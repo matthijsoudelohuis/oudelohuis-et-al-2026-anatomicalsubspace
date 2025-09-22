@@ -25,7 +25,6 @@ from loaddata.session_info import filter_sessions,load_sessions
 from utils.psth import compute_tensor,compute_respmat
 from utils.tuning import compute_tuning
 from utils.plot_lib import * #get all the fixed color schemes
-from utils.explorefigs import *
 from utils.CCAlib import *
 from utils.corr_lib import *
 from utils.tuning import compute_tuning_wrapper

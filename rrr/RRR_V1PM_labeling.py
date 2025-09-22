@@ -26,7 +26,6 @@ from loaddata.session_info import filter_sessions,load_sessions
 from utils.psth import compute_tensor,compute_respmat
 from utils.tuning import compute_tuning
 from utils.plot_lib import * #get all the fixed color schemes
-from utils.explorefigs import *
 from utils.tuning import compute_tuning_wrapper
 from utils.regress_lib import *
 from utils.RRRlib import *
@@ -59,25 +58,10 @@ celldata = pd.concat([ses.celldata for ses in sessions]).reset_index(drop=True)
 
 
 
-# RRR
-
-
-
-
-
-
-
-
 #%% 
 
 areas = ['V1','PM','AL','RSP']
 nareas = len(areas)
-
-
-# areas = ['V1','PM']
-# nareas = len(areas)
-
-
 
 # %% 
 # sessions,nSessions   = filter_sessions(protocols = 'GR',only_all_areas=areas,min_lab_cells_V1=20,min_lab_cells_PM=20)
@@ -85,12 +69,6 @@ nareas = len(areas)
 # sessions,nSessions   = filter_sessions(protocols = 'GN',only_all_areas=areas,filter_areas=areas)
 # sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=areas,filter_areas=areas)
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],filter_areas=areas)
-
-#%% Remove sessions with too much drift in them:
-sessiondata         = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=True)
-sessions_in_list    = np.where(~sessiondata['session_id'].isin(['LPE12013_2024_05_02','LPE10884_2023_10_20','LPE09830_2023_04_12']))[0]
-sessions            = [sessions[i] for i in sessions_in_list]
-nSessions           = len(sessions)
 
 #%%  Load data properly:        
 # calciumversion = 'deconv'
@@ -1547,163 +1525,3 @@ plt.savefig(os.path.join(savedir,'RRR_R2_difftypes'), format = 'png', bbox_inche
 
 
 
-
-
-
-#%% Using trial averaged or using timepoint fluctuations:
-
-#%% 
-sessions,nSessions   = filter_sessions(protocols = 'GR',only_all_areas=['V1','PM','AL'],filter_areas=['V1','PM','AL'])
-
-#%%  Load data properly:        
-calciumversion = 'dF'
-# calciumversion = 'deconv'
-for ises in range(nSessions):
-    sessions[ises].load_respmat(load_behaviordata=True, load_calciumdata=True,load_videodata=True,
-                                calciumversion=calciumversion,keepraw=False)
-
-    # [sessions[ises].tensor,t_axis]     = compute_tensor(sessions[ises].calciumdata, sessions[ises].ts_F, sessions[ises].trialdata['tOnset'], 
-    #                              t_pre, t_post, binsize,method='nearby')
-    
-
-#%%
-print('Number of cells in AL per session:')
-for ises in range(nSessions):
-    print('%d: %d' % (ises,np.sum(np.all((sessions[ises].celldata['roi_name']=='AL',
-                                           sessions[ises].celldata['noise_level']<20),axis=0))))
-
-
-#%% Parameters for decoding from size-matched populations of V1 and PM labeled and unlabeled neurons
-areacombs  = [['V1','PM','AL'],
-              ['V1','AL','PM'],
-              ['PM','V1','AL'],
-              ['PM','AL','V1'],
-              ['AL','V1','PM'],
-              ['AL','PM','V1']]
-
-nareacombs     = len(areacombs)
-
-Nsub                = 50
-kfold               = 5
-nmodelfits          = 10
-lam                 = 0
-
-rank                = 5
-nstims              = 16
-
-R2_cv               = np.full((nareacombs,2,2,nstims,nSessions,nmodelfits,kfold),np.nan)
-
-kf                  = KFold(n_splits=kfold,shuffle=True,random_state=None)
-
-for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model'):    # iterate over sessions
-    # for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
-    for istim,stim in enumerate([0]): # loop over orientations 
-        # idx_T               = ses.trialdata['stimCond']==stim
-        idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
-        for icomb, (areax,areay,areaz) in enumerate(areacombs):
-
-            idx_areax           = np.where(np.all((ses.celldata['roi_name']==areax,
-                                    ses.celldata['noise_level']<20),axis=0))[0]
-            idx_areay           = np.where(np.all((ses.celldata['roi_name']==areay,
-                                    ses.celldata['noise_level']<20),axis=0))[0]
-            idx_areaz           = np.where(np.all((ses.celldata['roi_name']==areaz,
-                                    ses.celldata['noise_level']<20),axis=0))[0]
-            
-            if len(idx_areax)>=Nsub and len(idx_areay)>=Nsub and len(idx_areaz)>=Nsub:
-                for irbh,regress_out_behavior in enumerate([False,True]):
-                    respmat                 = ses.respmat[:,idx_T].T
-                    
-                    if regress_out_behavior:
-                        X       = np.stack((sessions[ises].respmat_videome[idx_T],
-                        sessions[ises].respmat_runspeed[idx_T],
-                        sessions[ises].respmat_pupilarea[idx_T],
-                        sessions[ises].respmat_pupilx[idx_T],
-                        sessions[ises].respmat_pupily[idx_T]),axis=1)
-                        X       = np.column_stack((X,sessions[ises].respmat_videopc[:,idx_T].T))
-                        X       = zscore(X,axis=0,nan_policy='omit')
-
-                        si      = SimpleImputer()
-                        X       = si.fit_transform(X)
-
-                        respmat,_  = regress_out_behavior_modulation(ses,X,respmat,rank=10,lam=0,perCond=False)
-
-                    for imf in range(nmodelfits):
-                        idx_areax_sub       = np.random.choice(idx_areax,Nsub,replace=False)
-                        idx_areay_sub       = np.random.choice(idx_areay,Nsub,replace=False)
-                        idx_areaz_sub       = np.random.choice(idx_areaz,Nsub,replace=False)
-                    
-                        X                   = respmat[:,idx_areax_sub]
-                        Y                   = respmat[:,idx_areay_sub]
-                        Z                   = respmat[:,idx_areaz_sub]
-                        
-                        X                   = zscore(X,axis=0)  #Z score activity for each neuron across trials/timepoints
-                        Y                   = zscore(Y,axis=0)
-                        Z                   = zscore(Z,axis=0)
-
-                        for ikf, (idx_train, idx_test) in enumerate(kf.split(X)):
-                            X_train, X_test = X[idx_train], X[idx_test]
-                            Y_train, Y_test = Y[idx_train], Y[idx_test]
-                            Z_train, Z_test = Z[idx_train], Z[idx_test]
-
-                            B_hat_train         = LM(Y_train,X_train, lam=lam)
-
-                            Y_hat_train         = X_train @ B_hat_train
-
-                            # decomposing and low rank approximation of A
-                            U, s, V = linalg.svd(Y_hat_train, full_matrices=False)
-
-                            S = linalg.diagsvd(s,U.shape[0],s.shape[0])
-
-                            # for r in range(nranks):
-                            B_rrr               = B_hat_train @ V[:rank,:].T @ V[:rank,:] #project beta coeff into low rank subspace
-                                # Y_hat_rr_test       = X_test @ B_rrr #project test data onto low rank predictive subspace
-                                # R2_cv_folds[r,ikf] = EV(Y_test,Y_hat_rr_test)
-
-                            Y_hat_test_rr = X_test @ B_rrr
-
-                            # R2_cv[iapl,r,iori,ises,i,ikf] = EV(Y_test,Y_hat_test_rr)
-                            R2_cv[icomb,0,irbh,istim,ises,imf,ikf] = EV(Y_test,Y_hat_test_rr)
-
-                            B_hat         = LM(Z_train,X_train @ B_rrr, lam=lam)
-
-                            Z_hat_test_rr = X_test @ B_rrr @ B_hat
-                            
-                            R2_cv[icomb,1,irbh,istim,ises,imf,ikf] = EV(Z_test,Z_hat_test_rr)
-
-#%% Show the data: R2
-# tempdata = np.nanmean(R2_cv,axis=(2,4,5)) #if cross-validated: average across orientations, model samples and kfolds
-tempdata = np.nanmean(R2_cv,axis=(2,3,5,6)) #if cross-validated: average across orientations, model samples and kfolds
-tempdata = np.nanmean(R2_cv,axis=(3,5,6)) #if cross-validated: average across orientations, model samples and kfolds
-fig, axes = plt.subplots(1,2,figsize=(6,3),sharey=True,sharex=True)
-clrs_combs = sns.color_palette('colorblind',len(areacombs))
-
-ax = axes[0]
-
-handles = []
-for icomb, (areax,areay,areaz) in enumerate(areacombs):
-    # ax = axes[np.array(iapl>3,dtype=int)]
-    ax.scatter(tempdata[icomb,0,0,:],tempdata[icomb,1,0,:],s=15,color=clrs_combs[icomb],alpha=1)
-    # ax.scatter(tempdata[icomb,0],tempdata[icomb,1,0,:],s=15,color=clrs_combs[icomb],alpha=1)
-handles = [plt.Line2D([0], [0], marker='o', color='w', label=areacombs[icomb],
-                         markerfacecolor=clrs_combs[icomb], markersize=5) for icomb in range(len(areacombs))]
-ax.legend(handles=handles, loc='upper left',frameon=False,fontsize=6)
-ax.plot([0,0.2],[0,0.2],linestyle='--',color='k',alpha=0.5)
-ax.set_ylabel('R2 (XsubY->Z)')
-ax.set_xlabel('R2 (X->Y)')
-
-ax = axes[1]
-for icomb, (areax,areay,areaz) in enumerate(areacombs):
-    # ax.scatter(tempdata[icomb,0,1,:],tempdata[icomb,1,1,:],s=15,color=clrs_combs[icomb],alpha=1)
-    ax.scatter(tempdata[icomb,0,1,:],tempdata[icomb,1,1,:],s=15,color=clrs_combs[icomb],alpha=1)
-
-# ax.set_xlim([0,0.2])
-# ax.set_ylim([0,0.2])
-ax.set_xlabel('R2 (X->Y)')
-ax.set_xticks([0,0.1,0.2])
-ax.set_yticks([0,0.1,0.2])
-ax.plot([0,0.2],[0,0.2],linestyle='--',color='k',alpha=0.5)
-sns.despine(top=True,right=True,offset=3)
-
-my_savefig(fig,savedir,'RRR_cvR2_V1PMAL_Cross_RegressBehav_%dsessions' % (nSessions))
-# plt.savefig(os.path.join(savedir,'RRR_cvR2_V1PMAL_Cross_RegressBehav_%dsessions' % (nSessions)),
-#                         bbox_inches='tight')

@@ -708,12 +708,6 @@ def get_clr_labeled():
 
    
 def get_clr_deltaoris(deltaoris,version=90):
-    # c = ["darkred","darkgreen"]
-    # v = [0,1.]
-    # l = list(zip(v,c))
-    # cmap=LinearSegmentedColormap.from_list('rg',l, N=256)
-    # colors = cmap((45-np.mod(deltaoris,90))/45)
-    # c = ["darkgreen","darkblue","darkred"]
     c = ["darkred","darkblue","darkgreen"]
     v = [0,.5,1.]
     l = list(zip(v,c))

@@ -9,7 +9,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 import math, os
 os.chdir('e:\\Python\\molanalysis')
 from loaddata.get_data_folder import get_local_drive
-# os.chdir(os.path.join(get_local_drive(),'Python','molanalysis'))
 
 import numpy as np
 import pandas as pd
@@ -25,7 +24,6 @@ from loaddata.session_info import filter_sessions,load_sessions
 from utils.psth import compute_tensor,compute_respmat
 from utils.tuning import compute_tuning
 from utils.plot_lib import * #get all the fixed color schemes
-from utils.explorefigs import *
 from utils.CCAlib import *
 from utils.corr_lib import *
 from utils.regress_lib import *
@@ -421,3 +419,4 @@ for r in range(1,nrankstoplot):
     for i,iN in enumerate(target_example_neurons):
         ax.plot(ts,Y_hat_rr[:,iN,r]*scale+i,color=clrs_ranks[r],lw=lw)
     my_savefig(fig,savedir,'V1PM_LowRank_Excerpt_%s_Rank%d.png' % (ses.sessiondata['session_id'][0],r+1),formats=['png']) 
+

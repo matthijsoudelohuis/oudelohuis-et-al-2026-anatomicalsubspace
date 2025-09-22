@@ -7,14 +7,11 @@ Matthijs Oude Lohuis, 2023, Champalimaud Foundation
 import os
 import numpy as np
 import pandas as pd
-import logging
 from scipy.stats import zscore
 
 from loaddata.get_data_folder import get_data_folder
 from loaddata.session import Session
-from utils.behaviorlib import * # get support functions for beh analysis 
 from utils.psth import * # get support functions for psth generation
-logger = logging.getLogger(__name__)
 
 
 def load_sessions(protocol, session_list, load_behaviordata=False, load_calciumdata=False, load_videodata=False, 
@@ -126,6 +123,11 @@ def filter_sessions(protocols,load_behaviordata=False, load_calciumdata=False,
                 if only_session_id is not None:
                     sesflag = sesflag and ses.session_id in only_session_id
 
+                #Remove sessions with too much drift in them:
+                driftses = ['LPE12013_2024_05_02','LPE10884_2023_10_20','LPE09830_2023_04_12']
+                if ses.session_id in driftses and protocol in ['GR','GN','IM']:
+                    sesflag = False
+
                 # SELECT BASED ON # TRIALS
                 if min_trials is not None:
                     sesflag = sesflag and len(ses.trialdata) >= min_trials
@@ -209,172 +211,76 @@ def report_sessions(sessions):
                 f"Number of neurons in {area}: {len(celldata[celldata['roi_name'] == area])}")
         print(f"Total number of neurons: {len(celldata)}")
 
-def load_neural_performing_sessions(calciumversion='deconv'):
-    #Get signal as relative to psychometric curve for all sessions:
-    sessions,nSessions = filter_sessions(protocols='DN',min_cells=1) #Load specified list of sessions
-    np.random.seed(0)
-    sessions = noise_to_psy(sessions,filter_engaged=True,bootstrap=True)
-    # plot_psycurve(sessions,filter_engaged=True)
 
-    idx_ses = get_idx_performing_sessions(sessions)
+# def assign_layer(celldata):
+#     celldata['layer'] = ''
 
-    # Filter sessions:
-    sessions = [sessions[i] for i in np.where(idx_ses)[0]]
-    nSessions = len(sessions)
+#     layers = {
+#         'V1': {
+#             'L2/3': (0, 200),
+#             'L4': (200, 275),
+#             'L5': (275, np.inf)
+#         },
+#         'PM': {
+#             'L2/3': (0, 200),
+#             'L4': (200, 275),
+#             'L5': (275, np.inf)
+#         },
+#         'AL': {
+#             'L2/3': (0, 200),
+#             'L4': (200, 275),
+#             'L5': (275, np.inf)
+#         },
+#         'RSP': {
+#             'L2/3': (0, 300),
+#             'L5': (300, np.inf)
+#         }
+#     }
 
-    # Load the data:           
-    for ises in range(nSessions):    # iterate over sessions
-        sessions[ises].load_data(load_behaviordata=True, load_calciumdata=True,load_videodata=True,
-                                    calciumversion=calciumversion)
-    # Z-score the calciumdata: 
-    for i in range(nSessions):
-        sessions[i].calciumdata = sessions[i].calciumdata.apply(zscore,axis=0)
+#     for roi, layerdict in layers.items():
+#         for layer, (mindepth, maxdepth) in layerdict.items():
+#             idx = celldata[(celldata['roi_name'] == roi) & (mindepth <= celldata['depth']) & (celldata['depth'] < maxdepth)].index
+#             celldata.loc[idx, 'layer'] = layer
+    
+#     assert(celldata['layer'].notnull().all()), 'problematic assignment of layer based on ROI and depth'
+    
+#     #References: 
+#     # V1: 
+#     # Niell & Stryker, 2008 Journal of Neuroscience
+#     # Gilman, et al. 2017 eNeuro
+#     # RSC/PM:
+#     # Zilles 1995 Rat cortex areal and laminar structure
 
-    ## Construct spatial tensor: 3D 'matrix' of K trials by N neurons by S spatial bins
-    s_pre       = -60  #pre cm
-    s_post      = 80   #post cm
-    binsize     = 10     #spatial binning in cm
-
-    for i in range(nSessions):
-        sessions[i].stensor,sbins    = compute_tensor_space(sessions[i].calciumdata,sessions[i].ts_F,sessions[i].trialdata['stimStart'],
-                                        sessions[i].zpos_F,sessions[i].trialnum_F,s_pre=s_pre,s_post=s_post,binsize=binsize,method='binmean')
-        # Compute average response in stimulus response zone:
-        sessions[i].respmat             = compute_respmat_space(sessions[i].calciumdata, sessions[i].ts_F, sessions[i].trialdata['stimStart'],
-                                        sessions[i].zpos_F,sessions[i].trialnum_F,s_resp_start=0,s_resp_stop=20,method='mean',subtr_baseline=False)
-
-        temp = pd.DataFrame(np.reshape(np.array(sessions[i].behaviordata['runspeed']),(len(sessions[i].behaviordata['runspeed']),1)))
-        sessions[i].respmat_runspeed    = compute_respmat_space(temp, sessions[i].behaviordata['ts'], sessions[i].trialdata['stimStart'],
-                                        sessions[i].behaviordata['zpos'],sessions[i].behaviordata['trialNumber'],s_resp_start=0,s_resp_stop=20,method='mean',subtr_baseline=False)
-
-
-    return sessions,nSessions,sbins
-
-    # print("{nneurons} dataset: {nsessions} sessions, {ntrials} trials".format(
-        # protocol = sessions[0].sessiondata.protocol,nsessions = len(sessiondata),ntrials = len(trialdata))
-
-    # # SELECT BASED ON NUMBER OF UNITS PER AREA
-    # if min_units is not None:
-    #     units_df = make_units_overview()
-    #     units_df = units_df[units_df['n_units'] >= min_units]
-    #     sel_df = pd.merge(units_df, trial_df, on=['animal_id', 'session_id'])
-
-    # # SELECT BASED ON NUMBER OF UNITS/CHANNELS PER AREA/LAYER
-    # if min_units_per_layer is not None or min_channels_per_layer is not None:
-    #     layers_df = make_units_and_channels_overview()
-    #     #layers_df_copy = layers_df.copy()
-
-    #     if min_units_per_layer is not None:
-    #         layers_df = layers_df[layers_df['n_units'] >= min_units_per_layer]
-
-    #     if min_channels_per_layer is not None:
-    #         layers_df = layers_df[
-    #             layers_df['n_channels'] >= min_channels_per_layer]
-
-    #     if exclude_NA_layer:
-    #         layers_df = layers_df[layers_df['layer'] != 'NA']
-
-    #     sel_df = pd.merge(layers_df, trial_df, on=['animal_id', 'session_id'])
-
-    # try:
-    #     return sel_df
-    # except NameError:
-    #     return trial_df
+#     return celldata
 
 
-# if __name__ == '__main__':
-#     # performance
+# def assign_layer2(celldata,splitdepth=300):
+#     celldata['layer'] = ''
 
-#     only_correct = True
-#     stimulus_type = None
-#     min_trials_per_stim = 10
-#     min_units = None
-#     min_units_per_layer = 12
-#     min_channels_per_layer = 10
-#     min_perc_correct = 40
-#     exclude_NA_layer = True
+#     layers = {
+#         'V1': {
+#             'L2/3': (0, splitdepth),
+#             'L5': (splitdepth, np.inf)
+#         },
+#         'PM': {
+#             'L2/3': (0, splitdepth),
+#             'L5': (splitdepth, np.inf)
+#         },
+#         'AL': {
+#             'L2/3': (0, splitdepth),
+#             'L5': (splitdepth, np.inf)
+#         },
+#         'RSP': {
+#             'L2/3': (0, splitdepth),
+#             'L5': (splitdepth, np.inf)
+#         }
+#     }
 
-#     if min_units is not None and min_units_per_layer is not None:
-#         raise ValueError('You can select either the minimum number of (total) units'
-#                          'per area, or the minimum number of units per area/layer, '
-#                          'not both!')
+#     for roi, layerdict in layers.items():
+#         for layer, (mindepth, maxdepth) in layerdict.items():
+#             idx = celldata[(celldata['roi_name'] == roi) & (mindepth <= celldata['depth']) & (celldata['depth'] < maxdepth)].index
+#             celldata.loc[idx, 'layer'] = layer
+    
+#     assert(celldata['layer'].notnull().all()), 'problematic assignment of layer based on ROI and depth'
 
-#     trial_df = make_trial_overview()
-
-#     if min_trials_per_stim is not None:
-#         trial_df = trial_df.loc[(trial_df.only_correct == only_correct) &
-#                                     (trial_df.nt_0 >= min_trials_per_stim) &
-#                                     (trial_df.nt_1 >= min_trials_per_stim)]
-
-#     if stimulus_type is not None:
-#         trial_df = trial_df[trial_df['stimulus_type'] == stimulus_type]
-
-#     if min_perc_correct is not None:
-#         trial_df = trial_df[trial_df['perc_corr'] >= min_perc_correct]
-
-
-#     if min_units is not None:
-#         units_df = make_units_overview()
-
-#         units_df = units_df[units_df['n_units'] >= min_units]
-#         sel_df = pd.merge(units_df, trial_df, on=['animal_id', 'session_id'])
-
-
-#     if min_units_per_layer is not None or min_channels_per_layer is not None:
-#         layers_df = make_units_and_channels_overview()
-#         layers_df_copy = layers_df.copy()
-
-#         if min_units_per_layer is not None:
-#             layers_df = layers_df[layers_df['n_units'] >= min_units_per_layer]
-
-#         if min_channels_per_layer is not None:
-#             layers_df = layers_df[layers_df['n_channels'] >= min_channels_per_layer]
-
-#         if exclude_NA_layer:
-#             layers_df = layers_df[layers_df['layer'] != 'NA']
-
-#         sel_df = pd.merge(layers_df, trial_df, on=['animal_id', 'session_id'])
-
-
-# def make_trial_overview():
-
-#     dfs = []
-
-#     for animal_id in decoding_sessions.keys():
-#         for session_id in decoding_sessions[animal_id]:
-#             session = Session(animal_id=animal_id, session_id=session_id)
-#             session.load_data(load_spikes=False, load_lfp=False)
-#             df = session.get_session_overview_trials()
-#             print(df)
-#             dfs.append(df)
-
-#     df = pd.concat(dfs).reset_index().drop('index', axis=1)
-
-#     ind = df.loc[(df['animal_id'] == '2009') &
-#            (df['session_id'] == '2018-08-24_11-56-35') &
-#            (df['target_name'] == 'visualOriPostNorm')].index
-
-#     df = df.drop(ind)
-
-#     # just to make sure
-#     sel = df.loc[(df['animal_id'] == '2009') &
-#            (df['session_id'] == '2018-08-24_11-56-35') &
-#            (df['target_name'] == 'visualOriPostNorm')]
-#     assert sel.shape[0] == 0
-
-#     return df
-
-
-# def make_units_overview():
-
-#     dfs = []
-
-#     for animal_id in decoding_sessions.keys():
-#         for session_id in decoding_sessions[animal_id]:
-#             session = Session(animal_id=animal_id, session_id=session_id)
-#             # TODO we should be able to provide the unit layer without loading
-#             # the LFP
-#             session.load_data(load_spikes=True, load_lfp=False)
-#             df = session.get_session_overview_n_units()
-#             dfs.append(df)
-
-#     return pd.concat(dfs)
+#     return celldata

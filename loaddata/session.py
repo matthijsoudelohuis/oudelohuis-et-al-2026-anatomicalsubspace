@@ -14,15 +14,10 @@ import pandas as pd
 from loaddata.get_data_folder import get_data_folder
 from utils.psth import *
 import scipy
-import logging
-from utils.filter_lib import my_highpass_filter
-logger = logging.getLogger(__name__)
 
 class Session():
 
     def __init__(self, protocol='', animal_id='', sessiondate='', verbose=1):
-        logger.debug(
-            'Initializing Session object for: \n- animal ID: {}' '\n- Session ID: {}\n'.format(animal_id, sessiondate))
         self.data_folder = os.path.join(
             get_data_folder(), protocol, animal_id, sessiondate)
         self.verbose = verbose
@@ -121,12 +116,7 @@ class Session():
         #                             fp=self.behaviordata['zpos'])
 
     def reset_label_threshold(self, threshold):
-        logger.info(
-            'Setting new labeling threshold based on %1.2f overlap' % threshold)
-        # self.celldata['redcell'] = self.celldata['redcell_prob']>0.4
         self.celldata['redcell'] = self.celldata['frac_red_in_ROI'] >= threshold
-        # print('Need to set cre non flp again\n')
-        logger.info('put lower and upper threshold')
 
         # Add recombinase enzym label to red cells:
         labelareas = ['V1', 'PM']
@@ -137,6 +127,35 @@ class Session():
         # set all nonlabeled cells to 'non'
         self.celldata.loc[self.celldata['redcell'] == 0, 'recombinase'] = 'non'
 
+    def reset_layer(self, splitdepth=300):
+        self.celldata['layer'] = ''
+
+        layers = {
+            'V1': {
+                'L2/3': (0, splitdepth),
+                'L5': (splitdepth, np.inf)
+            },
+            'PM': {
+                'L2/3': (0, splitdepth),
+                'L5': (splitdepth, np.inf)
+            },
+            'AL': {
+                'L2/3': (0, splitdepth),
+                'L5': (splitdepth, np.inf)
+            },
+            'RSP': {
+                'L2/3': (0, splitdepth),
+                'L5': (splitdepth, np.inf)
+            }
+        }
+
+        for roi, layerdict in layers.items():
+            for layer, (mindepth, maxdepth) in layerdict.items():
+                idx = self.celldata[(self.celldata['roi_name'] == roi) & (mindepth <= self.celldata['depth']) & (self.celldata['depth'] < maxdepth)].index
+                self.celldata.loc[idx, 'layer'] = layer
+        
+        assert(self.celldata['layer'].notnull().all()), 'problematic assignment of layer based on ROI and depth'
+
     def load_respmat(self, load_behaviordata=True, load_calciumdata=True, load_videodata=True, calciumversion='dF',
                     keepraw=False, cellfilter=None,filter_hp=None):
         #combination to load data, then compute the average responses to the stimuli and delete the full data afterwards:
@@ -144,9 +163,6 @@ class Session():
         self.load_data(load_behaviordata=load_behaviordata, load_calciumdata=load_calciumdata,
                        load_videodata=load_videodata,calciumversion=calciumversion,filter_hp=filter_hp)
         
-        # if filter_hp is not None and filter_hp > 0:
-        #     self.calciumdata = my_highpass_filter(data = self.calciumdata, cutoff = filter_hp, fs=self.sessiondata['fs'][0])
-
         if self.sessiondata['protocol'][0]=='IM':
             if calciumversion=='deconv':
                 t_resp_start = 0

@@ -111,7 +111,7 @@ def RRR_cvR2(Y, X, rank,lam=0,kfold=5):
     return np.nanmean(R2_cv_folds)
 
 def RRR_wrapper(Y, X, nN=None,nM=None,nK=None,lam=0,nranks=25,kfold=5,nmodelfits=5):
-    #Reduced rank regression with unknown rank: 
+    # Reduced rank regression with unknown rank: 
     # Input: 
     # Y is activity in area 2, X is activity in area 1
 
