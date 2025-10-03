@@ -657,10 +657,10 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
     ax.set_ylabel(arealabelpairs[1])
     add_paired_ttest_results(ax,R2_cv[0,:],R2_cv[1,:],pos=[0.7,0.1],fontsize=10)
     ax.set_title('R2 (cv)',fontsize=10)
-    ax.set_xticks(np.arange(0,0.3,0.1))
-    ax.set_yticks(np.arange(0,0.3,0.1))
     ax.set_xlim([0,my_ceil(np.nanmax(R2_cv),2)])
     ax.set_ylim([0,my_ceil(np.nanmax(R2_cv),2)])
+    ax.set_xticks(np.linspace(0,ax.get_xlim()[1],3))
+    ax.set_yticks(np.linspace(0,ax.get_ylim()[1],3))
 
     ax=axes[2]
     ax.scatter(optim_rank[0,:],optim_rank[1,:],color=clrs_arealabelpairs[0],marker='o',s=10)

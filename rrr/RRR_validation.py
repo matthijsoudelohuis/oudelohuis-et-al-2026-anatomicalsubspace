@@ -283,18 +283,13 @@ arealabelpairs  = ['V1-V1',
                     'V1-PM',
                     'PM-V1'
                     ]
-alp_withinacross = ['Within',
-                   'Within',
-                   'Across',
-                   'Across'] 
 
 clrs_arealabelpairs = get_clr_area_pairs(arealabelpairs)
 narealabelpairs     = len(arealabelpairs)
 
-nsampleneurons      = 50
-nranks              = None
-nmodelfits          = 10 #number of times new neurons are resampled 
-kfold               = None
+nsampleneurons      = 100
+nranks              = 25
+nmodelfits          = 50 #number of times new neurons are resampled 
 nStim               = 16
 idx_resp            = np.where((t_axis>=0) & (t_axis<=1.5))[0]
 
@@ -326,6 +321,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
             idx_areax, idx_areay = np.array_split(np.random.permutation(idx_areax), 2)
 
         for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
+        # for istim,stim in enumerate([0]): # loop over orientations 
             idx_T               = ses.trialdata['stimCond']==stim
 
             #on tensor during the response:
@@ -341,16 +337,16 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
             Y                   = Y.reshape(len(idx_areay),-1).T
 
             #OUTPUT: MAX PERF, OPTIM RANK, PERF FOR EACH RANK ACROSS FOLDS AND MODELFITS
-            R2_cv[iapl,ises,istim],optim_rank[iapl,ises,istim],_  = RRR_wrapper(Y, X, 
-                            nN=nsampleneurons,nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
+            R2_cv[iapl,ises,istim],optim_rank[iapl,ises,istim],_  = RRR_wrapper(Y, X, nN=nsampleneurons,nranks=nranks,nmodelfits=nmodelfits)
 
 #%% Plotting:
 clr = clrs_arealabelpairs[0]
 R2_toplot = np.reshape(R2_cv,(narealabelpairs,nSessions*nStim))
 rank_toplot = np.reshape(optim_rank,(narealabelpairs,nSessions*nStim))
+# R2_toplot = np.nanmean(R2_cv,axis=2)
 # rank_toplot = np.nanmean(optim_rank,axis=2)
 
-fig,axes = plt.subplots(1,2,figsize=(4.5,2.5))
+fig,axes = plt.subplots(1,2,figsize=(5,2.5))
 
 clrs = get_clr_areas(['V1','PM'])
 ax = axes[0]
@@ -364,24 +360,10 @@ for icomp,comp in enumerate(comps):
     ax.set_title('R2')
 
     _,pval = ttest_rel(R2_toplot[comp[0],:],R2_toplot[comp[1],:],nan_policy='omit')
-    ax.text(0.6,0.1*(1+icomp),'%sp=%.3f' % (get_sig_asterisks(pval),pval),transform=ax.transAxes,fontsize=10,color=clrs[icomp])
-ax.legend(['V1','PM'],frameon=False,fontsize=10)
+    ax.text(0.6,0.1*(1+icomp),'%sp=%1.2e' % (get_sig_asterisks(pval),pval),transform=ax.transAxes,fontsize=10,color=clrs[icomp])
+ax.legend(['V1 (V1->V1 vs PM->V1)','PM (V1->PM vs PM->PM)'],frameon=False,fontsize=7,loc='upper left')
+# ax.legend(['V1','PM'],frameon=False,fontsize=10)
 my_legend_strip(ax)
-
-def my_legend_strip(ax):
-    leg = ax.get_legend()
-
-    for i,t in enumerate(leg.texts):
-        if isinstance(leg.legendHandles[i],matplotlib.lines.Line2D):
-            c = leg.legendHandles[i].get_color()
-        elif isinstance(leg.legendHandles[i],matplotlib.collections.PathCollection):
-            c = leg.legendHandles[i].get_facecolor()
-        # c = leg.legendHandles[i].get_facecolor()
-        t.set_color(c)
-    for handle in leg.legendHandles:
-        handle.set_visible(False)
-    leg.get_frame().set_visible(False)
-    
 ax.set_xlim([0,0.2])
 ax.set_ylim([0,0.2])
 ax.plot([0,0.2],[0,0.2],':',color='grey',linewidth=1)
@@ -393,8 +375,9 @@ for icomp,comp in enumerate(comps):
     ax.set_xlabel('Within')
     ax.set_title('Rank')
     _,pval = ttest_rel(rank_toplot[comp[0],:],rank_toplot[comp[1],:],nan_policy='omit')
-    ax.text(0.6,0.1*(1+icomp),'%sp=%.3f' % (get_sig_asterisks(pval),pval),transform=ax.transAxes,fontsize=10,color=clrs[icomp])
-ax.legend(['V1','PM'],frameon=False,fontsize=10)
+    ax.text(0.6,0.1*(1+icomp),'%sp=%1.2e' % (get_sig_asterisks(pval),pval),transform=ax.transAxes,fontsize=10,color=clrs[icomp])
+# ax.legend(['V1','PM'],frameon=False,fontsize=10)
+ax.legend(['V1 (V1->V1 vs PM->V1)','PM (V1->PM vs PM->PM)'],frameon=False,fontsize=7,loc='upper left')
 my_legend_strip(ax)
 ax.set_xlim([0,15])
 ax.set_ylim([0,15])
@@ -403,10 +386,7 @@ ax.plot([0,25],[0,25],':',color='grey',linewidth=1)
 
 sns.despine(offset=3,top=True,right=True)
 plt.tight_layout()
-
 # my_savefig(fig,savedir,'RRR_R2Rank_WithinVSAcross_%dneurons' % nsampleneurons,formats=['png'])
-
-
 
 
 

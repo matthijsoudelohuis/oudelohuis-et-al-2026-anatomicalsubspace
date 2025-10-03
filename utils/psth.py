@@ -12,6 +12,7 @@ from scipy.stats import binned_statistic
 from scipy import stats
 from scipy.interpolate import CubicSpline
 from tqdm.auto import tqdm
+from sklearn.impute import SimpleImputer
 
 """
  ####### ####### #     #  #####  ####### ######  
@@ -105,6 +106,10 @@ def compute_tensor(data, ts_F, ts_T, t_pre=-1, t_post=2, binsize=None, method='n
         #             tensor = None
         #             bincenters = None
         #             return tensor, bincenters
+    if np.any(np.isnan(tensor)):
+        si                  = SimpleImputer()
+        for iF in range(np.shape(tensor)[0]):
+            tensor[iF,:,:] = si.fit_transform(tensor[iF,:,:])
 
     return tensor, bincenters
 

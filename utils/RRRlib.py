@@ -110,7 +110,7 @@ def RRR_cvR2(Y, X, rank,lam=0,kfold=5):
 
     return np.nanmean(R2_cv_folds)
 
-def RRR_wrapper(Y, X, nN=None,nM=None,nK=None,lam=0,nranks=25,kfold=5,nmodelfits=5):
+def RRR_wrapper(Y, X, nN=None,nM=None,nK=None,lam=0,nranks=25,kfold=5,nmodelfits=5,fixed_rank=None):
     # Reduced rank regression with unknown rank: 
     # Input: 
     # Y is activity in area 2, X is activity in area 1
@@ -169,7 +169,7 @@ def RRR_wrapper(Y, X, nN=None,nM=None,nK=None,lam=0,nranks=25,kfold=5,nmodelfits
             U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
 
             S = linalg.diagsvd(s,U.shape[0],s.shape[0])
-
+            
             for r in range(nranks):
                 B_rrr               = B_hat_train @ V[:r,:].T @ V[:r,:] #project beta coeff into low rank subspace
 
@@ -177,9 +177,108 @@ def RRR_wrapper(Y, X, nN=None,nM=None,nK=None,lam=0,nranks=25,kfold=5,nmodelfits
 
                 R2_cv_folds[r,imf,ikf] = EV(Y_test,Y_hat_rr_test)
 
-    repmean,rank = rank_from_R2(R2_cv_folds.reshape([nranks,nmodelfits*kfold]),nranks,nmodelfits*kfold)
+    # repmean,rank = rank_from_R2(R2_cv_folds.reshape([nranks,nmodelfits*kfold]),nranks,nmodelfits*kfold)
+    
+    if fixed_rank is not None:
+        rank = fixed_rank
+        repmean = np.nanmean(R2_cv_folds[rank,:,:])
+    else:
+        repmean,rank = rank_from_R2(R2_cv_folds.reshape([nranks,nmodelfits*kfold]),nranks,nmodelfits*kfold)
 
     return repmean,rank,R2_cv_folds
+
+def RRR_wrapper_tensor(Y, X, nN=None,nM=None,nK=None,lam=0,nranks=25,kfold=5,nmodelfits=5,fixed_rank=None):
+    # Reduced rank regression with unknown rank: 
+    # Input: 
+    # Y is activity in area 2, X is activity in area 1
+
+    # Function:
+    # X is of shape N x K x T (features x trials x timepoints), Y is of shape M x K x T
+    # K is the number of samples, N is the number of neurons in area 1,
+    # M is the number of neurons in area 2
+    # T is the number of timepoints
+
+    # multiple linear regression, B_hat is of shape N x M:
+    # B_hat               = LM(Y,X, lam=lam) 
+    #RRR: do SVD decomp of Y_hat, 
+    # U is of shape K x r, S is of shape r x r, V is of shape r x M
+    # Y_hat_rr,U,S,V     = RRR(Y, X, B_hat, r)
+
+    kf      = KFold(n_splits=kfold,shuffle=True)
+
+    # Data format: 
+    N,K,T     = np.shape(X)
+    M       = np.shape(Y)[0]
+
+    nN  = nN or min(M,N)
+    nM  = nM or nN or min(M,N)
+    nK  = nK or K
+
+    assert nM<=M and nN<=N, "number of subsampled neurons must be smaller than M and N"
+    assert nK<=K, "number of subsampled timepoints must be smaller than number of timepoints"
+    # if nK/np.min([nN,nM]) < 5 and lam==0:
+        # print('Warning: number of samples per feature (e.g. trials per neuron) is less than 5 and no regularization is applied. This may result in overfitting.')
+
+    #Zscore: 
+    X -= np.nanmean(X, axis=(1,2), keepdims=True)
+    Y -= np.nanmean(Y, axis=(1,2), keepdims=True)
+
+    X /= np.nanstd(X, axis=(1,2), keepdims=True)
+    Y /= np.nanstd(Y, axis=(1,2), keepdims=True)
+
+    # R2_cv_folds = np.full((nranks,nmodelfits,kfold),np.nan)
+    R2_cv_folds = np.full((T,nranks,nmodelfits,kfold),np.nan)
+
+    for imf in range(nmodelfits):
+        idx_areax_sub           = np.random.choice(N,nN,replace=False)
+        idx_areay_sub           = np.random.choice(M,nM,replace=False)
+
+        X_sub                   = X[idx_areax_sub]
+        Y_sub                   = Y[idx_areay_sub]
+        
+        for ikf, (idx_train, idx_test) in enumerate(kf.split(np.arange(nK))): #Get indices of train and test trials
+            
+            X_train, X_test     = X_sub[:,idx_train,:], X_sub[:,idx_test,:]
+            Y_train, Y_test     = Y_sub[:,idx_train,:], Y_sub[:,idx_test,:]
+
+            # reshape to neurons x time points
+            X_train_r               = X_train.reshape(len(idx_areax_sub),-1).T
+            Y_train_r               = Y_train.reshape(len(idx_areay_sub),-1).T
+            X_test_r                = X_test.reshape(len(idx_areax_sub),-1).T
+            Y_test_r                = Y_test.reshape(len(idx_areay_sub),-1).T
+
+            B_hat_train             = LM(Y_train_r,X_train_r, lam=lam)
+
+            Y_hat_train             = X_train_r @ B_hat_train
+
+            # decomposing and low rank approximation of A
+            U, s, V = svds(Y_hat_train,k=np.min((nranks,nN,nM))-1,which='LM')
+            U, s, V = U[:, ::-1], s[::-1], V[::-1, :] #sort by singular values
+
+            S = linalg.diagsvd(s,U.shape[0],s.shape[0])
+
+            for r in range(nranks):
+                B_rrr               = B_hat_train @ V[:r,:].T @ V[:r,:] #project beta coeff into low rank subspace
+
+                Y_hat_rr_test       = X_test_r @ B_rrr #project test data onto low rank predictive subspace
+
+                Y_hat_rr       = np.reshape(Y_hat_rr_test.T,(len(idx_areay_sub),len(idx_test),T),order='C')
+                # Y_test_2       = np.reshape(Y_test_r.T,(len(idx_areay_sub),len(idx_test),T),order='C')
+
+                for t in range(T):
+                    # R2_cv_folds[t,r,imf,ikf] = EV(Y_test_2[:,:,t],Y_hat_rr[:,:,t])
+                    R2_cv_folds[t,r,imf,ikf] = EV(Y_test[:,:,t],Y_hat_rr[:,:,t])
+
+    repmean,rank = rank_from_R2(np.nanmean(R2_cv_folds,axis=0).reshape([nranks,nmodelfits*kfold]),nranks,nmodelfits*kfold)
+
+    if fixed_rank is not None:
+        rank = fixed_rank
+    
+    repmean = np.nanmean(R2_cv_folds[:,rank,:,:],axis=(1,2))
+    # plt.plot(repmean)
+
+    return repmean,rank,R2_cv_folds
+
 
 def RRR_decompose(Y, X, B, S, nN=None,nM=None,nK=None,lam=0,nranks=25,kfold=5,nmodelfits=5):
     #Reduced rank regression with unknown rank: 
@@ -419,6 +518,37 @@ def xval_rank(Y, X, lam, ranks, K=5):
             Rsss_rrr[k,i] = Rss(Y[test_ix], Y_hat_lr_test)
             EV_rrr[k,i] = EV(Y[test_ix], Y_hat_lr_test)
     return Rsss_lm, Rsss_rrr,EV_rrr
+
+def regress_out_cv(X=None,Y=None,rank=None,nranks=None,lam=0,kfold = 5):
+
+    Y_out = np.full_like(Y, np.nan)
+    Y_hat = np.full_like(Y, np.nan)
+
+    kf = KFold(n_splits=kfold,shuffle=True)
+    for ikf, (idx_train, idx_test) in enumerate(kf.split(X)):
+        X_train, X_test     = X[idx_train], X[idx_test]
+        Y_train, Y_test     = Y[idx_train], Y[idx_test]
+
+        B_hat_train         = LM(Y_train,X_train, lam=lam)
+
+        Y_hat_train         = X_train @ B_hat_train
+
+        # decomposing and low rank approximation of A
+        # U, s, V = linalg.svd(Y_hat_train, full_matrices=False)
+        U, s, V = svds(Y_hat_train,k=rank,which='LM')
+        U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
+
+        S = linalg.diagsvd(s,U.shape[0],s.shape[0])
+
+        B_rrr               = B_hat_train @ V[:rank,:].T @ V[:rank,:] #project beta coeff into low rank subspace
+        
+        Y_hat_rr_test       = X_test @ B_rrr #project test data onto low rank predictive subspace
+
+        Y_out[idx_test]     = Y_test - Y_hat_rr_test
+
+        Y_hat[idx_test]     = Y_hat_rr_test
+
+    return Y,Y_hat,Y_out
 
 def regress_out_behavior_modulation(ses,X=None,Y=None,nvideoPCs = 30,rank=None,nranks=None,lam=0,perCond=False,kfold = 5):
     
