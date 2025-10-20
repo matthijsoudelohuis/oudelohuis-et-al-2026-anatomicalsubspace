@@ -678,6 +678,23 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
     fig.tight_layout()
     return fig
 
+
+def arealabeled_to_figlabels(arealabeled):
+    # arealabeled_fig = np.array(np.shape(arealabeled),dtype=object)
+    table       = {'V1unl': "$V1_{ND}$",
+        'V1lab' : "$V1_{PM}$",
+        'PMunl' : "$PM_{ND}$",
+        'PMlab' : "$PM_{V1}$",
+        'V1_UNL': "$V1_{ND}$",
+        'V1_LAB' : "$V1_{PM}$",
+        'PM_UNL' : "$PM_{ND}$",
+        'PM_LAB' : "$PM_{V1}$",
+        'ALunl':    "$AL_{ND}$",
+        'ALlab' :   "$AL_{PM}$",
+        'RSPunl' :  "$RSP_{ND}$",
+        'RSPlab' :  "$RSP_{PM}$"}
+    return itemgetter(*arealabeled)(table)
+
 ################################################################
 ## Series of function that spit out lists of colors for different combinations of 
 ## areas, protocols, mice, stimuli, etc. 

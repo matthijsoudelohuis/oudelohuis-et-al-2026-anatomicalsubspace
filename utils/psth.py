@@ -109,7 +109,11 @@ def compute_tensor(data, ts_F, ts_T, t_pre=-1, t_post=2, binsize=None, method='n
     if np.any(np.isnan(tensor)):
         si                  = SimpleImputer()
         for iF in range(np.shape(tensor)[0]):
-            tensor[iF,:,:] = si.fit_transform(tensor[iF,:,:])
+            if not np.all(np.isnan(tensor[iF,:,:])):
+                tensor[iF,:,:] = si.fit_transform(tensor[iF,:,:])
+            # else:
+                # tensor[iF,:,:] = tensor[iF,:,:]
+            # tensor[iF,:,:] = si.fit_transform(tensor[iF,:,:])
 
     return tensor, bincenters
 

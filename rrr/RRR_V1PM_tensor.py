@@ -36,7 +36,7 @@ sessions,nSessions   = filter_sessions(protocols = 'GR',only_session_id=session_
 
 
 #%% Get all data 
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
+# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],min_lab_cells_V1=25,min_lab_cells_PM=25)
 report_sessions(sessions)
 
@@ -184,7 +184,7 @@ minsampleneurons    = 10
 filter_nearby       = True
 
 dataversions        = np.array(['original','behavout','neuralout'])
-# dataversions        = np.array(['original','behavout'])
+dataversions        = np.array(['original','behavout'])
 # dataversions        = np.array(['original','','neuralout'])
 # dataversions        = np.array(['original'])
 # dataversions        = np.array(['neuralout'])
@@ -250,6 +250,7 @@ valuematching       = None
 # valuematching       = 'event_rate'
 # valuematching       = 'skew'
 # valuematching       = 'meanF'
+sampleN = np.zeros((nSessions))
 
 for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for different populations'):
     if filter_nearby:
@@ -271,6 +272,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
                                                  ses.celldata['noise_level']<maxnoiselevel,
                                                  idx_nearby),axis=0)) for i in sourcepops],
                                   )
+    sampleN[ises] = nsampleneurons
 
     if not hasattr(ses,'tensor_behavout') and 'behavout' in dataversions: 
         sessions[ises].tensor_behavout = copy.copy(sessions[ises].tensor)
@@ -279,6 +281,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
                                 sessions[ises].tensor_run),axis=0)
         B                   = B.reshape(np.shape(B)[0],-1).T
         B                   = zscore(B,axis=0,nan_policy='omit')
+        B = B[:,~np.all(np.isnan(B),axis=0)]
         
         for area in ['V1','PM']:
             idx_N    = np.where(np.all((ses.celldata['roi_name']==area,
@@ -425,8 +428,9 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
             #     R2_cv[iapl,2,ises,istim],optim_rank[iapl,2,ises,istim],R2_ranks[iapl,2,ises,istim,:,:,:]  = RRR_wrapper(Y_neuralout, X_neuralout, 
             #                 nN=nsampleneurons,nK=None,lam=lam,nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
 
-#%% 
+print('Population size: %d (%d-%d)' % (np.mean(sampleN[sampleN>minsampleneurons]),np.min(sampleN[sampleN>minsampleneurons]),np.max(sampleN[sampleN>minsampleneurons])))
 
+#%% 
 
 #          #    ######     #     #  #####     #     # #     # #       
 #         # #   #     #    #     # #     #    #     # ##    # #       
@@ -435,6 +439,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 #       ####### #     #     #   #        #    #     # #   # # #       
 #       #     # #     #      # #   #     #    #     # #    ## #       
 ####### #     # ######        #     #####      #####  #     # ####### 
+
 
 #%% Show figure for each of the arealabelpairs and each of the dataversions
 for iversion, version in enumerate(dataversions):
@@ -452,6 +457,7 @@ for iversion, version in enumerate(dataversions):
 
 
 #%% Reshape data to stretch stim x sessions
+nversions = 3
 R2_cv_2         = np.reshape(R2_cv,(narealabelpairs,nversions,nSessions*nStim))
 optim_rank_2    = np.reshape(optim_rank,(narealabelpairs,nversions,nSessions*nStim))
 R2_ranks_2      = np.reshape(R2_ranks,(narealabelpairs,nversions,nSessions*nStim,nranks,nmodelfits,kfold))
@@ -459,7 +465,7 @@ R2_ranks_2      = np.reshape(R2_ranks,(narealabelpairs,nversions,nSessions*nStim
 # R2_cv_2[optim_rank_2<2] = np.nan
 
 # R2_cv_2         = np.nanmean(R2_cv,axis=3)
-optim_rank_2    = np.nanmean(optim_rank,axis=3)
+# optim_rank_2    = np.nanmean(optim_rank,axis=3)
 # R2_ranks_2      = np.reshape(R2_ranks,(narealabelpairs,nversions,nSessions*nStim,nranks,nmodelfits,kfold))
 
 # R2_cv_2[optim_rank_2<2] = np.nan
@@ -476,10 +482,9 @@ ratiodata_FF       = (R2_cv_2[1] / R2_cv_2[0])*100-100 #
 ratiodata_FB       = (R2_cv_2[3] / R2_cv_2[2])*100-100
 
 
-
 #%% Plot the R2 for each of the arealabelpairs and each of the dataversions
 #Residual variance explained goes down with behavior or brainwide activity regressed out: 
-
+nversions = 3
 fig,axes = plt.subplots(1,2,sharex=True,sharey=True,figsize=(5,4))
 ax = axes[0]
 # ax.errorbar(x=range(nversions),y=np.nanmean(R2_cv_2[0],axis=1),yerr=np.nanstd(R2_cv_2[0],axis=1)/np.sqrt(nSessions*nStim),color=clrs_arealabelpairs[0])
@@ -549,7 +554,6 @@ sns.despine(fig=fig,trim=True)
 # my_savefig(fig,savedir,'RRR_rank_FF_FB_diffversions_%dsessions' % (nSessions))
 
 
-
 #%% Make the figure: 
 fig,axes = plt.subplots(1,2,sharex=True,sharey=True,figsize=(5,4))
 ax = axes[0]
@@ -560,13 +564,13 @@ ax.set_title('FF')
 
 for it,(ix,iy) in enumerate(np.array([[0,1],[0,2],[1,2]])):
     h,p = stats.ttest_rel(ratiodata_FF[ix],ratiodata_FF[iy],nan_policy='omit')
-    add_stat_annotation(ax, ix,iy, 80+it*10, p, h=None)
+    add_stat_annotation(ax, ix,iy, 30+it*2, p, h=1)
 
 ax = axes[1]
 ax.errorbar(x=range(nversions),y=np.nanmean(ratiodata_FB,axis=1),yerr=np.nanstd(ratiodata_FB,axis=1)/np.sqrt(np.shape(ratiodata_FF)[1]))
 for it,(ix,iy) in enumerate(np.array([[0,1],[0,2],[1,2]])):
     h,p = stats.ttest_rel(ratiodata_FB[ix],ratiodata_FB[iy],nan_policy='omit')
-    add_stat_annotation(ax, ix,iy, 80+it*10, p, h=None)
+    add_stat_annotation(ax, ix,iy, 30+it*2, p, h=1)
 
 ax.axhline(y=0,color='k',linestyle='--')
 ax.set_ylabel("Relative performance in %\n$PM_{V1}$ vs $PM_{ND}$")
@@ -576,7 +580,7 @@ ax.set_title('FB')
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=True)
-# my_savefig(fig,savedir,'RRR_cvR2_ratio_FF_FB_diffversions_%dsessions' % (nSessions))
+my_savefig(fig,savedir,'RRR_cvR2_ratio_FF_FB_diffversions_%dsessions' % (nSessions))
 
 
 #%% 
@@ -633,6 +637,48 @@ for iversion, version in enumerate(dataversions):
             # my_savefig(fig,savedir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
 
 
+#%% Define the ratio of R2 between V1PM and V1ND
+ratiodata_FF       = (R2_cv_2[9] / R2_cv_2[8])*100-100 #
+ratiodata_FB       = (R2_cv_2[13] / R2_cv_2[12])*100-100
+
+# ratiodata_FF       = (R2_cv_2[11] / R2_cv_2[10])*100-100 #
+# ratiodata_FB       = (R2_cv_2[15] / R2_cv_2[14])*100-100
+
+#%% Make the figure: 
+fig,axes = plt.subplots(1,2,sharex=True,sharey=True,figsize=(5,4))
+ax = axes[0]
+ax.errorbar(x=range(nversions),y=np.nanmean(ratiodata_FF,axis=1),yerr=np.nanstd(ratiodata_FF,axis=1)/np.sqrt(np.shape(ratiodata_FF)[1]))
+ax.set_ylabel("Relative performance in %\n$V1_{PM}$ vs. $V1_{ND}$")
+ax.axhline(y=0,color='k',linestyle='--')
+ax.set_title('V1-->AL')
+
+for it in range(nversions):
+    h,p = stats.ttest_1samp(ratiodata_FF[it],0,nan_policy='omit')
+    add_stat_annotation(ax, it,it,np.nanmean(ratiodata_FF,axis=1)[it]+5, p, h=None)
+
+for it,(ix,iy) in enumerate(np.array([[0,1],[0,2],[1,2]])):
+    h,p = stats.ttest_rel(ratiodata_FF[ix],ratiodata_FF[iy],nan_policy='omit')
+    # add_stat_annotation(ax, ix,iy, 80+it*10, p, h=None)
+
+ax = axes[1]
+ax.errorbar(x=range(nversions),y=np.nanmean(ratiodata_FB,axis=1),yerr=np.nanstd(ratiodata_FB,axis=1)/np.sqrt(np.shape(ratiodata_FF)[1]))
+for it in range(nversions):
+    h,p = stats.ttest_1samp(ratiodata_FB[it],0,nan_policy='omit')
+    add_stat_annotation(ax, it,it,np.nanmean(ratiodata_FB,axis=1)[it]+5, p, h=None)
+
+for it,(ix,iy) in enumerate(np.array([[0,1],[0,2],[1,2]])):
+    h,p = stats.ttest_rel(ratiodata_FB[ix],ratiodata_FB[iy],nan_policy='omit')
+    # add_stat_annotation(ax, ix,iy, 80+it*10, p, h=None)
+
+ax.axhline(y=0,color='k',linestyle='--')
+ax.set_ylabel("Relative performance in %\n$PM_{V1}$ vs $PM_{ND}$")
+ax.set_xticks(range(nversions))
+ax.set_xticklabels(dataversions)
+ax.set_title('FB')
+
+plt.tight_layout()
+sns.despine(fig=fig,trim=True)
+my_savefig(fig,savedir,'RRR_cvR2_ratio_FF_FB_AL_diffversions_%dsessions' % (nSessions))
 
 #%% 
 
@@ -643,7 +689,6 @@ for iversion, version in enumerate(dataversions):
 #       #     # #     # #       #       #     # 
 #       #     # #     # #       #       #     # 
 ####### ####### ####### #       ####### ######  
-
 
 #%% 
 idx_FF = np.array([[0,5]])
@@ -679,6 +724,47 @@ for iversion, version in enumerate(dataversions):
             # my_savefig(fig,savedir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
 
 
+#%% Define the ratio of R2 between V1PM and V1ND
+ratiodata_FF       = (R2_cv_2[5] / R2_cv_2[0])*100-100 #
+ratiodata_FB       = (R2_cv_2[7] / R2_cv_2[2])*100-100
+
+# ratiodata_FF       = (R2_cv_2[8] - R2_cv_2[9])*100-100 #
+# ratiodata_FB       = (R2_cv_2[12] -  R2_cv_2[13])*100-100
+
+#%% Make the figure: 
+fig,axes = plt.subplots(1,2,sharex=True,sharey=True,figsize=(5,4))
+ax = axes[0]
+ax.errorbar(x=range(nversions),y=np.nanmean(ratiodata_FF,axis=1),yerr=np.nanstd(ratiodata_FF,axis=1)/np.sqrt(np.shape(ratiodata_FF)[1]))
+ax.set_ylabel("Relative performance in %\n$V1_{PM}$ vs. $V1_{ND}$")
+ax.axhline(y=0,color='k',linestyle='--')
+ax.set_title('FF')
+
+for it in range(nversions):
+    h,p = stats.ttest_1samp(ratiodata_FF[it],0,nan_policy='omit')
+    add_stat_annotation(ax, it,it,np.nanmean(ratiodata_FF,axis=1)[it]+5, p, h=None)
+
+for it,(ix,iy) in enumerate(np.array([[0,1],[0,2],[1,2]])):
+    h,p = stats.ttest_rel(ratiodata_FF[ix],ratiodata_FF[iy],nan_policy='omit')
+    add_stat_annotation(ax, ix,iy, 80+it*10, p, h=None)
+
+ax = axes[1]
+ax.errorbar(x=range(nversions),y=np.nanmean(ratiodata_FB,axis=1),yerr=np.nanstd(ratiodata_FB,axis=1)/np.sqrt(np.shape(ratiodata_FF)[1]))
+for it in range(nversions):
+    h,p = stats.ttest_1samp(ratiodata_FB[it],0,nan_policy='omit')
+    add_stat_annotation(ax, it,it,np.nanmean(ratiodata_FB,axis=1)[it]+5, p, h=None)
+
+for it,(ix,iy) in enumerate(np.array([[0,1],[0,2],[1,2]])):
+    h,p = stats.ttest_rel(ratiodata_FB[ix],ratiodata_FB[iy],nan_policy='omit')
+    add_stat_annotation(ax, ix,iy, 80+it*10, p, h=None)
+
+ax.axhline(y=0,color='k',linestyle='--')
+ax.set_ylabel("Relative performance in %\n$PM_{V1}$ vs $PM_{ND}$")
+ax.set_xticks(range(nversions))
+ax.set_xticklabels(dataversions)
+ax.set_title('FB')
+
+plt.tight_layout()
+sns.despine(fig=fig,trim=True)
 
 
 #%% Average across stim:

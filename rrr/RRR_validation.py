@@ -62,9 +62,9 @@ t_axis = sessions[0].t_axis
 
 #%% Show RRR example: 
 nranks              = 40
-nmodelfits          = 100 #number of times new neurons are resampled 
+nmodelfits          = 5 #number of times new neurons are resampled 
 kfold               = 5
-nsampleneurons      = 200
+nsampleneurons      = 25
 idx_resp            = np.where((t_axis>=0) & (t_axis<=1.5))[0]
 R2_ranks            = np.full((nranks,nmodelfits,kfold),np.nan)
 
@@ -109,6 +109,183 @@ ax.set_ylabel('Performance ($R^2$)')
 sns.despine(fig=fig,top=True,right=True,trim=True)
 my_savefig(fig,savedir,'RRR_rank_ev_procedure_%d' % nsampleneurons,formats=['png'])
 
+#%%
+from scipy.stats import pearsonr
+
+# Y: shape (n_timepoints, n_neurons, n_trials)
+def split_half_reliability(Y):
+    n_trials = Y.shape[2]
+    idx = np.random.permutation(n_trials)
+    half = n_trials // 2
+    Y1 = np.mean(Y[:, :, idx[:half]], axis=2)
+    Y2 = np.mean(Y[:, :, idx[half:]], axis=2)
+    
+    # Flatten over time and neurons for population-level reliability
+    r, _ = pearsonr(Y1.flatten(), Y2.flatten())
+    
+    # Spearman–Brown correction
+    r_sb = (2 * r) / (1 + r)
+    R2_ceiling = r_sb ** 2
+    return R2_ceiling
+
+#%%
+from scipy.stats import pearsonr
+
+def noise_ceiling_split_half(Y, n_splits=100, random_state=None):
+    """
+    Estimate noise ceiling (split-half reliability) for neural data.
+
+    Parameters
+    ----------
+    Y : array, shape (n_neurons, n_trials, n_timepoints)
+        Neural activity data.
+    n_splits : int, optional
+        Number of random trial splits to average over.
+    random_state : int or None
+        Random seed for reproducibility.
+
+    Returns
+    -------
+    R2_ceiling_mean : float
+        Estimated mean noise ceiling (R²) across random splits.
+    R2_ceiling_all : np.ndarray
+        All R² ceiling estimates from each split.
+    """
+
+    rng = np.random.default_rng(random_state)
+    n_neurons, n_trials, n_timepoints = Y.shape
+    R2_ceiling_all = np.zeros(n_splits)
+
+    for i in range(n_splits):
+        # Randomly split trials into two halves
+        perm = rng.permutation(n_trials)
+        half = n_trials // 2
+        idx1, idx2 = perm[:half], perm[half:]
+        
+        # Average activity across trials within each half
+        Y1 = np.mean(Y[:, idx1, :], axis=1)  # shape (n_neurons, n_timepoints)
+        Y2 = np.mean(Y[:, idx2, :], axis=1)
+
+        # Flatten across neurons and timepoints for population-level correlation
+        r, _ = pearsonr(Y1.flatten(), Y2.flatten())
+
+        # Spearman–Brown correction
+        r_sb = (2 * r) / (1 + r) if r < 1 else 1.0
+        R2_ceiling_all[i] = r_sb ** 2
+
+    return R2_ceiling_all.mean(), R2_ceiling_all
+
+#%% 
+def noise_ceiling_residuals(Y_resid, conds=None, n_splits=200, random_state=None, return_all=False):
+    """
+    Estimate noise ceiling (R^2) for trial-to-trial residuals.
+
+    Parameters
+    ----------
+    Y_resid : array_like
+        Residual activity, shape (n_neurons, n_trials, n_timepoints).
+        These should be single-trial residuals (mean stimulus response removed).
+    conds : array_like or None, optional
+        Condition labels for each trial, shape (n_trials,). If provided,
+        random splits are performed *within each condition* to avoid mixing different stimuli.
+    n_splits : int
+        Number of random splits to average over.
+    random_state : int or None
+        RNG seed.
+    return_all : bool
+        If True, also return array of R^2 estimates for each split.
+
+    Returns
+    -------
+    R2_ceiling_mean : float
+        Mean estimated noise ceiling (R^2) across splits.
+    R2_ceiling_all : np.ndarray (optional)
+        All R^2 estimates (length n_splits).
+    """
+    rng = np.random.default_rng(random_state)
+    Y = np.asarray(Y_resid)
+    n_neurons, n_trials, n_timepoints = Y.shape
+
+    # helper to split indices within a group
+    def split_indices(indices):
+        perm = rng.permutation(indices)
+        half = len(indices) // 2
+        # if odd, leave one out (could also assign ceil/ floor)
+        return perm[:half], perm[half:half+half]
+
+    R2_vals = np.zeros(n_splits)
+
+    # If no condition labels, treat all trials as one condition
+    if conds is None:
+        conds = np.zeros(n_trials, dtype=int)
+
+    conds = np.asarray(conds)
+    unique_conds = np.unique(conds)
+
+    for s in range(n_splits):
+        # collect averaged halves over conditions
+        Y1_parts = []
+        Y2_parts = []
+
+        for c in unique_conds:
+            idx = np.where(conds == c)[0]
+            if len(idx) < 2:
+                # can't split this condition; skip it
+                continue
+            idx1, idx2 = split_indices(idx)
+            if len(idx1) == 0 or len(idx2) == 0:
+                # not enough trials in this condition to form halves; skip
+                continue
+            # average across trials in each half -> shape (n_neurons, n_timepoints)
+            Y1_c = np.mean(Y[:, idx1, :], axis=1)
+            Y2_c = np.mean(Y[:, idx2, :], axis=1)
+            Y1_parts.append(Y1_c)
+            Y2_parts.append(Y2_c)
+
+        if len(Y1_parts) == 0:
+            raise ValueError("Not enough trials to split in any condition. Need >=2 trials for at least one condition.")
+
+        # concatenate across conditions along time axis to keep neuron alignment:
+        # result shape (n_neurons, n_timepoints * n_conditions_used)
+        Y1_cat = np.concatenate(Y1_parts, axis=1)
+        Y2_cat = np.concatenate(Y2_parts, axis=1)
+
+        # Flatten over neurons and time to compute population-level correlation
+        vec1 = Y1_cat.ravel()
+        vec2 = Y2_cat.ravel()
+
+        # if constant vectors, pearsonr will fail; guard:
+        if np.std(vec1) == 0 or np.std(vec2) == 0:
+            r = 0.0
+        else:
+            r, _ = pearsonr(vec1, vec2)
+
+        # Spearman-Brown correction (avoid division-by-zero)
+        if r >= 1.0:
+            r_sb = 1.0
+        else:
+            r_sb = (2 * r) / (1 + r)
+
+        R2_vals[s] = r_sb ** 2
+
+    if return_all:
+        return R2_vals.mean(), R2_vals
+    else:
+        return R2_vals.mean()
+    
+#%%
+
+split_half_reliability(Y[:20,:,:])
+split_half_reliability(Y[:20,:,:])
+
+noise_ceiling_split_half(Y[:20,:,:],n_splits=2)
+
+Y = Y[:20,:,:]
+Y_resid = Y[:20,:,:]
+
+#%%
+
+noise_ceiling_residuals(Y_resid=Y[:20,:,:], conds=None, n_splits=2)
 
 #%% 
    #     #####  ######  #######  #####   #####     ####### ### #     # ####### 
