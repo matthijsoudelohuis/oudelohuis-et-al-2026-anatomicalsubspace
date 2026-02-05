@@ -17,9 +17,13 @@ from scipy.stats import pearsonr,ttest_rel
 import copy
 from statannotations.Annotator import Annotator
 
-desired_width = 600
-pd.set_option('display.width', desired_width)
-pd.set_option("display.max_columns", 14)
+def set_plot_basic_config():
+    plt.rcParams.update({'font.size': 7, 'xtick.labelsize': 6, 'ytick.labelsize': 6, 'axes.titlesize': 8,
+                     'axes.labelsize': 7,'axes.labelpad': 1, 'ytick.major.pad': 1, 'xtick.major.pad': 1})
+    # desired_width = 600
+    # pd.set_option('display.width', desired_width)
+    # pd.set_option("display.max_columns", 14)
+
 
 def my_savefig(fig,savedir,filename,formats=['png','pdf']):
     for fmt in formats:

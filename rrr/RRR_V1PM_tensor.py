@@ -7,7 +7,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
+os.chdir('c:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 # os.chdir(os.path.join(get_local_drive(),'Python','molanalysis'))
 
 import numpy as np
@@ -17,6 +17,7 @@ from sklearn.decomposition import PCA
 from scipy.stats import zscore
 from scipy import stats
 
+from params import load_params
 from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import filter_sessions,load_sessions,report_sessions
 from utils.plot_lib import * #get all the fixed color schemes
@@ -27,6 +28,11 @@ from utils.pair_lib import value_matching
 from utils.psth import compute_tensor
 
 savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\Labeling')
+
+#%% Plotting and parameters:
+params  = load_params()
+set_plot_basic_config()
+cm      = 1/2.54  # centimeters in inches
 
 #%% 
 session_list        = np.array([['LPE12223_2024_06_10'], #GR
@@ -46,7 +52,6 @@ report_sessions(sessions)
 # t_pre       = -1    #pre s
 # t_post      = 1.9     #post s
 # binsize     = 0.2
-calciumversion = 'dF'
 vidfields   = np.concatenate((['videoPC_%d'%i for i in range(30)],
                             ['pupil_area','pupil_ypos','pupil_xpos']),axis=0)
 
@@ -58,7 +63,7 @@ binsize     = 1/5.35
 
 for ises in tqdm(range(nSessions),total=nSessions,desc='Loading data'):
     sessions[ises].load_data(load_behaviordata=True, load_calciumdata=True,load_videodata=True,
-                                calciumversion=calciumversion)
+                                calciumversion=params['calciumversion'])
     [sessions[ises].tensor,t_axis] = compute_tensor(sessions[ises].calciumdata, sessions[ises].ts_F, sessions[ises].trialdata['tOnset'], 
                                  method='nearby')
     
@@ -75,13 +80,25 @@ for ises in tqdm(range(nSessions),total=nSessions,desc='Loading data'):
     delattr(sessions[ises],'behaviordata')
     delattr(sessions[ises],'videodata')
 
+#%%
+for ises in range(nSessions):
+    sessions[ises].respmat = np.nanmean(sessions[ises].tensor[:,:,t_axis>0],axis=(2))
+    sessions[ises].respmat_videome = np.nanmean(sessions[ises].tensor_vid[np.ix_([0],range(sessions[ises].tensor_vid.shape[1]),t_axis>0)],axis=(2)).squeeze()
+    # sessions[ises].respmat_videome = np.nansum(sessions[ises].respmat_videome,axis=0)
+    # sessions[ises].respmat_runspeed = np.nanmean(sessions[ises].tensor_run[0,:,t_axis>0],axis=(1)).squeeze()
+    sessions[ises].respmat_runspeed = np.nanmean(sessions[ises].tensor_run[np.ix_([0],range(sessions[ises].tensor_run.shape[1]),t_axis>0)],axis=(2)).squeeze()
+
+for ises in range(nSessions):
+    sessions[ises].respmat_videome -= np.nanmin(sessions[ises].respmat_videome,keepdims=True)
+    sessions[ises].respmat_videome /= np.nanmax(sessions[ises].respmat_videome,keepdims=True)
+
+
 #%%  Load data properly:        
 # ## Construct tensor: 3D 'matrix' of N neurons by K trials by T time bins
 # ## Parameters for temporal binning
 # t_pre       = -1    #pre s
 # t_post      = 1.9     #post s
 # binsize     = 0.2
-# calciumversion = 'dF'
 # vidfields   = np.concatenate((['videoPC_%d'%i for i in range(30)],
 #                             ['pupil_area','pupil_ypos','pupil_xpos']),axis=0)
 
@@ -89,7 +106,7 @@ for ises in tqdm(range(nSessions),total=nSessions,desc='Loading data'):
 
 # for ises in tqdm(range(nSessions),total=nSessions,desc='Loading data'):
 #     sessions[ises].load_data(load_behaviordata=True, load_calciumdata=True,load_videodata=True,
-#                                 calciumversion=calciumversion)
+#                                 calciumversion=params['calciumversion'])
 #     [sessions[ises].tensor,t_axis] = compute_tensor(sessions[ises].calciumdata, sessions[ises].ts_F, sessions[ises].trialdata['tOnset'], 
 #                                  t_pre, t_post, method='binmean',binsize=binsize)
 #     [sessions[ises].tensor_vid,t_axis] = compute_tensor(sessions[ises].videodata[vidfields], sessions[ises].videodata['ts'], sessions[ises].trialdata['tOnset'], 
@@ -102,9 +119,8 @@ for ises in tqdm(range(nSessions),total=nSessions,desc='Loading data'):
 #     delattr(sessions[ises],'videodata')
 
 # #%%  Load data properly:        
-# calciumversion = 'dF'
 # for ises in range(nSessions):
-#     sessions[ises].load_tensor(load_calciumdata=True,calciumversion=calciumversion,keepraw=False)
+#     sessions[ises].load_tensor(load_calciumdata=True,calciumversion=params['calciumversion'],keepraw=False)
 
 # t_axis = sessions[0].t_axis
 
@@ -186,7 +202,7 @@ filter_nearby       = True
 dataversions        = np.array(['original','behavout','neuralout'])
 dataversions        = np.array(['original','behavout'])
 # dataversions        = np.array(['original','','neuralout'])
-# dataversions        = np.array(['original'])
+dataversions        = np.array(['original'])
 # dataversions        = np.array(['neuralout'])
 nversions           = len(dataversions) #0: original,1:behavior out, 2:neural out
 rank_behavout       = 5
@@ -252,7 +268,8 @@ valuematching       = None
 # valuematching       = 'meanF'
 sampleN = np.zeros((nSessions))
 
-for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for different populations'):
+# for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for different populations'):
+for ises,ses in tqdm(enumerate([sessions[0]]),total=nSessions,desc='Fitting RRR model for different populations'):
     if filter_nearby:
         idx_nearby  = filter_nearlabeled(ses,radius=30)
     else:
@@ -362,6 +379,11 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
         for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
             idx_T               = ses.trialdata['stimCond']==stim
 
+            # idx_T         = np.all((
+            #                         ses.respmat_videome < params['maxvideome'],
+            #                         ses.respmat_runspeed < params['maxrunspeed'],
+            #                         ses.trialdata['stimCond']==stim),axis=0)
+            
             if 'original' in dataversions:
                 X                   = sessions[ises].tensor[np.ix_(idx_areax,idx_T,idx_resp)]
                 Y                   = sessions[ises].tensor[np.ix_(idx_areay,idx_T,idx_resp)]
@@ -371,8 +393,8 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
                 Y                   = Y.reshape(len(idx_areay),-1).T
 
                 #OUTPUT: MAX PERF, OPTIM RANK, PERF FOR EACH RANK ACROSS FOLDS AND MODELFITS
-                R2_cv[iapl,0,ises,istim],optim_rank[iapl,0,ises,istim],R2_ranks[iapl,0,ises,istim,:,:,:]  = RRR_wrapper(Y, X, 
-                                nN=nsampleneurons,nK=None,lam=lam,nranks=nranks,kfold=kfold,nmodelfits=nmodelfits,fixed_rank=fixed_rank)
+                # R2_cv[iapl,0,ises,istim],optim_rank[iapl,0,ises,istim],R2_ranks[iapl,0,ises,istim,:,:,:]  = RRR_wrapper(Y, X, 
+                #                 nN=nsampleneurons,nK=None,lam=lam,nranks=nranks,kfold=kfold,nmodelfits=nmodelfits,fixed_rank=fixed_rank)
 
             if 'behavout' in dataversions:
                 X                   = sessions[ises].tensor_behavout[np.ix_(idx_areax,idx_T,idx_resp)]
