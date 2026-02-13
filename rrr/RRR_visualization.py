@@ -6,7 +6,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 """
 
 #%% ###################################################
-import math, os
+import os
 os.chdir('e:\\Python\\molanalysis')
 from loaddata.get_data_folder import get_local_drive
 
@@ -27,8 +27,14 @@ from utils.plot_lib import * #get all the fixed color schemes
 from utils.CCAlib import *
 from utils.corr_lib import *
 from utils.regress_lib import *
+from params import load_params
 
-savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\')
+savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\LabeledSubspace\\')
+
+#%% Plotting and parameters:
+params  = load_params()
+set_plot_basic_config()
+cm      = 1/2.54  # centimeters in inches
 
 #%% 
 session_list        = np.array([['LPE12223','2024_06_10'], #GR

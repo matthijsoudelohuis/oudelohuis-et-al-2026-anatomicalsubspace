@@ -20,17 +20,12 @@ from statannotations.Annotator import Annotator
 def set_plot_basic_config():
     plt.rcParams.update({'font.size': 7, 'xtick.labelsize': 6, 'ytick.labelsize': 6, 'axes.titlesize': 8,
                      'axes.labelsize': 7,'axes.labelpad': 1, 'ytick.major.pad': 1, 'xtick.major.pad': 1})
-    # desired_width = 600
-    # pd.set_option('display.width', desired_width)
-    # pd.set_option("display.max_columns", 14)
-
 
 def my_savefig(fig,savedir,filename,formats=['png','pdf']):
     for fmt in formats:
         fig.savefig(os.path.join(savedir,filename +  '.' + fmt),format = fmt,dpi=600,bbox_inches='tight',transparent=True)
     # fig.savefig(os.path.join(savedir,filename +  '.png'),format = 'png',dpi=300,bbox_inches='tight',transparent=True)
     # fig.savefig(os.path.join(savedir,filename +  '.pdf'),format = 'pdf',dpi=300,bbox_inches='tight',transparent=True)
-
 
 def shaded_error(x,y,yerror=None,ax=None,center='mean',error='std',color='black',
                  alpha=0.25,linewidth=2,linestyle='-',label=None):

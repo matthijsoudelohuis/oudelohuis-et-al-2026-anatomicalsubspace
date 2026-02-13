@@ -42,7 +42,7 @@ sessions,nSessions   = filter_sessions(protocols = 'GR',only_session_id=session_
 
 #%%  Load data properly:        
 calciumversion = 'dF'
-calciumversion = 'deconv'
+# calciumversion = 'deconv'
 
 for ises in range(nSessions):
     sessions[ises].load_respmat(load_behaviordata=True, load_calciumdata=True,load_videodata=True,
