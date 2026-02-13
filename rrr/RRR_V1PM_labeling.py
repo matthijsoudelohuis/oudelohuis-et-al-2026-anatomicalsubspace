@@ -29,8 +29,10 @@ from utils.plot_lib import * #get all the fixed color schemes
 from utils.tuning import compute_tuning_wrapper
 from utils.regress_lib import *
 from utils.RRRlib import *
+from params import load_params
 
-savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\Labeling\\')
+params = load_params()
+savedir = os.path.join(params['savedir'],'RRR','Labeling')
 
 #%% 
 session_list        = np.array([['LPE12223_2024_06_10'], #GR

@@ -29,7 +29,8 @@ from utils.corr_lib import *
 from utils.regress_lib import *
 from params import load_params
 
-savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\LabeledSubspace\\')
+params = load_params()
+savedir = os.path.join(params['savedir'],'RRR','LabeledSubspace')
 
 #%% Plotting and parameters:
 params  = load_params()

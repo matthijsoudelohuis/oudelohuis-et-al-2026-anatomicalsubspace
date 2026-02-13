@@ -3,9 +3,13 @@
 Parameters for the analysis
 Matthijs Oude Lohuis, 2023, Champalimaud Center
 """
+import os
+from loaddata.get_data_folder import get_local_drive
 
 def load_params():
     params = dict(
+                savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\LabeledSubspace'),
+
                 calciumversion = 'dF', #deconv or dF
                 maxnoiselevel = 20, #maximum noise level to include cell
                 minnneurons = 10, #minimum number of neurons in labeled or unlabeled population to include session

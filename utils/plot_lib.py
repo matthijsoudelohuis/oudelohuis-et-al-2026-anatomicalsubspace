@@ -598,7 +598,7 @@ def plot_RRR_R2_arealabels(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_arealab
 
 # Plot the performance across sessions as a function of rank:
 def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_arealabelpairs,normalize=False):
-
+    cm = 1/2.54
     nranks              = R2_ranks.shape[2]
     nSessions           = R2_cv.shape[1]
     arealabelpairs2     = [al.replace('-','-\n') for al in arealabelpairs]
@@ -618,7 +618,7 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
 
     axlim               = my_ceil(np.nanmax(np.nanmean(meanrankdata,axis=1))*1.1,2)
 
-    fig, axes = plt.subplots(1,3,figsize=(7.5,2.5))
+    fig, axes = plt.subplots(1,3,figsize=(12*cm,4*cm))
 
     ax = axes[0]
     handles = []
@@ -626,7 +626,8 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
         handles.append(shaded_error(np.arange(nranks),meanrankdata[iapl,:,:],color=clrs_arealabelpairs[iapl],
                                     alpha=0.25,error='sem',ax=ax))
 
-    ax.legend(handles,arealabelpairs,frameon=False,fontsize=8,loc='lower right')
+    ax.legend(handles,arealabelpairs,frameon=False,loc='lower right')
+    my_legend_strip(ax)
     ax.set_xlabel('Rank')
     ax.set_ylabel('R2 (cv)')
     # ax.set_yticks(np.arange(0,0.3,0.05))
@@ -637,7 +638,7 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
     # ax.set_ylim([0,0.15])
 
     ax=axes[1]
-    ax.scatter(R2_cv[0,:],R2_cv[1,:],color=clrs_arealabelpairs[0],marker='o',s=10)
+    ax.scatter(R2_cv[0,:],R2_cv[1,:],color=clrs_arealabelpairs[0],marker='o',s=8)
     
     temp = np.reshape(R2_ranks,np.shape(R2_ranks)[:3] + (np.prod(np.shape(R2_ranks)[3:]),))
     temp = np.nanstd(temp,axis=3)
@@ -654,8 +655,8 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
     ax.plot([0,1],[0,1],color='k',linestyle='--',linewidth=0.5)
     ax.set_xlabel(arealabelpairs[0])
     ax.set_ylabel(arealabelpairs[1])
-    add_paired_ttest_results(ax,R2_cv[0,:],R2_cv[1,:],pos=[0.7,0.1],fontsize=10)
-    ax.set_title('R2 (cv)',fontsize=10)
+    add_paired_ttest_results(ax,R2_cv[0,:],R2_cv[1,:],pos=[0.7,0.1])
+    ax.set_title('R2 (cv)')
     ax.set_xlim([0,my_ceil(np.nanmax(R2_cv),2)])
     ax.set_ylim([0,my_ceil(np.nanmax(R2_cv),2)])
     ax.set_xticks(np.linspace(0,ax.get_xlim()[1],3))
@@ -666,12 +667,12 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
     ax.plot([0,20],[0,20],color='k',linestyle='--',linewidth=0.5)
     ax.set_xlabel(arealabelpairs[0])
     ax.set_ylabel(arealabelpairs[1])
-    add_paired_ttest_results(ax,optim_rank[0,:],optim_rank[1,:],pos=[0.7,0.1],fontsize=10)
+    add_paired_ttest_results(ax,optim_rank[0,:],optim_rank[1,:],pos=[0.7,0.1])
     ax.set_xticks(np.arange(0,20,5))
     ax.set_yticks(np.arange(0,20,5))
     ax.set_xlim([0,my_ceil(np.nanmax(optim_rank),0)+1])
     ax.set_ylim([0,my_ceil(np.nanmax(optim_rank),0)+1])
-    ax.set_title('Rank',fontsize=10)
+    ax.set_title('Rank')
 
     sns.despine(top=True,right=True,offset=3)
     fig.tight_layout()
