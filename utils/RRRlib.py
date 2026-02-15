@@ -698,6 +698,49 @@ def project_onto_subspace(Yhat, subspace_basis):
     projection = Yhat_centered @ subspace_basis.T @ subspace_basis
     return projection
 
+def compute_rrr_sourcevariance(X,B,nranks):
+    # Predicts Y_hat=𝑋𝐵
+    # Y_hat=XB and performs SVD to extract the top predictive output modes.
+    # Maps these modes back into source space to obtain predictive dimensions in 𝑋.
+    # Orthonormalizes the predictive subspace and projects 𝑋 onto it.
+    # Computes the fraction of total X variance captured by each predictive dimension.
+    Y_hat = X @ B # Predict Y_hat
+
+    # SVD of predicted activity
+    U, S, Vt = np.linalg.svd(Y_hat, full_matrices=False)
+    V = Vt.T
+    # choose rank-k approximation
+    V_k = V[:, :nranks]
+
+    W = B @ V_k   # Predictive X-directions
+
+    Q, R = np.linalg.qr(W)   # Orthonormalize predictive X subspace
+
+    Z = X @ Q   # Project X onto predictive dimensions
+
+    # Variance of X along predictive dimensions
+    Sigma_X = (X.T @ X) / X.shape[0]
+
+    var_each = np.diag(Q.T @ Sigma_X @ Q)
+
+    total_var_X = np.trace(Sigma_X)
+
+    frac_total = np.sum(var_each) / total_var_X
+
+    # ---------------------------------------------------------
+    # 9. Print results
+    # ---------------------------------------------------------
+
+    # print("Variance of X along each predictive dimension:")
+    # print(var_each)
+
+    # print("\nFraction of total X variance in predictive subspace:")
+    # print(var_each / total_var_X)
+
+    # print("\nSingular values of Y_hat:")
+    # print(S[:k])
+    return var_each / total_var_X
+
 def compute_behavior_subspace_linear(Y, S, n_components=None):
     """
     Estimates behavior-related subspace using linear regression.
@@ -858,4 +901,12 @@ def estimate_dimensionality(X,method='participation_ratio'):
     else:
         raise ValueError('Unknown method')
 
+# pca = PCA().fit(X)
+# explained_variance = pca.explained_variance_
+# print((np.sum(explained_variance) ** 2) / np.sum(explained_variance ** 2))
 
+# U, S, Vt = np.linalg.svd(X, full_matrices=False)
+# lambdas = (S**2) / X.shape[0]
+
+# PR = (np.sum(lambdas)**2) / np.sum(lambdas**2)
+# print(PR)
