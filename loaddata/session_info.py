@@ -229,7 +229,7 @@ def load_resid_tensor(sessions,params,compute_respmat=True,subtract_mean_evoked=
     for ises in tqdm(range(nSessions),total=nSessions,desc='Loading data'):
         sessions[ises].load_data(load_behaviordata=True, load_calciumdata=True,load_videodata=True,
                                     calciumversion=params['calciumversion'])
-        [sessions[ises].tensor2,t_axis] = compute_tensor(sessions[ises].calciumdata, sessions[ises].ts_F, sessions[ises].trialdata['tOnset'], 
+        [sessions[ises].tensor,t_axis] = compute_tensor(sessions[ises].calciumdata, sessions[ises].ts_F, sessions[ises].trialdata['tOnset'], 
                                     method='nearby')
         
         [sessions[ises].tensor_vid,t_axis] = compute_tensor(sessions[ises].videodata[vidfields], sessions[ises].videodata['ts'], sessions[ises].trialdata['tOnset'], 
@@ -275,36 +275,39 @@ def load_resid_tensor(sessions,params,compute_respmat=True,subtract_mean_evoked=
 
     if regressbehavout:
         rank_behavout = 5
-        # if filter_nearby:
-        #     idx_nearby  = filter_nearlabeled(ses,radius=30)
-        # else:
-        #     idx_nearby = np.ones(len(ses.celldata),dtype=bool)
 
-        # sessions[ises].tensor_behavout = copy.copy(sessions[ises].tensor)
-        #Get behavioral matrix:
-        B                   = np.concatenate((sessions[ises].tensor_vid,
-                                sessions[ises].tensor_run),axis=0)
-        areas = np.unique(ses.celldata['roi_name'])
-        for area in areas:
-            idx_N    = np.where(np.all((ses.celldata['roi_name']==area,
-                                        # idx_nearby,
-                                        ses.celldata['noise_level']<20),axis=0))[0]
+        for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Regressing out behavior-related variability'):
 
-            for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations
-                idx_T               = sessions[ises].trialdata['stimCond']==stim
+            # if filter_nearby:
+            #     idx_nearby  = filter_nearlabeled(ses,radius=30)
+            # else:
+            #     idx_nearby = np.ones(len(ses.celldata),dtype=bool)
 
-                Bstim                   = B[:,idx_T,:].reshape(np.shape(B)[0],-1).T
-                Bstim                   = zscore(Bstim,axis=0,nan_policy='omit')
-                Bstim                   = Bstim[:,~np.all(np.isnan(Bstim),axis=0)]
+            # sessions[ises].tensor_behavout = copy.copy(sessions[ises].tensor)
+            #Get behavioral matrix:
+            B                   = np.concatenate((sessions[ises].tensor_vid,
+                                    sessions[ises].tensor_run),axis=0)
+            areas = np.unique(ses.celldata['roi_name'])
+            for area in areas:
+                idx_N    = np.where(np.all((ses.celldata['roi_name']==area,
+                                            # idx_nearby,
+                                            ses.celldata['noise_level']<20),axis=0))[0]
 
-                tempdata            = sessions[ises].tensor[np.ix_(idx_N,idx_T,np.arange(len(t_axis)))]
-                N,K,T = np.shape(tempdata)
-                Y_r = np.reshape(tempdata,(N,K*T),order='C').T
-                Y_orig,Y_hat,Y_out  = regress_out_cv(X=Bstim,Y=Y_r,rank=np.min([rank_behavout,len(idx_N)-1]),
-                                                    lam=0,kfold=5)
-                # print(area,EV(Y_orig,Y_hat))
-                sessions[ises].tensor[np.ix_(idx_N,idx_T,np.arange(len(t_axis)))] = np.reshape(Y_out.T,(N,K,T),order='C')
-                # sessions[ises].tensor_behavout[np.ix_(idx_N,idx_T,np.arange(len(t_axis)))] = np.reshape(Y_out.T,(N,K,T),order='C')
+                for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations
+                    idx_T               = sessions[ises].trialdata['stimCond']==stim
+
+                    Bstim                   = B[:,idx_T,:].reshape(np.shape(B)[0],-1).T
+                    Bstim                   = zscore(Bstim,axis=0,nan_policy='omit')
+                    Bstim                   = Bstim[:,~np.all(np.isnan(Bstim),axis=0)]
+
+                    tempdata            = sessions[ises].tensor[np.ix_(idx_N,idx_T,np.arange(len(t_axis)))]
+                    N,K,T = np.shape(tempdata)
+                    Y_r = np.reshape(tempdata,(N,K*T),order='C').T
+                    Y_orig,Y_hat,Y_out  = regress_out_cv(X=Bstim,Y=Y_r,rank=np.min([rank_behavout,len(idx_N)-1]),
+                                                        lam=0,kfold=5)
+                    # print(area,EV(Y_orig,Y_hat))
+                    sessions[ises].tensor[np.ix_(idx_N,idx_T,np.arange(len(t_axis)))] = np.reshape(Y_out.T,(N,K,T),order='C')
+                    # sessions[ises].tensor_behavout[np.ix_(idx_N,idx_T,np.arange(len(t_axis)))] = np.reshape(Y_out.T,(N,K,T),order='C')
 
     return sessions,t_axis
 

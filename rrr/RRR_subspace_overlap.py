@@ -18,24 +18,26 @@ import seaborn as sns
 from sklearn.decomposition import PCA
 from scipy.stats import zscore, ttest_rel, ttest_ind
 
-from loaddata.session_info import filter_sessions,load_sessions
+from loaddata.session_info import *
 from utils.tuning import compute_tuning
 from utils.plot_lib import * #get all the fixed color schemes
 from utils.CCAlib import *
 from utils.corr_lib import *
 from utils.tuning import compute_tuning_wrapper
 from utils.regress_lib import *
+from params import load_params
 
-# savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\SubspaceOverlap')
+params = load_params()
+savedir = os.path.join(params['savedir'],'RRR','Routing')
 
 
 #%% 
-areas = ['V1','PM','AL','RSP']
+areas = ['V1','PM','AL']
 nareas = len(areas)
 
 #%% Load example sessions:
 session_list        = np.array(['LPE12385_2024_06_13','LPE11998_2024_05_02']) #GN
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list)
+sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list,only_all_areas=areas,filter_areas=areas)
 
 # %% 
 # sessions,nSessions   = filter_sessions(protocols = 'GR',only_all_areas=areas,min_lab_cells_V1=20,min_lab_cells_PM=20)
@@ -50,6 +52,11 @@ for ises in range(nSessions):
     sessions[ises].load_respmat(load_behaviordata=True, load_calciumdata=True,load_videodata=True,
                                 calciumversion=calciumversion,keepraw=False)
 
+#%% Wrapper function to load the tensor data, 
+[sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=False)
+# sessions = load_resid_tensor(sessions,behavout=True)
+
+
 #%% 
 ######  ######  ### #     #  #####  ### ######  #       #######       #    #     #  #####  #       ####### 
 #     # #     #  #  ##    # #     #  #  #     # #       #            # #   ##    # #     # #       #       
@@ -59,6 +66,14 @@ for ises in range(nSessions):
 #       #    #   #  #    ## #     #  #  #       #       #          #     # #    ## #     # #       #       
 #       #     # ### #     #  #####  ### #       ####### #######    #     # #     #  #####  ####### ####### 
 #
+
+#%% 
+
+
+
+
+
+
 
 
 

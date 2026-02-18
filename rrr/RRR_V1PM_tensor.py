@@ -34,7 +34,6 @@ savedir = os.path.join(params['savedir'],'RRR','Labeling')
 set_plot_basic_config()
 cm      = 1/2.54  # centimeters in inches
 
-
 #%% 
 session_list        = np.array([['LPE12223_2024_06_10'], #GR
                                 ['LPE09830_2023_04_10'], #GR

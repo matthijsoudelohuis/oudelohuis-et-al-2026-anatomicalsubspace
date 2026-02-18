@@ -21,8 +21,12 @@ def set_plot_basic_config():
     plt.rcParams.update({'font.size': 7, 'xtick.labelsize': 6, 'ytick.labelsize': 6, 'axes.titlesize': 8,
                      'axes.labelsize': 7,'axes.labelpad': 1, 'ytick.major.pad': 1, 'xtick.major.pad': 1})
 
-def my_savefig(fig,savedir,filename,formats=['png','pdf']):
+def my_savefig(fig,savedir,filename,formats=['pdf','png']):
     for fmt in formats:
+        if fmt=='png':
+            magfactor = 2
+            dims = fig.get_size_inches()
+            fig.set_size_inches(dims[0]*magfactor,dims[1]*magfactor)
         fig.savefig(os.path.join(savedir,filename +  '.' + fmt),format = fmt,dpi=600,bbox_inches='tight',transparent=True)
     # fig.savefig(os.path.join(savedir,filename +  '.png'),format = 'png',dpi=300,bbox_inches='tight',transparent=True)
     # fig.savefig(os.path.join(savedir,filename +  '.pdf'),format = 'pdf',dpi=300,bbox_inches='tight',transparent=True)
@@ -663,7 +667,7 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
     ax.set_yticks(np.linspace(0,ax.get_ylim()[1],3))
 
     ax=axes[2]
-    ax.scatter(optim_rank[0,:],optim_rank[1,:],color=clrs_arealabelpairs[0],marker='o',s=10)
+    ax.scatter(optim_rank[0,:],optim_rank[1,:],color=clrs_arealabelpairs[0],marker='o',s=10,alpha=0.1)
     ax.plot([0,20],[0,20],color='k',linestyle='--',linewidth=0.5)
     ax.set_xlabel(arealabelpairs[0])
     ax.set_ylabel(arealabelpairs[1])
