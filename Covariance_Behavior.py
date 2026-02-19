@@ -30,7 +30,7 @@ from utils.RRRlib import *
 from params import load_params
 
 params = load_params()
-savedir = os.path.join(params['savedir'],'Behavior')
+figdir = os.path.join(params['figdir'],'Behavior')
 
 #%% 
 session_list        = np.array([['LPE12223_2024_06_10'], #GR
@@ -184,7 +184,7 @@ ax.set_xticks([])
 ax.set_yticks([])
 ax.yaxis.set_label_position("right")
 plt.tight_layout()
-my_savefig(fig,savedir,'CovarianceMatrix_V1PM_Behavior_%s' % sessions[ises].session_id)
+my_savefig(fig,figdir,'CovarianceMatrix_V1PM_Behavior_%s' % sessions[ises].session_id)
 
 
 #%% Make as separate figures: 
@@ -225,7 +225,7 @@ my_savefig(fig,savedir,'CovarianceMatrix_V1PM_Behavior_%s' % sessions[ises].sess
 #     # axi.axis["right"].set_visible(False)
 #     axi.set_axis_off()
 # plt.tight_layout()
-# my_savefig(fig,savedir,'CovarianceMatrix_V1PM_%s' % sessions[ises].session_id,formats=['png'])
+# my_savefig(fig,figdir,'CovarianceMatrix_V1PM_%s' % sessions[ises].session_id,formats=['png'])
 
 
 
@@ -448,7 +448,7 @@ ax.set_ylabel('Covariance explained')
 ax.set_title('Labeled covariance explained',fontsize=10)
 sns.despine(fig,top=True,right=True,offset=3)
 plt.tight_layout()
-my_savefig(fig,savedir,'CoVarianceExplained_V1PM_%dsessions' % nSessions)
+my_savefig(fig,figdir,'CoVarianceExplained_V1PM_%dsessions' % nSessions)
 
 #%% Plotting:
 fig,axes = plt.subplots(1,1,figsize=(1,1.5))
@@ -464,4 +464,4 @@ ax.set_xticks([])
 # ax.set_ylim([0,my_ceil(ax.get_ylim()[1],2)])
 sns.despine(fig,top=True,right=True,offset=3)
 plt.tight_layout()
-my_savefig(fig,savedir,'Mean_CoVarianceExplained_V1PM_%dsessions' % nSessions)
+my_savefig(fig,figdir,'Mean_CoVarianceExplained_V1PM_%dsessions' % nSessions)

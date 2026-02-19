@@ -21,15 +21,15 @@ def set_plot_basic_config():
     plt.rcParams.update({'font.size': 7, 'xtick.labelsize': 6, 'ytick.labelsize': 6, 'axes.titlesize': 8,
                      'axes.labelsize': 7,'axes.labelpad': 1, 'ytick.major.pad': 1, 'xtick.major.pad': 1})
 
-def my_savefig(fig,savedir,filename,formats=['pdf','png']):
+def my_savefig(fig,figdir,filename,formats=['pdf','png']):
     for fmt in formats:
         if fmt=='png':
             magfactor = 2
             dims = fig.get_size_inches()
             fig.set_size_inches(dims[0]*magfactor,dims[1]*magfactor)
-        fig.savefig(os.path.join(savedir,filename +  '.' + fmt),format = fmt,dpi=600,bbox_inches='tight',transparent=True)
-    # fig.savefig(os.path.join(savedir,filename +  '.png'),format = 'png',dpi=300,bbox_inches='tight',transparent=True)
-    # fig.savefig(os.path.join(savedir,filename +  '.pdf'),format = 'pdf',dpi=300,bbox_inches='tight',transparent=True)
+        fig.savefig(os.path.join(figdir,filename +  '.' + fmt),format = fmt,dpi=600,bbox_inches='tight',transparent=True)
+    # fig.savefig(os.path.join(figdir,filename +  '.png'),format = 'png',dpi=300,bbox_inches='tight',transparent=True)
+    # fig.savefig(os.path.join(figdir,filename +  '.pdf'),format = 'pdf',dpi=300,bbox_inches='tight',transparent=True)
 
 def shaded_error(x,y,yerror=None,ax=None,center='mean',error='std',color='black',
                  alpha=0.25,linewidth=2,linestyle='-',label=None):

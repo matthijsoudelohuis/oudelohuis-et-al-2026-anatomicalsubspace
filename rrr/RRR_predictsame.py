@@ -29,7 +29,7 @@ from params import load_params
 from utils.corr_lib import filter_sharednan
 
 params = load_params()
-savedir = os.path.join(params['savedir'],'RRR','Labeling')
+figdir = os.path.join(params['figdir'],'RRR','Labeling')
 
 #%% Plotting parameters:
 set_plot_basic_config()
@@ -255,7 +255,7 @@ for iapl in range(narealabelpairs):
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=0)
-my_savefig(fig,savedir,'RRR_neurons_neededtomatch_cvR2_labunl_FF_%dsessions' % (nSessions))
+my_savefig(fig,figdir,'RRR_neurons_neededtomatch_cvR2_labunl_FF_%dsessions' % (nSessions))
 
 #%% 
 

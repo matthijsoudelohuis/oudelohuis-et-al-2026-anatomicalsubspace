@@ -720,7 +720,7 @@ def plot_bin_corr_distance(sessions,binmean,binedges,areapairs,corr_type):
             ax.plot(binedges[:-1],binmean[ises,iap,:].squeeze(),linewidth=0.15,color=clrs_areapairs[iap])
         handles.append(shaded_error(ax=ax,x=binedges[:-1],y=binmean[:,iap,:].squeeze(),
                                     error='sem',color=clrs_areapairs[iap],linewidth=3))
-        # plt.savefig(os.path.join(savedir,'NoiseCorr_distRF_RegressOut_' + areapair + '_' + sessions[sesidx].sessiondata['session_id'][0] + '.png'), format = 'png')
+        # plt.savefig(os.path.join(figdir,'NoiseCorr_distRF_RegressOut_' + areapair + '_' + sessions[sesidx].sessiondata['session_id'][0] + '.png'), format = 'png')
 
     ax.legend(handles,areapairs,loc='upper right',frameon=False,fontsize=9)	
     ax.set_xlabel('Anatomical distance ($\mu$m)')

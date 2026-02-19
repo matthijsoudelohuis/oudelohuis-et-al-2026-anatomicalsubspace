@@ -28,7 +28,7 @@ from utils.psth import compute_tensor
 from params import load_params
 
 params = load_params()
-savedir = os.path.join(params['savedir'],'RRR','Labeling')
+figdir = os.path.join(params['figdir'],'RRR','Labeling')
 
 #%% Plotting parameters:
 set_plot_basic_config()
@@ -501,7 +501,7 @@ for iversion, version in enumerate(dataversions):
         for idx in np.array([[0,1],[2,3]]):
             clrs        = ['grey',get_clr_area_labeled([arealabelpairs[idx[1]].split('-')[0]])]
             fig         = plot_RRR_R2_arealabels_paired(R2_data[idx],optim_rank_data[idx],R2_ranks_data[idx],np.array(arealabelpairs)[idx],clrs)
-            # my_savefig(fig,savedir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
+            # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
 
 #%% Reshape data to stretch stim x sessions
 nversions = 3
@@ -551,7 +551,7 @@ ax.set_title('FB')
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=True)
-# my_savefig(fig,savedir,'RRR_cvR2_FF_FB_diffversions_%dsessions' % (nSessions))
+# my_savefig(fig,figdir,'RRR_cvR2_FF_FB_diffversions_%dsessions' % (nSessions))
 
 #%% Plot the R2 for each of the arealabelpairs and each of the dataversions
 # #Residual variance explained goes down with behavior or brainwide activity regressed out: 
@@ -574,7 +574,7 @@ ax.set_title('FB')
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=True)
-# my_savefig(fig,savedir,'RRR_cvR2_FF_FB_labeled_diffversions_%dsessions' % (nSessions))
+# my_savefig(fig,figdir,'RRR_cvR2_FF_FB_labeled_diffversions_%dsessions' % (nSessions))
 
 #%% Plot the R2 for each of the arealabelpairs and each of the dataversions
 #Residual variance explained goes down with behavior or brainwide activity regressed out: 
@@ -597,7 +597,7 @@ ax.set_title('FB')
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=True)
-# my_savefig(fig,savedir,'RRR_rank_FF_FB_diffversions_%dsessions' % (nSessions))
+# my_savefig(fig,figdir,'RRR_rank_FF_FB_diffversions_%dsessions' % (nSessions))
 
 
 #%% Make the figure: 
@@ -626,7 +626,7 @@ ax.set_title('FB')
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=True)
-# my_savefig(fig,savedir,'RRR_cvR2_ratio_FF_FB_diffversions_%dsessions' % (nSessions))
+# my_savefig(fig,figdir,'RRR_cvR2_ratio_FF_FB_diffversions_%dsessions' % (nSessions))
 
 
 #%% 
@@ -665,7 +665,7 @@ for iversion, version in enumerate(dataversions):
         if np.any(~np.isnan(R2_data)):
             clrs        = ['grey',get_clr_area_labeled([arealabelpairs[idx[1]].split('-')[0]])]
             fig         = plot_RRR_R2_arealabels_paired(R2_data[idx],optim_rank_data[idx],R2_ranks_data[idx],np.array(arealabelpairs)[idx],clrs)
-            # my_savefig(fig,savedir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
+            # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
 
 #%% 
 for iversion, version in enumerate(dataversions):
@@ -680,7 +680,7 @@ for iversion, version in enumerate(dataversions):
         if np.any(~np.isnan(R2_data)):
             clrs        = ['grey',get_clr_area_labeled([arealabelpairs[idx[1]].split('-')[0]])]
             fig         = plot_RRR_R2_arealabels_paired(R2_data[idx],optim_rank_data[idx],R2_ranks_data[idx],np.array(arealabelpairs)[idx],clrs)
-            # my_savefig(fig,savedir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
+            # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
 
 
 #%% Define the ratio of R2 between V1PM and V1ND
@@ -724,7 +724,7 @@ ax.set_title('FB')
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=True)
-# my_savefig(fig,savedir,'RRR_cvR2_ratio_FF_FB_AL_diffversions_%dsessions' % (nSessions))
+# my_savefig(fig,figdir,'RRR_cvR2_ratio_FF_FB_AL_diffversions_%dsessions' % (nSessions))
 
 #%% 
 
@@ -754,7 +754,7 @@ for iversion, version in enumerate(dataversions):
         if np.any(~np.isnan(R2_data)):
             clrs        = ['grey',get_clr_area_labeled([arealabelpairs[idx[1]].split('-')[0]])]
             fig         = plot_RRR_R2_arealabels_paired(R2_data[idx],optim_rank_data[idx],R2_ranks_data[idx],np.array(arealabelpairs)[idx],clrs)
-            # my_savefig(fig,savedir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
+            # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
 
 #%% 
 for iversion, version in enumerate(dataversions):
@@ -767,7 +767,7 @@ for iversion, version in enumerate(dataversions):
         if np.any(~np.isnan(R2_data)):
             clrs        = ['grey',get_clr_area_labeled([arealabelpairs[idx[1]].split('-')[0]])]
             fig         = plot_RRR_R2_arealabels_paired(R2_data[idx],optim_rank_data[idx],R2_ranks_data[idx],np.array(arealabelpairs)[idx],clrs)
-            # my_savefig(fig,savedir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
+            # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
 
 
 #%% Define the ratio of R2 between V1PM and V1ND
@@ -827,7 +827,7 @@ sns.despine(fig=fig,trim=True)
 
 # #%% Plot the R2 performance and number of dimensions per area pair
 # # fig         = plot_RRR_R2_arealabels(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_arealabelpairs)
-# # my_savefig(fig,savedir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
+# # my_savefig(fig,figdir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
 # # fig         = plot_RRR_R2_arealabels(R2_cv[:2],optim_rank[:2],R2_ranks[:2],arealabelpairs[:2],clrs_arealabelpairs[:2])
 # # fig         = plot_RRR_R2_arealabels(R2_cv[2:4],optim_rank[2:4],R2_ranks[2:4],arealabelpairs[2:4],clrs_arealabelpairs[2:4])
 # # fig         = plot_RRR_R2_arealabels(R2_cv[[1,3]],optim_rank[[1,3]],R2_ranks[[0,3]],arealabelpairs[[0,3]],clrs_arealabelpairs[2:4])
@@ -839,7 +839,7 @@ sns.despine(fig=fig,trim=True)
 #     # fig         = plot_RRR_R2_arealabels_paired(R2_cv[idx],optim_rank[idx],R2_ranks[idx],np.array(arealabelpairs)[idx],clrs)
 #     # fig         = plot_RRR_R2_arealabels_paired(R2_cv[idx],optim_rank[idx],R2_ranks[idx],np.array(arealabelpairs)[idx],clrs)
 #     fig         = plot_RRR_R2_arealabels_paired(R2_cv_2[idx],optim_rank_2[idx],R2_ranks_2[idx],np.array(arealabelpairs)[idx],clrs)
-#     # my_savefig(fig,savedir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
+#     # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
 
 # # for idx in np.array([[0,1],[2,3],[4,5],[6,7]]):
 #     # mean,sd = np.nanmean(R2_cv[idx[1]] / R2_cv[idx[0]])*100-100,np.nanstd(R2_cv[idx[1]] / R2_cv[idx[0]])
@@ -852,7 +852,7 @@ sns.despine(fig=fig,trim=True)
 #     clrs        = ['grey',get_clr_area_labeled([arealabelpairs[idx[1]].split('-')[0]])]
 #     # fig         = plot_RRR_R2_arealabels_paired(R2_cv[idx],optim_rank[idx],R2_ranks[idx],np.array(arealabelpairs)[idx],clrs)
 #     fig         = plot_RRR_R2_arealabels_paired(R2_cv_2[idx],optim_rank_2[idx],R2_ranks_2[idx],np.array(arealabelpairs)[idx],clrs=)
-#     my_savefig(fig,savedir,'RRR_cvR2_diffTarget_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
+#     my_savefig(fig,figdir,'RRR_cvR2_diffTarget_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
 
 # for idx in np.array([[0,3],[4,7]]):
 #     # mean,sd = np.nanmean(R2_cv[idx[1]] / R2_cv[idx[0]])*100-100,np.nanstd(R2_cv[idx[1]] / R2_cv[idx[0]])
@@ -864,7 +864,7 @@ sns.despine(fig=fig,trim=True)
 # for idx in np.array([[0,1],[2,3],[4,5]]):
 #     clrs        = ['grey',get_clr_area_labeled([arealabelpairs[idx[1]].split('-')[0]])]
 #     fig         = plot_RRR_R2_arealabels_paired(R2_cv[idx],optim_rank[idx],R2_ranks[idx],np.array(arealabelpairs)[idx],clrs,normalize=normalize)
-#     # my_savefig(fig,savedir,'RRR_cvR2_%s_%s_%d_ALRSP_sessions' % (arealabelpairs[idx[1]],version,nSessions))
+#     # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%d_ALRSP_sessions' % (arealabelpairs[idx[1]],version,nSessions))
 
 # for idx in np.array([[0,1],[2,3],[4,5]]):
 #     mean,sd = np.nanmean(R2_cv[idx[1]] / R2_cv[idx[0]])*100-100,np.nanstd(R2_cv[idx[1]] / R2_cv[idx[0]])
@@ -1042,9 +1042,9 @@ for r in range(nranks-1):
     print(np.corrcoef(xdatatoplot,ydatatoplot)[0,1])
 plt.tight_layout()
 sns.despine(fig=fig,trim=True,top=True,right=True,offset=3)
-my_savefig(fig,savedir,'RRR_unique_cvR2_V1lab_V1unl_PMunl_%dneurons' % Nsub)
+my_savefig(fig,figdir,'RRR_unique_cvR2_V1lab_V1unl_PMunl_%dneurons' % Nsub)
 
-# my_savefig(fig,savedir,'RRR_cvR2_V1unl_V
+# my_savefig(fig,figdir,'RRR_cvR2_V1unl_V
 
 # #%% Show the correlation between R2 predicted by labeled and unlabeled neurons:
 
@@ -1071,7 +1071,7 @@ my_savefig(fig,savedir,'RRR_unique_cvR2_V1lab_V1unl_PMunl_%dneurons' % Nsub)
 #     print(np.corrcoef(xdatatoplot,ydatatoplot)[0,1])
 # plt.tight_layout()
 # sns.despine(fig=fig,trim=True,top=True,right=True)
-# # my_savefig(fig,savedir,'RRR_cvR2_V1unl_V
+# # my_savefig(fig,figdir,'RRR_cvR2_V1unl_V
 
 #%% 
 sourcearealabelpairs = ['V1unl','V1lab']
@@ -1179,7 +1179,7 @@ for r in range(rank):
         ax.add_artist(AnchoredSizeBar(ax.transData, 10*ses.sessiondata['fs'][0],
                         "10 Sec", loc=4, frameon=False))
 plt.tight_layout()
-my_savefig(fig,savedir,'Example_Latents_Joint_V1lab_V1unl_PMunl_%dneurons' % Nsub)
+my_savefig(fig,figdir,'Example_Latents_Joint_V1lab_V1unl_PMunl_%dneurons' % Nsub)
 
 #%% Do RRR of V1 and PM labeled and unlabeled neurons simultaneously
 
@@ -1329,7 +1329,7 @@ ax.set_ylabel('Aligned source variance R2')
 plt.tight_layout()
 sns.despine(fig=fig,trim=True,top=True,right=True)
 # ax = axes[1]
-my_savefig(fig,savedir,'RRR_source_aligned_R2_V1lab_V1unl_PMunl_%dneurons' % Nsub)
+my_savefig(fig,figdir,'RRR_source_aligned_R2_V1lab_V1unl_PMunl_%dneurons' % Nsub)
 
 
 #%% Show the correlation between R2 predicted by labeled and unlabeled neurons:
@@ -1364,4 +1364,4 @@ for r in range(nranks-1):
     print(np.corrcoef(xdatatoplot,ydatatoplot)[0,1])
 plt.tight_layout()
 sns.despine(fig=fig,trim=True,top=True,right=True,offset=3)
-my_savefig(fig,savedir,'RRR_unique_cvR2_V1lab_V1unl_PMunl_%dneurons' % Nsub)
+my_savefig(fig,figdir,'RRR_unique_cvR2_V1lab_V1unl_PMunl_%dneurons' % Nsub)

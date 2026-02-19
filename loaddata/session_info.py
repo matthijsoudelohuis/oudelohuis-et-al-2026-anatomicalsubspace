@@ -231,29 +231,30 @@ def load_resid_tensor(sessions,params,compute_respmat=True,subtract_mean_evoked=
                                     calciumversion=params['calciumversion'])
         [sessions[ises].tensor,t_axis] = compute_tensor(sessions[ises].calciumdata, sessions[ises].ts_F, sessions[ises].trialdata['tOnset'], 
                                     method='nearby')
-        
-        [sessions[ises].tensor_vid,t_axis] = compute_tensor(sessions[ises].videodata[vidfields], sessions[ises].videodata['ts'], sessions[ises].trialdata['tOnset'], 
-                                    params['t_pre'], params['t_post'], method='binmean',binsize=params['binsize'])
-        #Subsample behavioral data 10 times before binning:
-        sessions[ises].behaviordata.drop('session_id',axis=1,inplace=True)
-        sessions[ises].behaviordata = sessions[ises].behaviordata.groupby(sessions[ises].behaviordata.index // 10).mean()
-        sessions[ises].behaviordata['diffrunspeed'] = np.diff(sessions[ises].behaviordata['runspeed'],prepend=0)
-        [sessions[ises].tensor_run,t_axis] = compute_tensor(sessions[ises].behaviordata[behavfields], sessions[ises].behaviordata['ts'], sessions[ises].trialdata['tOnset'], 
-                                    params['t_pre'], params['t_post'], method='binmean',binsize=params['binsize'])
-        
         delattr(sessions[ises],'calciumdata')
-        delattr(sessions[ises],'behaviordata')
-        delattr(sessions[ises],'videodata')
+        if regressbehavout:
+            [sessions[ises].tensor_vid,t_axis] = compute_tensor(sessions[ises].videodata[vidfields], sessions[ises].videodata['ts'], sessions[ises].trialdata['tOnset'], 
+                                        params['t_pre'], params['t_post'], method='binmean',binsize=params['binsize'])
+            #Subsample behavioral data 10 times before binning:
+            sessions[ises].behaviordata.drop('session_id',axis=1,inplace=True)
+            sessions[ises].behaviordata = sessions[ises].behaviordata.groupby(sessions[ises].behaviordata.index // 10).mean()
+            sessions[ises].behaviordata['diffrunspeed'] = np.diff(sessions[ises].behaviordata['runspeed'],prepend=0)
+            [sessions[ises].tensor_run,t_axis] = compute_tensor(sessions[ises].behaviordata[behavfields], sessions[ises].behaviordata['ts'], sessions[ises].trialdata['tOnset'], 
+                                        params['t_pre'], params['t_post'], method='binmean',binsize=params['binsize'])
+            
+            delattr(sessions[ises],'behaviordata')
+            delattr(sessions[ises],'videodata')
 
     if compute_respmat:
         for ises in range(nSessions):
             sessions[ises].respmat = np.nanmean(sessions[ises].tensor[:,:,t_axis>0],axis=(2))
-            sessions[ises].respmat_videome = np.nanmean(sessions[ises].tensor_vid[np.ix_([0],range(sessions[ises].tensor_vid.shape[1]),t_axis>0)],axis=(2)).squeeze()
-            sessions[ises].respmat_runspeed = np.nanmean(sessions[ises].tensor_run[np.ix_([0],range(sessions[ises].tensor_run.shape[1]),t_axis>0)],axis=(2)).squeeze()
+            
+            if regressbehavout: 
+                sessions[ises].respmat_videome = np.nanmean(sessions[ises].tensor_vid[np.ix_([0],range(sessions[ises].tensor_vid.shape[1]),t_axis>0)],axis=(2)).squeeze()
+                sessions[ises].respmat_runspeed = np.nanmean(sessions[ises].tensor_run[np.ix_([0],range(sessions[ises].tensor_run.shape[1]),t_axis>0)],axis=(2)).squeeze()
 
-        for ises in range(nSessions):
-            sessions[ises].respmat_videome -= np.nanmin(sessions[ises].respmat_videome,keepdims=True)
-            sessions[ises].respmat_videome /= np.nanmax(sessions[ises].respmat_videome,keepdims=True)
+                sessions[ises].respmat_videome -= np.nanmin(sessions[ises].respmat_videome,keepdims=True)
+                sessions[ises].respmat_videome /= np.nanmax(sessions[ises].respmat_videome,keepdims=True)
 
     if subtract_mean_evoked:
         #Subtracting mean response across trials for each stimulus condition

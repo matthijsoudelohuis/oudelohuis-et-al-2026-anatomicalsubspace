@@ -32,7 +32,7 @@ from utils.RRRlib import *
 from utils.regress_lib import *
 from preprocessing.preprocesslib import assign_layer
 
-savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\WithinAcross')
+figdir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\WithinAcross')
 
 #%% 
 session_list        = np.array([['LPE12223_2024_06_10'], #GR
@@ -181,7 +181,7 @@ for r in range(nrankstoshow):
     ax.set_xlim([0,nM])
     ax.set_ylim([-0.3,0.3])
 
-my_savefig(fig,savedir,'RRR_weights_acrossranks_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
+my_savefig(fig,figdir,'RRR_weights_acrossranks_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
 
 #%% Plot the mean across ranks: 
 fig,axes = plt.subplots(1,1,figsize=(4,3))
@@ -194,7 +194,7 @@ ax.legend(frameon=False,fontsize=8)
 ax.set_xlabel('Dimension')
 ax.set_ylabel('Mean weight')
 sns.despine(right=True,top=True,offset=3,trim=True)
-my_savefig(fig,savedir,'RRR_Meanweights_acrossranks_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
+my_savefig(fig,figdir,'RRR_Meanweights_acrossranks_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
 
 
 #%% 
@@ -240,7 +240,7 @@ plt.tight_layout()
 print('%1.2f average overlap of significant target neurons across pairs of dimensions' % np.mean(V_overlap[np.triu_indices(nranks,k=1)]))
 
 sns.despine(right=True,top=True,offset=3,trim=True)
-my_savefig(fig,savedir,'RRR_SigWeightOverlap_acrossranks_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
+my_savefig(fig,figdir,'RRR_SigWeightOverlap_acrossranks_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
 
 
 #%% Perform RRR on all neurons in V1 to PM for one session and show labeled weights:
@@ -311,7 +311,7 @@ for r in range(nrankstoshow):
     ax.axis('off')
     ax.set_xlim([0,np.sum(idx_lab)])
 # plt.tight_layout()
-my_savefig(fig,savedir,'RRR_weights_acrossranks_V1PMlabeled_%s' % ses.sessiondata['session_id'][0],formats=['png'])
+my_savefig(fig,figdir,'RRR_weights_acrossranks_V1PMlabeled_%s' % ses.sessiondata['session_id'][0],formats=['png'])
 
 
 
@@ -394,7 +394,7 @@ else:
 # ax.set_ylim([0,0.3])
 plt.tight_layout()
 sns.despine(top=True,right=True,offset=3,trim=True)
-my_savefig(fig,savedir,'RRR_R2_acrossranks_V1PM_%dsessions' % nSessions,formats=['png'])
+my_savefig(fig,figdir,'RRR_R2_acrossranks_V1PM_%dsessions' % nSessions,formats=['png'])
 
 
 
@@ -483,7 +483,7 @@ add_corr_results(ax,dims.flatten(),np.flip(R2_cv,axis=1).flatten())
 plt.tight_layout()
 sns.despine(top=True,right=True,offset=3)
 
-# my_savefig(fig,savedir,'RRR_Perf_WithinAcross_Dimensionality_%dsessions' % nSessions)
+# my_savefig(fig,figdir,'RRR_Perf_WithinAcross_Dimensionality_%dsessions' % nSessions)
 
 #%% 
 fig,axes = plt.subplots(1,1,figsize=(3.5,3.5),sharex=True,sharey='row')
@@ -679,7 +679,7 @@ ax.legend(handles=handles,labels=['V1-Predictive','V1-Dominant'],
                     loc='lower right',frameon=False,fontsize=8)
 sns.despine(offset=5,top=True,right=True)
 fig.tight_layout()
-my_savefig(fig,savedir,'V1PM_dominant_predictive_ranks_%dsessions' % (nSessions),formats=['png'])
+my_savefig(fig,figdir,'V1PM_dominant_predictive_ranks_%dsessions' % (nSessions),formats=['png'])
 
 
 #%% 
@@ -820,8 +820,8 @@ axes[1].set_xticks(range(narealayerpairs),arealayerpairs,rotation=45,ha='right',
 axes[2].set_xticks(range(narealayerpairs),arealayerpairs,rotation=45,ha='right',fontsize=6)
 
 plt.tight_layout()
-my_savefig(fig,savedir,'RRR_V1PM_Layers_%dsessions' % (nSessions),formats=['png'])
-# my_savefig(fig,savedir,'RRR_V1PM_Layers_%dsessions_stats' % (nSessions),formats=['png'])
+my_savefig(fig,figdir,'RRR_V1PM_Layers_%dsessions' % (nSessions),formats=['png'])
+# my_savefig(fig,figdir,'RRR_V1PM_Layers_%dsessions_stats' % (nSessions),formats=['png'])
 
 
 
@@ -894,8 +894,8 @@ axes[0].set_ylabel('Source area')
 axes[1].set_xlabel('Target area')
 axes[1].set_ylabel('Source area')
 fig.tight_layout()
-my_savefig(fig,savedir,'RRR_R2_rank_allareas_%d_onlyall' % nSessions, formats=['png'])
-# my_savefig(fig,savedir,'RRR_R2_rank_allareas_%d' % nSessions, formats=['png'])
+my_savefig(fig,figdir,'RRR_R2_rank_allareas_%d_onlyall' % nSessions, formats=['png'])
+# my_savefig(fig,figdir,'RRR_R2_rank_allareas_%d' % nSessions, formats=['png'])
 
 
 
@@ -970,7 +970,7 @@ for iarea in range(2):
     ax.legend(handles=handles,labels=['Original','Residual'],frameon=False,fontsize=8,loc='lower right')
 sns.despine(top=True,right=True,offset=3)
 plt.tight_layout()
-# my_savefig(fig,savedir,'RRR_V1PM_ranks_mean_vs_residual')
+# my_savefig(fig,figdir,'RRR_V1PM_ranks_mean_vs_residual')
 
 #%% RRR decomposition of variance:
 
@@ -1104,7 +1104,7 @@ ax.set_xticks(np.arange(0,nranks+1,5))
 ax.set_ylim([0,1])
 plt.tight_layout()
 sns.despine(top=True,right=True,offset=3)
-my_savefig(fig,savedir,'RRR_V1PM_decomposition_%dneurons' % nsampleneurons,formats=['png'])
+my_savefig(fig,figdir,'RRR_V1PM_decomposition_%dneurons' % nsampleneurons,formats=['png'])
 
 
 #%% 
@@ -1187,7 +1187,7 @@ sns.despine(top=True,right=True,offset=3)
 axes[0].set_xticks(range(narealabelpairs),arealabelpairs,rotation=45,ha='right',fontsize=7)
 axes[1].set_xticks(range(narealabelpairs),arealabelpairs,rotation=45,ha='right',fontsize=7)
 plt.tight_layout()
-my_savefig(fig,savedir,'RRR_V1PM_decomposition_%dneurons' % nsampleneurons,formats=['png'])
+my_savefig(fig,figdir,'RRR_V1PM_decomposition_%dneurons' % nsampleneurons,formats=['png'])
 
 
 
@@ -1429,7 +1429,7 @@ ax.set_title('Orig-Behavior (RRR)')
 ax.set_yticklabels('')
 ax.set_xlabel('Neurons')
 plt.tight_layout()
-my_savefig(fig,savedir,'BehaviorRegressedOut_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
+my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
 
 #%%
 nranks      = 10
@@ -1448,7 +1448,7 @@ ax.set_ylabel('Variance Explained')
 ax.set_xlabel('Rank')
 ax.set_xticks(range(nranks+1))
 sns.despine(top=True,right=True,offset=3)
-my_savefig(fig,savedir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
+my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
 
 #%% Plot the number of dimensions per area pair
 def plot_RRR_R2_regressout(R2data,rankdata,arealabelpairs,clrs_arealabelpairs):
@@ -1607,7 +1607,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 #%% Plot the R2 performance and number of dimensions per area pair
 fig = plot_RRR_R2_regressout(R2_cv,optim_rank,arealabelpairs,clrs_arealabelpairs)
 
-# my_savefig(fig,savedir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
+# my_savefig(fig,figdir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
 
 
 #%% Print how many labeled neurons there are in V1 and Pm in the loaded sessions:
@@ -1668,7 +1668,7 @@ ax.set_title('Orig - AL/RSP')
 ax.set_yticklabels('')
 ax.set_xlabel('V1 PM Neurons')
 plt.tight_layout()
-my_savefig(fig,savedir,'AL_RSP_RegressedOut_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
+my_savefig(fig,figdir,'AL_RSP_RegressedOut_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
 
 #%%
 nranks      = 10
@@ -1687,7 +1687,7 @@ ax.set_ylabel('Variance Explained')
 ax.set_xlabel('Rank')
 ax.set_xticks(range(nranks+1))
 sns.despine(top=True,right=True,offset=3)
-my_savefig(fig,savedir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
+my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
 
 
 
@@ -1766,7 +1766,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 
 #%%
 fig = plot_RRR_R2_regressout(R2_cv,optim_rank,arealabelpairs,clrs_arealabelpairs)
-my_savefig(fig,savedir,'RRR_V1PM_regressoutneuralALRSP_%dsessions' % (nSessions))
+my_savefig(fig,figdir,'RRR_V1PM_regressoutneuralALRSP_%dsessions' % (nSessions))
 
 #%% Fraction of R2 explained by shared activity with AL and RSP:
 datatoplot          = (R2_cv[:,0,:] - R2_cv[:,1,:]) / R2_cv[:,0,:]
@@ -1805,6 +1805,6 @@ ax.set_ylim([0.5,1])
 sns.despine(top=True,right=True,offset=3)
 ax.set_xticklabels(arealabelpairs2,fontsize=7)
 
-my_savefig(fig,savedir,'RRR_V1PM_regressoutneural_Frac_var_shared_ALRSP_%dsessions' % (nSessions))
+my_savefig(fig,figdir,'RRR_V1PM_regressoutneural_Frac_var_shared_ALRSP_%dsessions' % (nSessions))
 
 

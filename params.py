@@ -8,7 +8,8 @@ from loaddata.get_data_folder import get_local_drive
 
 def load_params():
     params = dict(
-                savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\LabeledSubspace'),
+                figdir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\LabeledSubspace'),
+                resultdir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Analysis\\LabeledSubspace'),
 
                 calciumversion = 'dF', #deconv or dF
                 t_pre       = -1,         #pre s

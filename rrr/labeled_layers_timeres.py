@@ -29,7 +29,7 @@ from utils.tuning import compute_tuning_wrapper
 from utils.regress_lib import *
 from utils.RRRlib import *
 
-savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\TimeResolution\\')
+figdir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\TimeResolution\\')
 
 #%% 
 session_list        = np.array([['LPE12223_2024_06_10'], #GR
@@ -360,7 +360,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 #     for idx in np.array([[0,1],[2,3]]):
 #         clrs        = ['grey',get_clr_area_labeled([arealabelpairs[idx[1]].split('-')[0]])]
 #         fig         = plot_RRR_R2_arealabels_paired(R2_data[idx],optim_rank_data[idx],R2_ranks_data[idx],np.array(arealabelpairs)[idx],clrs)
-#         # my_savefig(fig,savedir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
+#         # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
 
 #%% Plotting:
 idx_version = 0
@@ -404,8 +404,8 @@ for iR in range(nR):
 
 plt.tight_layout()
 sns.despine(fig=fig, top=True, right=True, offset = 3)
-# my_savefig(fig,savedir,'RRR_V1PM_GR_across_time',formats=['png'])
-# my_savefig(fig,savedir,'RRR_V1PM_layer_labeled_GR_across_time',formats=['png'])
+# my_savefig(fig,figdir,'RRR_V1PM_GR_across_time',formats=['png'])
+# my_savefig(fig,figdir,'RRR_V1PM_layer_labeled_GR_across_time',formats=['png'])
 
 #%% Plotting:
 idx_version = 0
@@ -453,8 +453,8 @@ for iR in range(nR):
 
 plt.tight_layout()
 sns.despine(fig=fig, top=True, right=True, offset = 3)
-# my_savefig(fig,savedir,'RRR_V1PM_GR_across_time',formats=['png'])
-my_savefig(fig,savedir,'RRR_V1PM_diff_layer_labeled_GR_across_time',formats=['png'])
+# my_savefig(fig,figdir,'RRR_V1PM_GR_across_time',formats=['png'])
+my_savefig(fig,figdir,'RRR_V1PM_diff_layer_labeled_GR_across_time',formats=['png'])
 
 #%% 
 # print(np.nanmean(R2_cv))
@@ -531,9 +531,9 @@ my_savefig(fig,savedir,'RRR_V1PM_diff_layer_labeled_GR_across_time',formats=['pn
 
 # sns.despine(fig=fig, top=True, right=True, offset = 3)
 # plt.tight_layout()
-# # my_savefig(fig,savedir,'RRR_V1PM_labeled_timeres')
-# # my_savefig(fig,savedir,'RRR_V1PM_labeled_GR_across_time',formats=['png'])
-# my_savefig(fig,savedir,'RRR_V1PM_labeled_GR_perOri_across_time',formats=['png'])
+# # my_savefig(fig,figdir,'RRR_V1PM_labeled_timeres')
+# # my_savefig(fig,figdir,'RRR_V1PM_labeled_GR_across_time',formats=['png'])
+# my_savefig(fig,figdir,'RRR_V1PM_labeled_GR_perOri_across_time',formats=['png'])
 
 
 # #%% Plotting:
@@ -573,4 +573,4 @@ my_savefig(fig,savedir,'RRR_V1PM_diff_layer_labeled_GR_across_time',formats=['pn
 
 # sns.despine(fig=fig, top=True, right=True, offset = 3)
 # plt.tight_layout()
-# my_savefig(fig,savedir,'RRR_V1PM_GR_across_time',formats=['png'])
+# my_savefig(fig,figdir,'RRR_V1PM_GR_across_time',formats=['png'])

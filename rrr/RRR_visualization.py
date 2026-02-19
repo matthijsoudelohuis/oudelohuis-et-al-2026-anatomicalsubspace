@@ -30,7 +30,7 @@ from utils.regress_lib import *
 from params import load_params
 
 params = load_params()
-savedir = os.path.join(params['savedir'],'RRR','LabeledSubspace')
+figdir = os.path.join(params['figdir'],'RRR','LabeledSubspace')
 
 #%% Plotting and parameters:
 params  = load_params()
@@ -189,7 +189,7 @@ ax.set_ylabel('Trials')
 ax.set_xlabel('Target Neurons (M)')
 
 plt.tight_layout()
-my_savefig(fig,savedir,'RRR_visualization_%s.png' % ses.sessiondata['session_id'][0],formats=['png'])
+my_savefig(fig,figdir,'RRR_visualization_%s.png' % ses.sessiondata['session_id'][0],formats=['png'])
 
 
 #%% Make figure
@@ -210,7 +210,7 @@ for r in range(nranks):
     # ax.set_ylabel('Source Neurons (N)')
     # ax.set_xlabel('Target Neurons (M)')
 plt.tight_layout()
-my_savefig(fig,savedir,'RRR_rankweights_%s.png' % ses.sessiondata['session_id'][0],formats=['png'])
+my_savefig(fig,figdir,'RRR_rankweights_%s.png' % ses.sessiondata['session_id'][0],formats=['png'])
 
 #%%
 nranks      = 10
@@ -229,7 +229,7 @@ ax.set_ylabel('Variance Explained')
 ax.set_xlabel('Rank')
 ax.set_xticks(range(nranks+1))
 sns.despine(top=True,right=True,offset=3)
-my_savefig(fig,savedir,'BehaviorRegressedOut_V1PM_%dsessions.png' % nSessions,formats=['png'])
+my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%dsessions.png' % nSessions,formats=['png'])
 
 #%% Plot the number of dimensions per area pair
 def plot_RRR_R2_regressout(R2data,rankdata,arealabelpairs,clrs_arealabelpairs):
@@ -421,9 +421,9 @@ ax.set_title('Target Activity (PM)')
 ax.set_xlim([example_tstart-10,example_tstart+20])
 ax.axis('off')
 
-my_savefig(fig,savedir,'V1PM_LowRank_Excerpt_%s_Rank%d.png' % (ses.sessiondata['session_id'][0],0),formats=['png']) 
+my_savefig(fig,figdir,'V1PM_LowRank_Excerpt_%s_Rank%d.png' % (ses.sessiondata['session_id'][0],0),formats=['png']) 
 for r in range(1,nrankstoplot):
     for i,iN in enumerate(target_example_neurons):
         ax.plot(ts,Y_hat_rr[:,iN,r]*scale+i,color=clrs_ranks[r],lw=lw)
-    my_savefig(fig,savedir,'V1PM_LowRank_Excerpt_%s_Rank%d.png' % (ses.sessiondata['session_id'][0],r+1),formats=['png']) 
+    my_savefig(fig,figdir,'V1PM_LowRank_Excerpt_%s_Rank%d.png' % (ses.sessiondata['session_id'][0],r+1),formats=['png']) 
 

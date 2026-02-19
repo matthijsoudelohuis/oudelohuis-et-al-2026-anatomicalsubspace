@@ -29,7 +29,7 @@ from utils.RRRlib import *
 protocol = 'SP'
 areas = ['V1','PM']
 nareas = len(areas)
-savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\WithinAcross')
+figdir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\WithinAcross')
 
 #%% Load data: 
 # session_list        = np.array([['LPE12223_2024_06_10'], #GR
@@ -137,7 +137,7 @@ else:
 # ax.set_ylim([0,0.3])
 plt.tight_layout()
 sns.despine(top=True,right=True,offset=3)
-# my_savefig(fig,savedir,'RRR_R2_acrossranks_V1PM_SPONT_%dsessions_%dsec.png' % (nSessions,temporalbin),formats=['png'])
+# my_savefig(fig,figdir,'RRR_R2_acrossranks_V1PM_SPONT_%dsessions_%dsec.png' % (nSessions,temporalbin),formats=['png'])
 
 #%% 
 
@@ -149,7 +149,7 @@ sns.despine(top=True,right=True,offset=3)
 #    #  #    #  #    #     #       #     # #     #      # #   #     #    #     # #    ## #       
 #     # #     # #     #    ####### #     # ######        #     #####      #####  #     # ####### 
 
-savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\Labeling')
+figdir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\Labeling')
 
 
 #%% Parameters for decoding from size-matched populations of V1 and PM labeled and unlabeled neurons
@@ -281,11 +281,11 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 
 #%% Plot the R2 performance and number of dimensions per area pair
 # fig         = plot_RRR_R2_arealabels(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_arealabelpairs)
-# my_savefig(fig,savedir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
+# my_savefig(fig,figdir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
 # fig         = plot_RRR_R2_arealabels(R2_cv[:4],optim_rank[:4],R2_ranks[:4],arealabelpairs[:4],clrs_arealabelpairs[:4])
-# my_savefig(fig,savedir,'RRR_cvR2_V1PM_LabUnl_%dsessions_spont' % nSessions)
+# my_savefig(fig,figdir,'RRR_cvR2_V1PM_LabUnl_%dsessions_spont' % nSessions)
 # fig         = plot_RRR_R2_arealabels(R2_cv[4:],optim_rank[4:],R2_ranks[4:],arealabelpairs[4:],clrs_arealabelpairs[4:])
-# my_savefig(fig,savedir,'RRR_cvR2_PMV1_LabUnl_%dsessions_spont' % nSessions)
+# my_savefig(fig,figdir,'RRR_cvR2_PMV1_LabUnl_%dsessions_spont' % nSessions)
 
 #%% 
 normalize   = False
@@ -294,7 +294,7 @@ for idx in np.array([[0,1],[2,3],[4,5],[6,7]]):
     clrs        = ['grey',get_clr_area_labeled([arealabelpairs[idx[1]].split('-')[0]])]
     # fig         = plot_RRR_R2_arealabels_paired(R2_cv[idx],optim_rank[idx],R2_ranks[idx],np.array(arealabelpairs)[idx],clrs,normalize=normalize)
     fig         = plot_RRR_R2_arealabels_paired(R2_cv[idx],optim_rank[idx],R2_ranks[idx],np.array(arealabelpairs)[idx],clrs,normalize=normalize)
-    my_savefig(fig,savedir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],protocol,nSessions))
+    my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],protocol,nSessions))
 
 for idx in np.array([[0,1],[2,3],[4,5],[6,7]]):
     mean,sd = np.nanmean(R2_cv[idx[1]] / R2_cv[idx[0]])*100-100,np.nanstd(R2_cv[idx[1]] / R2_cv[idx[0]])
@@ -304,7 +304,7 @@ for idx in np.array([[0,1],[2,3],[4,5],[6,7]]):
 for idx in np.array([[0,3],[4,7]]):
     clrs        = ['grey',get_clr_area_labeled([arealabelpairs[idx[1]].split('-')[0]])]
     fig         = plot_RRR_R2_arealabels_paired(R2_cv[idx],optim_rank[idx],R2_ranks[idx],np.array(arealabelpairs)[idx],clrs,normalize=normalize)
-    my_savefig(fig,savedir,'RRR_cvR2_diffTarget_%s_%s_%dsessions' % (arealabelpairs[idx[1]],protocol,nSessions))
+    my_savefig(fig,figdir,'RRR_cvR2_diffTarget_%s_%s_%dsessions' % (arealabelpairs[idx[1]],protocol,nSessions))
 
 for idx in np.array([[0,3],[4,7]]):
     mean,sd = np.nanmean(R2_cv[idx[1]] / R2_cv[idx[0]])*100-100,np.nanstd(R2_cv[idx[1]] / R2_cv[idx[0]])

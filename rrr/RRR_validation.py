@@ -25,7 +25,7 @@ from utils.plot_lib import * #get all the fixed color schemes
 from utils.regress_lib import *
 from utils.RRRlib import *
 
-savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\Validation\\')
+figdir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\Validation\\')
 
 
 #%% 
@@ -107,7 +107,7 @@ ax.set_xticks(xticks)
 ax.set_xlabel('Rank')
 ax.set_ylabel('Performance ($R^2$)')
 sns.despine(fig=fig,top=True,right=True,trim=True)
-my_savefig(fig,savedir,'RRR_rank_ev_procedure_%d' % nsampleneurons,formats=['png'])
+my_savefig(fig,figdir,'RRR_rank_ev_procedure_%d' % nsampleneurons,formats=['png'])
 
 #%%
 from scipy.stats import pearsonr
@@ -365,7 +365,7 @@ ax.set_xticklabels(t_ticks)
 ax.set_xlabel('Time (sec)')
 ax.set_ylabel('RRR R2')
 sns.despine(fig=fig,top=True,right=True,trim=True)
-my_savefig(fig,savedir,'RRR_perf_across_time',formats=['png'])
+my_savefig(fig,figdir,'RRR_perf_across_time',formats=['png'])
 
 
 #%% 
@@ -441,7 +441,7 @@ ax.set_xlabel('# source neurons')
 ax.set_title('Rank')
 sns.despine(top=True,right=True,offset=3)
 plt.tight_layout()
-my_savefig(fig,savedir,'R2_RRR_Tensor_Rank_PopSize_V1PM_%dsessions' % nSessions,formats=['png'])
+my_savefig(fig,figdir,'R2_RRR_Tensor_Rank_PopSize_V1PM_%dsessions' % nSessions,formats=['png'])
 
 
 
@@ -563,7 +563,7 @@ ax.plot([0,25],[0,25],':',color='grey',linewidth=1)
 
 sns.despine(offset=3,top=True,right=True)
 plt.tight_layout()
-# my_savefig(fig,savedir,'RRR_R2Rank_WithinVSAcross_%dneurons' % nsampleneurons,formats=['png'])
+# my_savefig(fig,figdir,'RRR_R2Rank_WithinVSAcross_%dneurons' % nsampleneurons,formats=['png'])
 
 
 #%%
@@ -637,7 +637,7 @@ ax.set_title('Rank')
 sns.despine(top=True,right=True,offset=3)
 
 plt.tight_layout()
-my_savefig(fig,savedir,'R2_RRR_Rank_PopSize_Both_V1PM_%dsessions.png' % nSessions,formats=['png'])
+my_savefig(fig,figdir,'R2_RRR_Rank_PopSize_Both_V1PM_%dsessions.png' % nSessions,formats=['png'])
 
 
 #%% Does performance increase with increasing number of neurons? Predicting PM from V1 with different number of V1 and PM neurons
@@ -701,7 +701,7 @@ ax.set_xticks([10,100,200,500])
 sns.despine(top=True,right=True,offset=3)
 
 plt.tight_layout()
-my_savefig(fig,savedir,'R2_RRR_Rank_PopSize_V1PM_%dsessions.png' % nSessions,formats=['png'])
+my_savefig(fig,figdir,'R2_RRR_Rank_PopSize_V1PM_%dsessions.png' % nSessions,formats=['png'])
 
 
 
@@ -797,12 +797,12 @@ ax.set_xlabel('number of trials')
 ax.set_ylabel('R2 at optimal rank')
 ax.set_ylim([0,np.max(R2data)+.05])
 plt.tight_layout()
-plt.savefig(os.path.join(savedir,'RRR_nTrials_lam%d_Rank_%dneurons.png' % (lam,nsampleneurons)), format = 'png')
+plt.savefig(os.path.join(figdir,'RRR_nTrials_lam%d_Rank_%dneurons.png' % (lam,nsampleneurons)), format = 'png')
 
 
 #%%  Within to across area dimensionality comparison: 
 
-savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\WithinAcross\\')
+figdir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\WithinAcross\\')
 
 
 #%% 
@@ -916,7 +916,7 @@ ax.plot([0,25],[0,25],':',color='grey',linewidth=1)
 sns.despine(offset=3,top=True,right=True)
 plt.tight_layout()
 
-my_savefig(fig,savedir,'RRR_R2Rank_WithinVSAcross_%dneurons' % nsampleneurons,formats=['png'])
+my_savefig(fig,figdir,'RRR_R2Rank_WithinVSAcross_%dneurons' % nsampleneurons,formats=['png'])
 
 
 
@@ -1048,10 +1048,10 @@ ax.set_xscale('log')
 ax.set_ylabel('R2 at optimal rank')
 ax.set_ylim([0,np.nanmax(R2data)+.05])
 plt.tight_layout()
-# plt.savefig(os.path.join(savedir,'RRR_perOri_Lam_Rank_%dneurons.png' % nsampleneurons), format = 'png')
-# plt.savefig(os.path.join(savedir,'RRR_Lam_Rank_%dneurons.png' % nsampleneurons), format = 'png')
-my_savefig(fig,savedir,'RRR_Lam_Rank_%dneurons.png' % nsampleneurons,formats=['png'])
-# my_savefig(fig,savedir,'RRR_perOri_Lam_Rank_%dneurons.png' % nsampleneurons,formats=['png'])
+# plt.savefig(os.path.join(figdir,'RRR_perOri_Lam_Rank_%dneurons.png' % nsampleneurons), format = 'png')
+# plt.savefig(os.path.join(figdir,'RRR_Lam_Rank_%dneurons.png' % nsampleneurons), format = 'png')
+my_savefig(fig,figdir,'RRR_Lam_Rank_%dneurons.png' % nsampleneurons,formats=['png'])
+# my_savefig(fig,figdir,'RRR_perOri_Lam_Rank_%dneurons.png' % nsampleneurons,formats=['png'])
 
 
 
@@ -1164,9 +1164,9 @@ ax.set_xscale('log')
 ax.set_ylabel('R2 at optimal rank')
 ax.set_ylim([0,np.max(R2data)+.05])
 plt.tight_layout()
-# plt.savefig(os.path.join(savedir,'RRR_PrePCA_lam5000_Rank_%dneurons.png' % nsampleneurons), format = 'png')
-# plt.savefig(os.path.join(savedir,'RRR_PrePCA_lam0_Rank_%dneurons.png' % nsampleneurons), format = 'png')
-plt.savefig(os.path.join(savedir,'RRR_PrePCA_lam0_perOri_Rank_%dneurons.png' % nsampleneurons), format = 'png')
+# plt.savefig(os.path.join(figdir,'RRR_PrePCA_lam5000_Rank_%dneurons.png' % nsampleneurons), format = 'png')
+# plt.savefig(os.path.join(figdir,'RRR_PrePCA_lam0_Rank_%dneurons.png' % nsampleneurons), format = 'png')
+plt.savefig(os.path.join(figdir,'RRR_PrePCA_lam0_perOri_Rank_%dneurons.png' % nsampleneurons), format = 'png')
 
 
 

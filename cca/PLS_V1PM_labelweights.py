@@ -29,7 +29,7 @@ from utils.CCAlib import *
 from utils.RRRlib import *
 from utils.pair_lib import value_matching
 
-savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\LabeledSubspace\\PLS\\')
+figdir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\LabeledSubspace\\PLS\\')
 
 #%% 
 areas       = ['V1','PM']
@@ -201,7 +201,7 @@ ax.set_yticks(np.arange(0,1.1,0.2))
 ax.set_xticks(np.arange(0,n_components+5,5),np.arange(0,n_components+5,5)+1)
 ax.axhline(0.1,linestyle='--',color='k')
 sns.despine(top=True,right=True,offset=2,trim=False)
-# my_savefig(fig,savedir,'CCA_V1PM_labeled_testcorr_%dsessions_%s' % (nSessions,varversion),formats=['png'])
+# my_savefig(fig,figdir,'CCA_V1PM_labeled_testcorr_%dsessions_%s' % (nSessions,varversion),formats=['png'])
 
 
 #%% 
@@ -256,8 +256,8 @@ ax.set_xticks(np.arange(0,n_components+5,5),np.arange(0,n_components+5,5)+1)
 
 ax.legend(frameon=False,loc='lower center')
 sns.despine(top=True,right=True,offset=2,trim=False)
-# my_savefig(fig,savedir,'CCA_V1PM_labeled_loadings_%dsessions_%s' % (nSessions,varversion),formats=['png'])
-# my_savefig(fig,savedir,'CCA_V1PM_labeled_weights_v2_%dsessions' % nSessions,formats=['png'])
+# my_savefig(fig,figdir,'CCA_V1PM_labeled_loadings_%dsessions_%s' % (nSessions,varversion),formats=['png'])
+# my_savefig(fig,figdir,'CCA_V1PM_labeled_weights_v2_%dsessions' % nSessions,formats=['png'])
 
 
 #%% 
@@ -319,5 +319,5 @@ ax_nticks(ax,5)
 ax.set_xticks(np.arange(0,n_components+5,5),np.arange(0,n_components+5,5)+1)
 
 sns.despine(top=True,right=True,offset=3,trim=True)
-my_savefig(fig,savedir,'CCA_V1PM_labeled_deltaloadings_%dsessions_%s' % (nSessions,varversion),formats=['png'])
+my_savefig(fig,figdir,'CCA_V1PM_labeled_deltaloadings_%dsessions_%s' % (nSessions,varversion),formats=['png'])
 

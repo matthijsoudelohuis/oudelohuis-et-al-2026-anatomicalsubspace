@@ -53,7 +53,7 @@ ax.set_title('Orig-Behavior (RRR)')
 ax.set_yticklabels('')
 ax.set_xlabel('Neurons')
 plt.tight_layout()
-my_savefig(fig,savedir,'BehaviorRegressedOut_V1PM_%s' % ses.session_id,formats=['png'])
+my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%s' % ses.session_id,formats=['png'])
 
 #%%
 nranks      = 10
@@ -72,7 +72,7 @@ ax.set_ylabel('Variance Explained')
 ax.set_xlabel('Rank')
 ax.set_xticks(range(nranks+1))
 sns.despine(top=True,right=True,offset=3)
-my_savefig(fig,savedir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
+my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
 
 #%% Plot the number of dimensions per area pair
 def plot_RRR_R2_regressout(R2data,rankdata,arealabelpairs,clrs_arealabelpairs):
@@ -278,7 +278,7 @@ rankdata    = optim_rank[:,:,idx_ses]
 
 fig         = plot_RRR_R2_regressout(R2_data,rankdata,arealabelpairs,clrs_arealabelpairs)
 
-my_savefig(fig,savedir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
+my_savefig(fig,figdir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
 
 
 #%% Print how many labeled neurons there are in V1 and Pm in the loaded sessions:
@@ -336,7 +336,7 @@ ax.set_title('Orig - AL/RSP')
 ax.set_yticklabels('')
 ax.set_xlabel('V1 PM Neurons')
 plt.tight_layout()
-# my_savefig(fig,savedir,'AL_RSP_RegressedOut_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
+# my_savefig(fig,figdir,'AL_RSP_RegressedOut_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
 
 #%%
 nranks      = 10
@@ -355,7 +355,7 @@ ax.set_ylabel('Variance Explained')
 ax.set_xlabel('Rank')
 ax.set_xticks(range(nranks+1))
 sns.despine(top=True,right=True,offset=3)
-my_savefig(fig,savedir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
+my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
 
 
 
@@ -443,7 +443,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 
 #%%
 fig = plot_RRR_R2_regressout(R2_cv,optim_rank,arealabelpairs,clrs_arealabelpairs)
-my_savefig(fig,savedir,'RRR_V1PM_labeled_regressoutneuralALRSP_%dsessions' % (nSessions))
+my_savefig(fig,figdir,'RRR_V1PM_labeled_regressoutneuralALRSP_%dsessions' % (nSessions))
 
 #%% Fraction of R2 explained by shared activity with AL and RSP:
 statpairs = [(0,1),(0,2),(0,3),
@@ -485,7 +485,7 @@ ax.set_ylim([0.8,1])
 sns.despine(top=True,right=True,offset=3)
 ax.set_xticklabels(arealabelpairs2,fontsize=7)
 
-# my_savefig(fig,savedir,'RRR_V1PM_regressoutneural_Frac_var_shared_ALRSP_%dsessions' % (nSessions))
+# my_savefig(fig,figdir,'RRR_V1PM_regressoutneural_Frac_var_shared_ALRSP_%dsessions' % (nSessions))
 
 
 

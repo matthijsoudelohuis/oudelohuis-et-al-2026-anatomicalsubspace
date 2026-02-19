@@ -32,7 +32,7 @@ from utils.RRRlib import *
 from params import load_params
 
 params = load_params()
-savedir = os.path.join(params['savedir'],'RRR','Labeling')
+figdir = os.path.join(params['figdir'],'RRR','Labeling')
 
 #%% 
 session_list        = np.array([['LPE12223_2024_06_10'], #GR
@@ -237,7 +237,7 @@ ax.set_title('Target Weights V1')
 
 sns.despine(top=True,right=True,offset=3)
 plt.tight_layout()
-my_savefig(fig,savedir,'RRR_weights_acrossranks_labeledV1PM_%dsessions' % (nSessions),formats=['png'])
+my_savefig(fig,figdir,'RRR_weights_acrossranks_labeledV1PM_%dsessions' % (nSessions),formats=['png'])
 
 #%% Plot:
 fig,axes = plt.subplots(2,2,figsize=(6,6),sharex=True,sharey=True)
@@ -300,7 +300,7 @@ ax.set_title('Target Weights V1')
 
 sns.despine(top=True,right=True,offset=3)
 plt.tight_layout()
-my_savefig(fig,savedir,'RRR_weights_acrossranks_labeledV1PM_%dsessions' % (nSessions),formats=['png'])
+my_savefig(fig,figdir,'RRR_weights_acrossranks_labeledV1PM_%dsessions' % (nSessions),formats=['png'])
 
 #%% 
 
@@ -412,18 +412,18 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 
 #%% Plot the R2 performance and number of dimensions per area pair
 # fig         = plot_RRR_R2_arealabels(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_arealabelpairs)
-# my_savefig(fig,savedir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
+# my_savefig(fig,figdir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
 fig         = plot_RRR_R2_arealabels(R2_cv[:4],optim_rank[:4],R2_ranks[:4],arealabelpairs[:4],clrs_arealabelpairs[:4])
-my_savefig(fig,savedir,'RRR_cvR2_V1PM_LabUnl_%dsessions' % nSessions)
+my_savefig(fig,figdir,'RRR_cvR2_V1PM_LabUnl_%dsessions' % nSessions)
 fig         = plot_RRR_R2_arealabels(R2_cv[4:],optim_rank[4:],R2_ranks[4:],arealabelpairs[4:],clrs_arealabelpairs[4:])
-my_savefig(fig,savedir,'RRR_cvR2_PMV1_LabUnl_%dsessions' % nSessions)
+my_savefig(fig,figdir,'RRR_cvR2_PMV1_LabUnl_%dsessions' % nSessions)
 
 fig         = plot_RRR_R2_arealabels(R2_cv[:4],optim_rank[:4],R2_ranks[:4],arealabelpairs[:4],
                                      clrs_arealabelpairs[:4],normalize=True)
-my_savefig(fig,savedir,'RRR_cvR2_V1PM_LabUnl_norm_%dsessions' % nSessions)
+my_savefig(fig,figdir,'RRR_cvR2_V1PM_LabUnl_norm_%dsessions' % nSessions)
 fig         = plot_RRR_R2_arealabels(R2_cv[4:],optim_rank[4:],R2_ranks[4:],arealabelpairs[4:],
                                      clrs_arealabelpairs[4:],normalize=True)
-my_savefig(fig,savedir,'RRR_cvR2_PMV1_LabUnl_norm_%dsessions' % nSessions)
+my_savefig(fig,figdir,'RRR_cvR2_PMV1_LabUnl_norm_%dsessions' % nSessions)
 
 
 #%% Is the enhancement specific to the target area the neurons project to?
@@ -498,9 +498,9 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 
 #%% Plot the R2 performance and number of dimensions per area pair
 # fig         = plot_RRR_R2_arealabels(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_arealabelpairs)
-# my_savefig(fig,savedir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
+# my_savefig(fig,figdir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
 fig         = plot_RRR_R2_arealabels(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_arealabelpairs)
-my_savefig(fig,savedir,'RRR_cvR2_V1PM_LabUnl_ALRSP_%s_%dsessions' % (versionname,nSessions),formats=['png'])
+my_savefig(fig,figdir,'RRR_cvR2_V1PM_LabUnl_ALRSP_%s_%dsessions' % (versionname,nSessions),formats=['png'])
 
 
 
@@ -558,7 +558,7 @@ ax.set_title('Orig-Behavior (RRR)')
 ax.set_yticklabels('')
 ax.set_xlabel('Neurons')
 plt.tight_layout()
-my_savefig(fig,savedir,'BehaviorRegressedOut_V1PM_%s' % ses.session_id,formats=['png'])
+my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%s' % ses.session_id,formats=['png'])
 
 #%%
 nranks      = 10
@@ -577,7 +577,7 @@ ax.set_ylabel('Variance Explained')
 ax.set_xlabel('Rank')
 ax.set_xticks(range(nranks+1))
 sns.despine(top=True,right=True,offset=3)
-my_savefig(fig,savedir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
+my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
 
 #%% Plot the number of dimensions per area pair
 def plot_RRR_R2_regressout(R2data,rankdata,arealabelpairs,clrs_arealabelpairs):
@@ -783,7 +783,7 @@ rankdata    = optim_rank[:,:,idx_ses]
 
 fig         = plot_RRR_R2_regressout(R2_data,rankdata,arealabelpairs,clrs_arealabelpairs)
 
-my_savefig(fig,savedir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
+my_savefig(fig,figdir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
 
 
 #%% Print how many labeled neurons there are in V1 and Pm in the loaded sessions:
@@ -841,7 +841,7 @@ ax.set_title('Orig - AL/RSP')
 ax.set_yticklabels('')
 ax.set_xlabel('V1 PM Neurons')
 plt.tight_layout()
-# my_savefig(fig,savedir,'AL_RSP_RegressedOut_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
+# my_savefig(fig,figdir,'AL_RSP_RegressedOut_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
 
 #%%
 nranks      = 10
@@ -860,7 +860,7 @@ ax.set_ylabel('Variance Explained')
 ax.set_xlabel('Rank')
 ax.set_xticks(range(nranks+1))
 sns.despine(top=True,right=True,offset=3)
-my_savefig(fig,savedir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
+my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
 
 
 
@@ -948,7 +948,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 
 #%%
 fig = plot_RRR_R2_regressout(R2_cv,optim_rank,arealabelpairs,clrs_arealabelpairs)
-my_savefig(fig,savedir,'RRR_V1PM_labeled_regressoutneuralALRSP_%dsessions' % (nSessions))
+my_savefig(fig,figdir,'RRR_V1PM_labeled_regressoutneuralALRSP_%dsessions' % (nSessions))
 
 #%% Fraction of R2 explained by shared activity with AL and RSP:
 statpairs = [(0,1),(0,2),(0,3),
@@ -990,7 +990,7 @@ ax.set_ylim([0.8,1])
 sns.despine(top=True,right=True,offset=3)
 ax.set_xticklabels(arealabelpairs2,fontsize=7)
 
-# my_savefig(fig,savedir,'RRR_V1PM_regressoutneural_Frac_var_shared_ALRSP_%dsessions' % (nSessions))
+# my_savefig(fig,figdir,'RRR_V1PM_regressoutneural_Frac_var_shared_ALRSP_%dsessions' % (nSessions))
 
 
 
@@ -1109,7 +1109,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 
 #%%
 fig = plot_RRR_R2_regressout(R2_cv,optim_rank,arealabelpairs,clrs_arealabelpairs)
-my_savefig(fig,savedir,'RRR_V1PM_regressout_unlabeled_%dsessions' % (nSessions))
+my_savefig(fig,figdir,'RRR_V1PM_regressout_unlabeled_%dsessions' % (nSessions))
 
 
 
@@ -1174,8 +1174,8 @@ my_savefig(fig,savedir,'RRR_V1PM_regressout_unlabeled_%dsessions' % (nSessions))
 # print('Optimal lam for %d neurons: %.3f' % (nsampleneurons,lam))
 # plt.axvline(lam,linestyle='--',color='k')
 # plt.text(lam,0,'lam=%.3f' % lam,ha='right',va='center',fontsize=9)
-# plt.savefig(os.path.join(savedir,'RRR_Lam_%dneurons' % nsampleneurons), format = 'png')
-# # plt.savefig(os.path.join(savedir,'RRR_Lam_prePCA_%dneurons' % nsampleneurons), format = 'png')
+# plt.savefig(os.path.join(figdir,'RRR_Lam_%dneurons' % nsampleneurons), format = 'png')
+# # plt.savefig(os.path.join(figdir,'RRR_Lam_prePCA_%dneurons' % nsampleneurons), format = 'png')
 
 
 #%% Are CCA and RRR capturing the same signal?
@@ -1253,7 +1253,7 @@ sns.despine(fig=fig, top=True, right=True,offset=5)
 
 fig.suptitle('Correlation between CCA and RRR:')
 fig.tight_layout()
-fig.savefig(os.path.join(savedir,'Corr_CCA_RRR_weights'), format = 'png')
+fig.savefig(os.path.join(figdir,'Corr_CCA_RRR_weights'), format = 'png')
 
 #%% TO DO:
 # chose the value of λ using X-fold cross-validation
@@ -1325,7 +1325,7 @@ ax.set_xlabel('Kfold')
 ax.set_ylabel('R2')
 ax.set_ylim([0,0.2])
 sns.despine(fig=fig, top=True, right=True,offset=5)
-plt.savefig(os.path.join(savedir,'RRR_R2_kfold'), format = 'png', bbox_inches='tight')
+plt.savefig(os.path.join(figdir,'RRR_R2_kfold'), format = 'png', bbox_inches='tight')
 
 
 
@@ -1523,7 +1523,7 @@ ax.set_ylabel('R2')
 ax.set_ylim([0,0.2])
 ax.set_title('Which data to use?')
 sns.despine(fig=fig, top=True, right=True,offset=5)
-plt.savefig(os.path.join(savedir,'RRR_R2_difftypes'), format = 'png', bbox_inches='tight')
+plt.savefig(os.path.join(figdir,'RRR_R2_difftypes'), format = 'png', bbox_inches='tight')
 
 
 

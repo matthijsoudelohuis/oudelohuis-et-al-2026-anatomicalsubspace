@@ -25,7 +25,7 @@ from utils.psth import compute_tensor
 from params import load_params
 
 params = load_params()
-savedir = os.path.join(params['savedir'],'RRR','Validation')
+figdir = os.path.join(params['figdir'],'RRR','Validation')
 
 #%% Plotting parameters:
 set_plot_basic_config()
@@ -355,7 +355,7 @@ ax.set_ylabel('Stimulus direction (test)')
 ax.set_xticks(stim[::2]+0.5,stimlabels[::2],rotation=45)
 ax.set_yticks(stim[::2]+0.5,stimlabels[::2])
 plt.tight_layout()
-my_savefig(fig,savedir,'Cross_Stimulus_R2_RRR_V1PM_%dsessions' % nSessions)
+my_savefig(fig,figdir,'Cross_Stimulus_R2_RRR_V1PM_%dsessions' % nSessions)
 
 #%% 
 nsampleneurons = 100
@@ -452,4 +452,4 @@ for irank in range(fixed_rank):
     ax.set_xlabel('Stimulus direction')
 axes[0].set_yticks(stim[::2]+0.5,stimlabels[::2])
 plt.tight_layout()
-my_savefig(fig,savedir,'Principle_Angle_V1PM_%dsessions' % nSessions)
+my_savefig(fig,figdir,'Principle_Angle_V1PM_%dsessions' % nSessions)

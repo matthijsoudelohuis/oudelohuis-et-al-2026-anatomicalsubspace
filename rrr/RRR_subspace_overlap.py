@@ -28,7 +28,7 @@ from utils.regress_lib import *
 from params import load_params
 
 params = load_params()
-savedir = os.path.join(params['savedir'],'RRR','Routing')
+figdir = os.path.join(params['figdir'],'RRR','Routing')
 
 
 #%% 
@@ -327,7 +327,7 @@ ax.set_xticks(range(0,nranks+1,10))
 ax.set_xlabel('Rank')
 ax.set_ylabel('CV R2')
 sns.despine(top=True,right=True,offset=3,trim=True)
-my_savefig(fig,savedir,'RRR_cvR2_CrossVsTarget_%dsessions' % nSessions,formats=['png'])
+my_savefig(fig,figdir,'RRR_cvR2_CrossVsTarget_%dsessions' % nSessions,formats=['png'])
 
 
 
@@ -407,7 +407,7 @@ ax.set_xticks([0,0.1,0.2,0.3])
 ax.set_yticks([0,0.1,0.2,0.3])
 sns.despine(top=True,right=True,offset=3)
 fig.tight_layout()
-# my_savefig(fig,savedir,'RRR_cvR2_DiffSamePopulations_AreaAverage_%dsessions' % (nSessions))
+# my_savefig(fig,figdir,'RRR_cvR2_DiffSamePopulations_AreaAverage_%dsessions' % (nSessions))
 
 
 #%% Performance on cross population prediction versus on neurons from the same area:
@@ -478,7 +478,7 @@ ax.set_ylabel('CV R2')
 sns.despine(top=True,right=True,offset=3)
 fig.tight_layout()
 
-my_savefig(fig,savedir,'CrossSubspace_R2_diffpops_%dsessions' % (nSessions))
+my_savefig(fig,figdir,'CrossSubspace_R2_diffpops_%dsessions' % (nSessions))
 
 #%% Performance on cross population prediction versus on neurons from the same area:
 # # If above the diagonal then predicting neurons from the same area from specific subspace is better
@@ -523,7 +523,7 @@ my_savefig(fig,savedir,'CrossSubspace_R2_diffpops_%dsessions' % (nSessions))
 # # ax.set_ylim([0,np.nanmax(np.nanmean(subspace_R2,axis=(5,6)))*1.1])
 # sns.despine(top=True,right=True,offset=3)
 # fig.tight_layout()
-# # my_savefig(fig,savedir,'R2_cross_vs_train_diffpops_%dsessions.png' % (nSessions))
+# # my_savefig(fig,figdir,'R2_cross_vs_train_diffpops_%dsessions.png' % (nSessions))
 
 
 #%% 
@@ -644,7 +644,7 @@ for i in range(2):
 sns.despine(top=True,right=True,offset=3)
 fig.tight_layout()
 
-my_savefig(fig,savedir,'CrossSubspace_R2_V1PM_Labeled_%dsessions' % nSessions,formats=['png'])
+my_savefig(fig,figdir,'CrossSubspace_R2_V1PM_Labeled_%dsessions' % nSessions,formats=['png'])
 
 #%% Generalization to other cross target populations:
 # The idea is to compare the R2 performance when predicting a population that it was not trained on
@@ -726,7 +726,7 @@ for ipair in range(len(combpairstoplot)):
 
 sns.despine(top=True,right=True,offset=3)
 fig.tight_layout()
-my_savefig(fig,savedir,'Generalization_V1PM_AllCross_%dsessions_%s' % (nSessions,rankversion))
+my_savefig(fig,figdir,'Generalization_V1PM_AllCross_%dsessions_%s' % (nSessions,rankversion))
 
 #%% Test generalization across multiple combinations of feedforward and feedback neurons: 
 data_generalization = np.full((nSessions,len(combpairstoplot)),np.nan)
@@ -768,7 +768,7 @@ ax.set_xlim([-0.5,1.5])
 ax.axhline(1,linestyle='--',color='k',alpha=0.5)
 sns.despine(top=True,right=True,offset=3,trim=True)
 
-my_savefig(fig,savedir,'GeneralizationIndex_V1PM_Cross_%dsessions_%s' % (nSessions,rankversion))
+my_savefig(fig,figdir,'GeneralizationIndex_V1PM_Cross_%dsessions_%s' % (nSessions,rankversion))
 
 
 #%% Define function to plot these scatters with paired comparisons
@@ -885,7 +885,7 @@ ax.set_ylabel('%s->%s' % (combpairstoplot[1][0],combpairstoplot[1][1]))
 plt.suptitle('Generalization within area',fontsize=9)
 sns.despine(top=True,right=True,offset=3,trim=True)
 plt.tight_layout()
-my_savefig(fig,savedir,'Generalization_V1PM_Labeled_Same_%dsessions_%s' % (nSessions,rankversion),formats=['png'])
+my_savefig(fig,figdir,'Generalization_V1PM_Labeled_Same_%dsessions_%s' % (nSessions,rankversion),formats=['png'])
 
 
 #%% Generalization to other target populations:
@@ -906,8 +906,8 @@ combpairstoplot4 = np.array([['PMunl','V1unl','RSPunl'],
 fig = plot_paired_combpairs_ALRSP(ax,arealabels,data,combpairstoplot1,combpairstoplot2,
                                 combpairstoplot3,combpairstoplot4)
 
-# my_savefig(fig,savedir,'Generalization_cross_area_labeledV1PM_%dsessions_%s' % (nSessions,rankversion))
-my_savefig(fig,savedir,'Generalization_cross_area_labeledSourceV1PM_%dsessions_%s' % (nSessions,rankversion),formats=['png'])
+# my_savefig(fig,figdir,'Generalization_cross_area_labeledV1PM_%dsessions_%s' % (nSessions,rankversion))
+my_savefig(fig,figdir,'Generalization_cross_area_labeledSourceV1PM_%dsessions_%s' % (nSessions,rankversion),formats=['png'])
 
 
 #%% Generalization to other target populations:
@@ -928,7 +928,7 @@ combpairstoplot4 = np.array([['PMunl','V1unl','RSPunl'],
 fig = plot_paired_combpairs_ALRSP(ax,arealabels,data,combpairstoplot1,combpairstoplot2,
                                 combpairstoplot3,combpairstoplot4)
 
-my_savefig(fig,savedir,'Generalization_cross_area_labeledTargetV1PM_%dsessions_%s' % (nSessions,rankversion),formats=['png'])
+my_savefig(fig,figdir,'Generalization_cross_area_labeledTargetV1PM_%dsessions_%s' % (nSessions,rankversion),formats=['png'])
 
 
 #%% 
@@ -1008,8 +1008,8 @@ ax.set_ylabel('Dim 2')
 sns.despine(top=True,right=True,offset=3,trim=True)
 plt.tight_layout()
 
-my_savefig(fig,savedir,'CrossArea_RRR_Subspace_Clustering_%dsessions_%s' % (nSessions,rankversion))
-# fig.savefig(os.path.join(savedir,'PCA_TuningCurve_HITMISS_%dsessions.png') % (nSessions), format='png')
+my_savefig(fig,figdir,'CrossArea_RRR_Subspace_Clustering_%dsessions_%s' % (nSessions,rankversion))
+# fig.savefig(os.path.join(figdir,'PCA_TuningCurve_HITMISS_%dsessions.png') % (nSessions), format='png')
 
 
 #%%  
@@ -1168,6 +1168,6 @@ ax.set_yticks([0,0.1,0.2])
 ax.plot([0,0.2],[0,0.2],linestyle='--',color='k',alpha=0.5)
 sns.despine(top=True,right=True,offset=3)
 
-my_savefig(fig,savedir,'RRR_cvR2_V1PMAL_Cross_RegressBehav_%dsessions' % (nSessions))
-# plt.savefig(os.path.join(savedir,'RRR_cvR2_V1PMAL_Cross_RegressBehav_%dsessions' % (nSessions)),
+my_savefig(fig,figdir,'RRR_cvR2_V1PMAL_Cross_RegressBehav_%dsessions' % (nSessions))
+# plt.savefig(os.path.join(figdir,'RRR_cvR2_V1PMAL_Cross_RegressBehav_%dsessions' % (nSessions)),
 #                         bbox_inches='tight')

@@ -28,7 +28,7 @@ from utils.CCAlib import *
 from utils.RRRlib import *
 from utils.pair_lib import value_matching
 
-savedir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\CCA\\Labeling\\')
+figdir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\CCA\\Labeling\\')
 
 #%% 
 areas       = ['V1','PM']
@@ -189,7 +189,7 @@ ax.set_yticks(np.arange(0,1.1,0.2))
 ax.set_xticks(np.arange(0,n_components+5,5),np.arange(0,n_components+5,5)+1)
 ax.axhline(0.1,linestyle='--',color='k')
 sns.despine(top=True,right=True,offset=2,trim=False)
-# my_savefig(fig,savedir,'CCA_V1PM_labeled_testcorr_%dsessions_%s' % (nSessions,varversion),formats=['png'])
+# my_savefig(fig,figdir,'CCA_V1PM_labeled_testcorr_%dsessions_%s' % (nSessions,varversion),formats=['png'])
 
 
 #%% 
@@ -244,8 +244,8 @@ ax.set_xticks(np.arange(0,n_components+5,5),np.arange(0,n_components+5,5)+1)
 
 ax.legend(frameon=False,loc='lower center')
 sns.despine(top=True,right=True,offset=2,trim=False)
-my_savefig(fig,savedir,'CCA_V1PM_labeled_loadings_%dsessions_%s' % (nSessions,varversion),formats=['png'])
-# my_savefig(fig,savedir,'CCA_V1PM_labeled_weights_v2_%dsessions' % nSessions,formats=['png'])
+my_savefig(fig,figdir,'CCA_V1PM_labeled_loadings_%dsessions_%s' % (nSessions,varversion),formats=['png'])
+# my_savefig(fig,figdir,'CCA_V1PM_labeled_weights_v2_%dsessions' % nSessions,formats=['png'])
 
 
 #%% 
@@ -307,7 +307,7 @@ ax_nticks(ax,5)
 ax.set_xticks(np.arange(0,n_components+5,5),np.arange(0,n_components+5,5)+1)
 
 sns.despine(top=True,right=True,offset=3,trim=True)
-my_savefig(fig,savedir,'CCA_V1PM_labeled_deltaloadings_%dsessions_%s' % (nSessions,varversion),formats=['png'])
+my_savefig(fig,figdir,'CCA_V1PM_labeled_deltaloadings_%dsessions_%s' % (nSessions,varversion),formats=['png'])
 
 
 #%% 
@@ -455,7 +455,7 @@ if ival==0:
     ax.set_ylabel('|Weight|   (Lab-Unl)')
 ax.axhline(y=1,color='k',linestyle='--')
 plt.tight_layout()
-my_savefig(fig,savedir,'CCA_V1PM_labeled_weights_%dsessions_Controls' % (nSessions),formats=['png'])
+my_savefig(fig,figdir,'CCA_V1PM_labeled_weights_%dsessions_Controls' % (nSessions),formats=['png'])
 
 
 #%% 
@@ -510,7 +510,7 @@ for iarea,area in enumerate(areas):
 # sns.despine(top=True,right=True,offset=1,trim=True)
 #  ax.scatter(1,PMlabdiff,s=20,color='k')
 plt.tight_layout()
-# my_savefig(fig,savedir,'CCA_V1PM_labeled_weights_%dsessions_Controls' % (nSessions),formats=['png'])
+# my_savefig(fig,figdir,'CCA_V1PM_labeled_weights_%dsessions_Controls' % (nSessions),formats=['png'])
 
 
 
@@ -571,7 +571,7 @@ ax.set_xlabel('PC Dimension')
 ax.set_ylabel('Explained variance')
 sns.despine(top=True,right=True,offset=1,trim=True)
 plt.tight_layout()
-# my_savefig(fig,savedir,'PCA_V1PM_labeled_GRGN_%dsessions' % (nSessions),formats=['png'])
+# my_savefig(fig,figdir,'PCA_V1PM_labeled_GRGN_%dsessions' % (nSessions),formats=['png'])
 
 
 #%% Now control for the dimensionality: 
@@ -795,7 +795,7 @@ ax_nticks(ax,5)
 ax.set_xticks(np.arange(0,n_components+5,5),np.arange(0,n_components+5,5)+1)
 
 sns.despine(top=True,right=True,offset=3,trim=True)
-my_savefig(fig,savedir,'CCA_V1PM_labeled_deltaweights_%dsessions_%s_equaleigenspectrum' % (nSessions,varversion),formats=['png'])
+my_savefig(fig,figdir,'CCA_V1PM_labeled_deltaweights_%dsessions_%s_equaleigenspectrum' % (nSessions,varversion),formats=['png'])
 
 
 #%% 
@@ -1033,7 +1033,7 @@ ax_nticks(ax,5)
 ax.set_xticks(np.arange(0,n_components+5,5),np.arange(0,n_components+5,5)+1)
 
 sns.despine(top=True,right=True,offset=3,trim=True)
-# my_savefig(fig,savedir,'CCA_V1PM_labeled_to%s_deltaweights_%dsessions_%s' % (diffarea,nSessions,varversion),formats=['png'])
+# my_savefig(fig,figdir,'CCA_V1PM_labeled_to%s_deltaweights_%dsessions_%s' % (diffarea,nSessions,varversion),formats=['png'])
 
 #%% 
 ######  #######  #####  ######  #######  #####   #####     ######  ####### #     #    #    #     # 
@@ -1242,7 +1242,7 @@ for iarea,area in enumerate(areas):
 sns.despine(top=True,right=True,offset=1,trim=True)
 #  ax.scatter(1,PMlabdiff,s=20,color='k')
 plt.tight_layout()
-# my_savefig(fig,savedir,'CCA_V1PM_labeled_sumdeltaweights_behav_%dsessions_%s' % (nSessions,varversion),formats=['png'])
+# my_savefig(fig,figdir,'CCA_V1PM_labeled_sumdeltaweights_behav_%dsessions_%s' % (nSessions,varversion),formats=['png'])
 
 
 #%% 
@@ -1360,7 +1360,7 @@ ax.set_xlabel('CCA Dimension')
 ax.set_ylabel('Correlation')
 ax.legend(handles,arealabelpairs,loc='upper right',frameon=False,fontsize=9)
 sns.despine(top=True,right=True,offset=1,trim=True)
-my_savefig(fig,savedir,'CCA_V1PM_pops_labeled_testcorr_%dsessions' % (nSessions),formats=['png'])
+my_savefig(fig,figdir,'CCA_V1PM_pops_labeled_testcorr_%dsessions' % (nSessions),formats=['png'])
 
 #%%
 fig, axes = plt.subplots(1,1,figsize=(4,4))
@@ -1380,7 +1380,7 @@ ax.set_xlabel('CCA Dimension')
 ax.set_ylabel('Correlation')
 ax.legend(arealabelpairs,loc='upper right',frameon=False,fontsize=9)
 sns.despine(top=True,right=True,offset=1,trim=True)
-# my_savefig(fig,savedir,'CCA_V1PM_pops_labeled_testcorr_normdim1_%dsessions_%s' % (nSessions,varversion),formats=['png'])
+# my_savefig(fig,figdir,'CCA_V1PM_pops_labeled_testcorr_normdim1_%dsessions_%s' % (nSessions,varversion),formats=['png'])
 
 #%%
 fig, axes = plt.subplots(1,1,figsize=(4,4))
@@ -1414,7 +1414,7 @@ ax.set_xlabel('CCA Dimension')
 ax.set_ylabel(u'Δ Correlation')
 ax.legend(handles,arealabelpairs,loc='upper right',frameon=False,fontsize=9)
 sns.despine(top=True,right=True,offset=1,trim=True)
-my_savefig(fig,savedir,'CCA_V1PM_pops_labeled_testcorr_normUnl_%dsessions' % (nSessions),formats=['png'])
+my_savefig(fig,figdir,'CCA_V1PM_pops_labeled_testcorr_normUnl_%dsessions' % (nSessions),formats=['png'])
 
 
 #%% 
