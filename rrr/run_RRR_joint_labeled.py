@@ -34,10 +34,12 @@ from datetime import datetime
 params = load_params()
 params['radius'] = 50
 
-params['regress_behavout'] = True
-# params['regress_behavout'] = False
+# params['regress_behavout'] = True
+params['regress_behavout'] = False
 # params['direction'] = 'FF'
-params['direction'] = 'FB'
+# params['direction'] = 'FB'
+params['direction'] = 'FF_AL'
+params['direction'] = 'FB_AL'
 
 version = 'Joint_labeled_%s_%s' % (params['direction'],'behavout' if params['regress_behavout'] else 'original')
 
@@ -51,9 +53,19 @@ savefilename = os.path.join(resultdir,'RRR_%s_%s' % (version,datetime_str))
 if params['direction'] =='FF': 
     sourcearealabelpairs = ['V1unl','V1unl','V1lab']
     targetarealabelpair = 'PMunl'
+    only_all_areas = np.array(['V1','PM'])
 elif params['direction'] =='FB': 
     sourcearealabelpairs = ['PMunl','PMunl','PMlab']
     targetarealabelpair = 'V1unl'
+    only_all_areas = np.array(['V1','PM'])
+elif params['direction'] =='FF_AL': 
+    sourcearealabelpairs = ['V1unl','V1unl','V1lab']
+    targetarealabelpair = 'ALunl'
+    only_all_areas = np.array(['V1','PM','AL'])
+elif params['direction'] =='FB_AL': 
+    sourcearealabelpairs = ['PMunl','PMunl','PMlab']
+    targetarealabelpair = 'ALunl'
+    only_all_areas = np.array(['V1','PM','AL'])
 
 #%% 
 session_list        = np.array([
@@ -77,8 +89,7 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=s
                                        min_lab_cells_V1=20,filter_noiselevel=False)
 
 #%% Get all data 
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],filter_noiselevel=True)
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
+sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
 # sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],min_lab_cells_V1=20,filter_noiselevel=True)
 report_sessions(sessions)
 sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=True)

@@ -98,9 +98,9 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
     # idx_T               = ses.trialdata['Orientation']==0
     idx_T               = np.ones(len(ses.trialdata['stimCond']),dtype=bool)
     idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     
     X                   = sessions[ises].respmat[np.ix_(idx_areax,idx_T)].T
     Y                   = sessions[ises].respmat[np.ix_(idx_areay,idx_T)].T
@@ -127,9 +127,9 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
     idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
 
     idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 
     nN                  = len(idx_areax)
     nM                  = len(idx_areay)
@@ -150,9 +150,9 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
     weights_target[idx_ses[idx_areay],:] = V
 
     idx_areax           = np.where(np.all((ses.celldata['roi_name']=='PM',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     idx_areay           = np.where(np.all((ses.celldata['roi_name']=='V1',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 
     nN                  = len(idx_areax)
     nM                  = len(idx_areay)
@@ -764,10 +764,10 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
                 idx_nearby = np.ones(len(ses.celldata),dtype=bool)
 
             idx_areax           = np.where(np.all((ses.celldata['arealabel']==alx,
-                                    ses.celldata['noise_level']<20,	
+                                    ses.celldata['noise_level']<params['maxnoiselevel'],	
                                     idx_nearby),axis=0))[0]
             idx_areay           = np.where(np.all((ses.celldata['arealabel']==aly,
-                                    ses.celldata['noise_level']<20,	
+                                    ses.celldata['noise_level']<params['maxnoiselevel'],	
                                     idx_nearby),axis=0))[0]
         
             X = neuraldata[:,idx_areax,irbhv]
@@ -791,9 +791,9 @@ print('Number of labeled neurons in V1 and PM:')
 for ises, ses in enumerate(sessions):
     print('Session %d: %d in V1, %d in PM' % (ises+1,
                                               np.sum(np.all((ses.celldata['arealabel']=='V1lab',
-                                                             ses.celldata['noise_level']<20),axis=0)),
+                                                             ses.celldata['noise_level']<params['maxnoiselevel']),axis=0)),
                                               np.sum(np.all((ses.celldata['arealabel']=='PMlab',
-                                                             ses.celldata['noise_level']<20),axis=0))))
+                                                             ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))))
 
 #%% Validate regressing out AL RSP activity: 
 # for ises in range(nSessions):#
@@ -808,11 +808,11 @@ respmat         = ses.respmat[:,idx_T].T
 respmat         = zscore(respmat,axis=0)
 
 idx_ALRSP   = np.where(np.all((np.isin(ses.celldata['roi_name'],['AL','RSP']),
-                        # ses.celldata['noise_level']<20	
+                        # ses.celldata['noise_level']<params['maxnoiselevel']	
                         ),axis=0))[0]
 
 idx_V1PM   = np.where(np.all((np.isin(ses.celldata['roi_name'],['V1','PM']),
-                        # ses.celldata['noise_level']<20	
+                        # ses.celldata['noise_level']<params['maxnoiselevel']	
                         ),axis=0))[0]
 
 Y_orig,Y_hat_rr,Y_out,rank,EVdata  = regress_out_behavior_modulation(ses,X=respmat[:,idx_ALRSP],Y=respmat[:,idx_V1PM],rank=rank,lam=0)
@@ -898,7 +898,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
     
     #take the smallest sample size
     allpops             = np.array([i.split('-') for i in arealabelpairs]).flatten()
-    nsampleneurons      = np.min([np.sum((ses.celldata['arealabel']==i) & (ses.celldata['noise_level']<20)) for i in allpops])
+    nsampleneurons      = np.min([np.sum((ses.celldata['arealabel']==i) & (ses.celldata['noise_level']<params['maxnoiselevel'])) for i in allpops])
 
     if nsampleneurons<minsampleneurons: #skip session if less than minsampleneurons in either population
         continue
@@ -910,11 +910,11 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
         respmat             = zscore(respmat,axis=0)
 
         idx_ALRSP           = np.where(np.all((np.isin(ses.celldata['roi_name'],['AL','RSP']),
-                                ses.celldata['noise_level']<20	
+                                ses.celldata['noise_level']<params['maxnoiselevel']	
                                 ),axis=0))[0]
 
         idx_V1PM            = np.where(np.all((np.isin(ses.celldata['roi_name'],['V1','PM']),
-                                ses.celldata['noise_level']<20	
+                                ses.celldata['noise_level']<params['maxnoiselevel']	
                                 ),axis=0))[0]
 
         Y_orig,Y_hat_rr,Y_out,rank,EVdata  = regress_out_behavior_modulation(ses,X=respmat[:,idx_ALRSP],Y=respmat[:,idx_V1PM],
@@ -1039,16 +1039,16 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
     respmat             = zscore(respmat,axis=0)
 
     idx_V1unl = np.where(np.all((ses.celldata['arealabel']=='V1unl',
-                                    ses.celldata['noise_level']<20),axis=0))[0]
+                                    ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     idx_V1lab = np.where(np.all((ses.celldata['arealabel']=='V1lab',
-                                    ses.celldata['noise_level']<20),axis=0))[0]
+                                    ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     
     nV1lab = len(idx_V1lab)
 
     idx_PMunl = np.where(np.all((ses.celldata['arealabel']=='PMunl',
-                                    ses.celldata['noise_level']<20),axis=0))[0]
+                                    ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     idx_PMlab = np.where(np.all((ses.celldata['arealabel']=='PMlab',
-                                    ses.celldata['noise_level']<20),axis=0))[0]
+                                    ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     
     nPMlab = len(idx_PMlab)
 
@@ -1095,10 +1095,10 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
                 idx_nearby = np.ones(len(ses.celldata),dtype=bool)
 
             idx_areax           = np.where(np.all((ses.celldata['arealabel']==alx,
-                                    ses.celldata['noise_level']<20,	
+                                    ses.celldata['noise_level']<params['maxnoiselevel'],	
                                     idx_nearby),axis=0))[0]
             idx_areay           = np.where(np.all((ses.celldata['arealabel']==aly,
-                                    ses.celldata['noise_level']<20,	
+                                    ses.celldata['noise_level']<params['maxnoiselevel'],	
                                     idx_nearby),axis=0))[0]
         
             X = neuraldata[:,idx_areax,irbhv]
@@ -1129,9 +1129,9 @@ my_savefig(fig,figdir,'RRR_V1PM_regressout_unlabeled_%dsessions' % (nSessions))
 # for ises,ses in enumerate(sessions):
 #     idx_T               = ses.trialdata['Orientation']==0
 #     idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
-#                             ses.celldata['noise_level']<20),axis=0))[0]
+#                             ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 #     idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
-#                             ses.celldata['noise_level']<20),axis=0))[0]
+#                             ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 
 #     if len(idx_areax)>nsampleneurons and len(idx_areay)>nsampleneurons:
 
@@ -1190,9 +1190,9 @@ model_CCA           = CCA(n_components=10,scale = False, max_iter = 1000)
 
 for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model'):    # iterate over sessions
     idx_areax       = np.where(np.all((ses.celldata['roi_name']=='V1',
-                                                ses.celldata['noise_level']<20),axis=0))[0]
+                                                ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     idx_areay       = np.where(np.all((ses.celldata['roi_name']=='PM',
-                                            ses.celldata['noise_level']<20),axis=0))[0]
+                                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     
     for iori,ori in enumerate(oris): # loop over orientations 
         idx_T               = ses.trialdata['Orientation']==ori
@@ -1272,9 +1272,9 @@ pca                 = PCA(n_components=25)
 
 for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model'):    # iterate over sessions
     idx_areax       = np.where(np.all((ses.celldata['roi_name']=='V1',
-                                                ses.celldata['noise_level']<20),axis=0))[0]
+                                                ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     idx_areay       = np.where(np.all((ses.celldata['roi_name']=='PM',
-                                            ses.celldata['noise_level']<20),axis=0))[0]
+                                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 
     for iori,ori in enumerate(oris): # loop over orientations 
         idx_T               = ses.trialdata['Orientation']==ori
@@ -1375,9 +1375,9 @@ pca                 = PCA(n_components=25)
 
 for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model'):    # iterate over sessions
     idx_areax       = np.where(np.all((ses.celldata['roi_name']=='V1',
-                                                ses.celldata['noise_level']<20),axis=0))[0]
+                                                ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     idx_areay       = np.where(np.all((ses.celldata['roi_name']=='PM',
-                                            ses.celldata['noise_level']<20),axis=0))[0]
+                                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 
     for iori,ori in enumerate(oris): # loop over orientations 
         idx_T               = ses.trialdata['Orientation']==ori

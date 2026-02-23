@@ -70,9 +70,9 @@ R2_ranks            = np.full((nranks,nmodelfits,kfold),np.nan)
 
 ses                 = sessions[0]
 idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
-                        ses.celldata['noise_level']<20),axis=0))[0]
+                        ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
-                        ses.celldata['noise_level']<20),axis=0))[0]
+                        ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 
 idx_T               = ses.trialdata['stimCond']==0
 
@@ -391,9 +391,9 @@ optim_rank          = np.full((nSessions,nStim,npopsizes,npopsizes),np.nan)
 
 for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for different population sizes'):
     idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     
     # for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
     for istim,stim in enumerate([0]): # loop over orientations 
@@ -475,10 +475,10 @@ optim_rank          = np.full((narealabelpairs,nSessions,nStim),np.nan)
 
 for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for different population sizes'):
     idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
-    if np.sum((ses.celldata['roi_name']=='V1') & (ses.celldata['noise_level']<20))<(nsampleneurons*2):
+    if np.sum((ses.celldata['roi_name']=='V1') & (ses.celldata['noise_level']<params['maxnoiselevel']))<(nsampleneurons*2):
         continue
     
-    if np.sum((ses.celldata['roi_name']=='PM') & (ses.celldata['noise_level']<20))<(nsampleneurons*2):
+    if np.sum((ses.celldata['roi_name']=='PM') & (ses.celldata['noise_level']<params['maxnoiselevel']))<(nsampleneurons*2):
         continue
 
     for iapl, arealabelpair in enumerate(arealabelpairs):
@@ -486,10 +486,10 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
         alx,aly = arealabelpair.split('-')
 
         idx_areax           = np.where(np.all((ses.celldata['roi_name']==alx,
-                                ses.celldata['noise_level']<20
+                                ses.celldata['noise_level']<params['maxnoiselevel']
                                 ),axis=0))[0]
         idx_areay           = np.where(np.all((ses.celldata['roi_name']==aly,
-                                ses.celldata['noise_level']<20
+                                ses.celldata['noise_level']<params['maxnoiselevel']
                                 ),axis=0))[0]
     
         if np.any(np.intersect1d(idx_areax,idx_areay)): #if interactions within one population:
@@ -598,9 +598,9 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
     # idx_T               = ses.trialdata['Orientation']==0
     idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
     idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     
     X                   = sessions[ises].respmat[np.ix_(idx_areax,idx_T)].T
     Y                   = sessions[ises].respmat[np.ix_(idx_areay,idx_T)].T
@@ -654,9 +654,9 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
     # idx_T               = ses.trialdata['Orientation']==0
     idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
     idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     
     X                   = sessions[ises].respmat[np.ix_(idx_areax,idx_T)].T
     Y                   = sessions[ises].respmat[np.ix_(idx_areay,idx_T)].T
@@ -719,9 +719,9 @@ kf              = KFold(n_splits=kfold,shuffle=True)
 
 for ises,ses in enumerate(sessions):
     idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 
     if len(idx_areax)>nsampleneurons and len(idx_areay)>nsampleneurons:
 
@@ -847,10 +847,10 @@ optim_rank          = np.full((narealabelpairs,nSessions),np.nan)
 
 for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for different population sizes'):
     idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
-    if np.sum((ses.celldata['roi_name']=='V1') & (ses.celldata['noise_level']<20))<(nsampleneurons*2):
+    if np.sum((ses.celldata['roi_name']=='V1') & (ses.celldata['noise_level']<params['maxnoiselevel']))<(nsampleneurons*2):
         continue
     
-    if np.sum((ses.celldata['roi_name']=='PM') & (ses.celldata['noise_level']<20))<(nsampleneurons*2):
+    if np.sum((ses.celldata['roi_name']=='PM') & (ses.celldata['noise_level']<params['maxnoiselevel']))<(nsampleneurons*2):
         continue
 
     for iapl, arealabelpair in enumerate(arealabelpairs):
@@ -858,10 +858,10 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
         alx,aly = arealabelpair.split('-')
 
         idx_areax           = np.where(np.all((ses.celldata['roi_name']==alx,
-                                ses.celldata['noise_level']<20
+                                ses.celldata['noise_level']<params['maxnoiselevel']
                                 ),axis=0))[0]
         idx_areay           = np.where(np.all((ses.celldata['roi_name']==aly,
-                                ses.celldata['noise_level']<20
+                                ses.celldata['noise_level']<params['maxnoiselevel']
                                 ),axis=0))[0]
     
         if np.any(np.intersect1d(idx_areax,idx_areay)): #if interactions within one population:
@@ -945,9 +945,9 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
     idx_T               = ses.trialdata['Orientation']==0
     # idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
     idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 
     if len(idx_areax)>nsampleneurons and len(idx_areay)>nsampleneurons:
 
@@ -1069,9 +1069,9 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
     # idx_T               = ses.trialdata['Orientation']==0
     idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
     idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 
     if len(idx_areax)>nsampleneurons and len(idx_areay)>nsampleneurons:
 

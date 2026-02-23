@@ -422,8 +422,8 @@ def mean_corr_areas_labeling(sessions,corr_type='trace_corr',absolute=False,
                                 idx_source = np.logical_and(idx_source,sessions[ises].celldata['redcell']==xRed)
                                 idx_target = np.logical_and(idx_target,sessions[ises].celldata['redcell']==yRed)
 
-                                idx_source = np.logical_and(idx_source,sessions[ises].celldata['noise_level']<20)
-                                idx_target = np.logical_and(idx_target,sessions[ises].celldata['noise_level']<20)
+                                idx_source = np.logical_and(idx_source,sessions[ises].celldata['noise_level']<params['maxnoiselevel'])
+                                idx_target = np.logical_and(idx_target,sessions[ises].celldata['noise_level']<params['maxnoiselevel'])
 
                                 # if 'rf_p_F' in sessions[ises].celldata:
                                 #     idx_source = np.logical_and(idx_source,sessions[ises].celldata['rf_p_F']<0.001)

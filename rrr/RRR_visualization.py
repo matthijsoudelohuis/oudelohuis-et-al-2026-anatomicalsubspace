@@ -76,9 +76,9 @@ idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
 idx_T               = ses.trialdata['Orientation']<=120
 # idx_T              = np.random.choice(range(len(idx_T)),1000,replace=False)
 idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
-                        ses.celldata['noise_level']<20),axis=0))[0]
+                        ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
-                        ses.celldata['noise_level']<20),axis=0))[0]
+                        ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 
 idx_areax_sub       = np.random.choice(idx_areax,nN,replace=False)
 idx_areay_sub       = np.random.choice(idx_areay,nM,replace=False)

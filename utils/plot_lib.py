@@ -13,7 +13,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 import warnings
-from scipy.stats import pearsonr,ttest_rel
+from scipy.stats import pearsonr,ttest_rel,wilcoxon
 import copy
 from statannotations.Annotator import Annotator
 
@@ -275,6 +275,15 @@ def add_paired_ttest_results(ax, x,y,pos=[0.2,0.1],fontsize=8):
 
     print('Paired t-test: p=%.3f' % (p))
     ax.text(pos[0],pos[1],'p<%s' % round_pval(p,return_ns=True),transform=ax.transAxes,ha='center',va='center',fontsize=fontsize,color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
+
+
+def add_paired_wilcoxon_results(ax, x,y,pos=[0.2,0.1],fontsize=8):
+    nas = np.logical_or(np.isnan(x), np.isnan(y))
+    t,p = wilcoxon(x[~nas], y[~nas])
+
+    print('Paired wilcoxon: p=%.3f' % (p))
+    ax.text(pos[0],pos[1],'p<%s' % round_pval(p,return_ns=True),transform=ax.transAxes,ha='center',va='center',fontsize=fontsize,color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
+
 
 def my_legend_strip(ax):
     leg = ax.get_legend()
@@ -605,8 +614,20 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
     cm = 1/2.54
     nranks              = R2_ranks.shape[2]
     nSessions           = R2_cv.shape[1]
-    arealabelpairs2     = [al.replace('-','-\n') for al in arealabelpairs]
+    # arealabelpairs2     = [al.replace('-','-\n') for al in arealabelpairs]
+    # arealabelpairs2     = [al.replace('-','-\n') for al in arealabelpairs]
+    alx1 = arealabeled_to_figlabels(arealabelpairs[0].split('-')[0])
+    alx2 = arealabeled_to_figlabels(arealabelpairs[1].split('-')[0])
+
     narealabelpairs     = len(arealabelpairs)
+
+    #filter only sessions for which both populations are present:
+    # R2_ranks_temp = R2_ranks[idx]
+    # np.any(~np.isnan(R2_ranks),axis=(0,1,3,4))
+    idx_ses = np.all(~np.isnan(R2_ranks),axis=(0,2,3,4))
+    R2_ranks[:,~idx_ses,:,:,:] = np.nan
+    R2_cv[:,~idx_ses] = np.nan
+    optim_rank[:,~idx_ses] = np.nan
 
     meanrankdata          = np.nanmean(R2_ranks,axis=(3,4))
     if normalize:
@@ -630,15 +651,17 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
         handles.append(shaded_error(np.arange(nranks),meanrankdata[iapl,:,:],color=clrs_arealabelpairs[iapl],
                                     alpha=0.25,error='sem',ax=ax))
 
-    ax.legend(handles,arealabelpairs,frameon=False,loc='lower right')
+    ax.legend(handles,[alx1,alx2],frameon=False,loc='lower right')
     my_legend_strip(ax)
     ax.set_xlabel('Rank')
     ax.set_ylabel('R2 (cv)')
     # ax.set_yticks(np.arange(0,0.3,0.05))
-    ax.set_yticks(np.arange(0,0.3,0.025))
-    ax.set_xticks(np.arange(0,20,5))
     ax.set_ylim([0,axlim])
+    ax.set_yticks(np.linspace(0,axlim,3))
+
+    # ax.set_yticks(np.arange(0,0.3,0.025))
     ax.set_xlim([0,nranks])
+    ax.set_xticks(np.arange(0,nranks,5))
     # ax.set_ylim([0,0.15])
 
     ax=axes[1]
@@ -657,23 +680,27 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
                 fmt='none',markersize=5)
 
     ax.plot([0,1],[0,1],color='k',linestyle='--',linewidth=0.5)
-    ax.set_xlabel(arealabelpairs[0])
-    ax.set_ylabel(arealabelpairs[1])
+    ax.set_xlabel(alx1)
+    ax.set_ylabel(alx2)
     add_paired_ttest_results(ax,R2_cv[0,:],R2_cv[1,:],pos=[0.7,0.1])
+    # add_paired_wilcoxon_results(ax,R2_cv[0,:],R2_cv[1,:],pos=[0.7,0.1])
     ax.set_title('R2 (cv)')
     ax.set_xlim([0,my_ceil(np.nanmax(R2_cv),2)])
     ax.set_ylim([0,my_ceil(np.nanmax(R2_cv),2)])
     ax.set_xticks(np.linspace(0,ax.get_xlim()[1],3))
     ax.set_yticks(np.linspace(0,ax.get_ylim()[1],3))
+    # ax_nticks(ax,4)
 
     ax=axes[2]
-    ax.scatter(optim_rank[0,:],optim_rank[1,:],color=clrs_arealabelpairs[0],marker='o',s=10,alpha=0.1)
+    ax.scatter(optim_rank[0,:],optim_rank[1,:],color=clrs_arealabelpairs[0],marker='o',s=10,alpha=0.8)
     ax.plot([0,20],[0,20],color='k',linestyle='--',linewidth=0.5)
-    ax.set_xlabel(arealabelpairs[0])
-    ax.set_ylabel(arealabelpairs[1])
+    ax.set_xlabel(alx1)
+    ax.set_ylabel(alx2)
     add_paired_ttest_results(ax,optim_rank[0,:],optim_rank[1,:],pos=[0.7,0.1])
-    ax.set_xticks(np.arange(0,20,5))
-    ax.set_yticks(np.arange(0,20,5))
+    # add_paired_wilcoxon_results(ax,optim_rank[0,:],optim_rank[1,:],pos=[0.7,0.1])
+    ax_nticks(ax,4)
+    # ax.set_xticks(np.arange(0,20,5))
+    # ax.set_yticks(np.arange(0,20,5))
     ax.set_xlim([0,my_ceil(np.nanmax(optim_rank),0)+1])
     ax.set_ylim([0,my_ceil(np.nanmax(optim_rank),0)+1])
     ax.set_title('Rank')
@@ -684,6 +711,8 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
 
 
 def arealabeled_to_figlabels(arealabeled):
+    if type(arealabeled) == str:
+        arealabeled = [arealabeled]
     # arealabeled_fig = np.array(np.shape(arealabeled),dtype=object)
     table       = {'V1unl': "$V1_{ND}$",
         'V1lab' : "$V1_{PM}$",

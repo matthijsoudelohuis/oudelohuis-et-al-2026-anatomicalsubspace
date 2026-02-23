@@ -38,8 +38,22 @@ set_plot_basic_config()
 cm      = 1/2.54  # centimeters in inches
 
 #%% Load the data:
-filename = 'RRR_Joint_labeled_FF_original_2026-02-19_16-58-15'
-filename = 'RRR_Joint_labeled_FF_original_2026-02-19_17-50-46'
+# filename = 'RRR_Joint_labeled_FF_original_2026-02-19_16-58-15'
+# filename = 'RRR_Joint_labeled_FF_original_2026-02-19_17-50-46'
+# filename = 'RRR_Joint_labeled_FF_original_2026-02-19_17-50-46'
+# filename = 'RRR_Joint_labeled_FF_original_2026-02-19_17-50-46'
+
+version = 'FF_original'
+filename = 'RRR_Joint_labeled_FF_original_2026-02-19_18-05-04'
+
+version = 'FF_behavout'
+filename = 'RRR_Joint_labeled_FF_behavout_2026-02-20_02-00-03'
+
+version = 'FB_original'
+filename = 'RRR_Joint_labeled_FB_original_2026-02-19_21-42-16'
+
+version = 'FB_behavout'
+# filename = 'RRR_Joint_labeled_FB_behavout_2026-02-20_06-11-04'
 
 #%% Save the data:
 data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
@@ -51,8 +65,13 @@ for key in data.keys():
 with open(os.path.join(resultdir,filename + '_params' + '.txt'), "rb") as myFile:
     params = pickle.load(myFile)
 
+nmodelfits = 100
+Nsub = 25
+dim_method = 'PCA_shuffle'
+
 #%% 
 clrs_arealabelpairs = ['grey','grey','red']
+narealabelpairs = 3
 fig, axes = plt.subplots(1,1,figsize=(6*cm,5*cm))
 # ax = axes[0]
 ax = axes
@@ -67,8 +86,7 @@ ax.set_ylabel('Cross-validated R2')
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
-# my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%dsessions' % (params['nSessions']))
-# my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_FF_%dsessions_behavout' % (params['nSessions']))
+my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_%dsessions' % (version,params['nSessions']))
 
 
 #%% Show figure for each of the arealabelpairs and each of the dataversions
@@ -129,7 +147,7 @@ elif diffmetric == 'difference':
     ax.axhline(y=0,color='grey',linestyle='--')
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
-my_savefig(fig,figdir,'RRR_R2_%s_rank_noiseconstant_%dneurons_%dsessions' % (diffmetric,Nsub,params['nSessions']))
+my_savefig(fig,figdir,'RRR_R2_%s_rank_noiseconstant_%s_%dsessions' % (diffmetric,version,params['nSessions']))
 # my_savefig(fig,figdir,'RRR_unique_cvR2_V1lab_V1unl_V1unl_%dneurons' % Nsub)
 
 #%% Are the dimensions which are enhanced in labeled cells unique or express in unlabeled cells as well?
@@ -173,7 +191,7 @@ ax.set_title('Difference')
 ax.plot([0,r2lim],[0,r2lim],color='grey',linestyle='--')
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
-my_savefig(fig,figdir,'R2_2dhist_%dneurons_%dsessions' % (Nsub,params['nSessions']))
+my_savefig(fig,figdir,'R2_2dhist_%s_%dsessions' % (version,params['nSessions']))
 
 #%% Are the dimensions which are enhanced in labeled cells unique or express in unlabeled cells as well?
 r2data = np.nanmean(R2_ranks,axis=(5)) #average across kfolds
@@ -182,6 +200,8 @@ nbins = 20
 r2lim = 0.05
 bins = np.linspace(0,r2lim,nbins)
 fig,axes = plt.subplots(1,params['nrankstoplot'],figsize=(params['nrankstoplot']*4*cm,4.5*cm),sharey=True,sharex=True)
+
+vmin,vmax = -.005,.005
 
 for r in range(params['nrankstoplot']):
     ax = axes[r]
@@ -202,13 +222,13 @@ for r in range(params['nrankstoplot']):
     # Apply gaussian filter
     sigma = [1, 1]
     diffdata = sp.ndimage.filters.gaussian_filter(diffdata, sigma, mode='constant')
-    vmin,vmax = -np.abs(np.nanpercentile(diffdata,99.5)),np.abs(np.nanpercentile(diffdata,99.5)) #diffdata.max()),diffdata.max()
+    # vmin,vmax = -np.abs(np.nanpercentile(diffdata,99.5)),np.abs(np.nanpercentile(diffdata,99.5)) #diffdata.max()),diffdata.max()
     ax.pcolor(bins,bins,diffdata,cmap='bwr',vmin=vmin,vmax=vmax)
     ax.set_title('Dimension %d' % (r+1))
     ax.plot([0,r2lim],[0,r2lim],color='grey',linestyle='--')
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
-my_savefig(fig,figdir,'R2_2dhist_perrank_%dneurons_%dsessions' % (Nsub,params['nSessions']))
+my_savefig(fig,figdir,'R2_2dhist_perrank_%s_%dsessions' % (version,params['nSessions']))
 
 
 #%% Which neurons are well predicted? Is this distribution Gaussian, or skewed?
@@ -227,7 +247,7 @@ ax.set_xlabel('Crossvalidated R2 per neuron')
 ax.set_yscale('log')
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=0)
-my_savefig(fig,figdir,'cvR2_pertargetneuron_%dneurons_%dsessions' % (Nsub,params['nSessions']))
+my_savefig(fig,figdir,'cvR2_pertargetneuron_%s_%dsessions' % (version,params['nSessions']))
 
 #%% Are specific neurons much better predicted by labeled cells? Is this distribution Gaussian, or skewed?
 data = np.nanmean(R2_ranks_neurons,axis=(6)) #average across kfolds
@@ -244,7 +264,7 @@ ax.legend(['unl-unl','lab-unl'],frameon=False)
 sns.despine(fig=fig,top=True,right=True,offset=0)
 ax.set_yscale('log')
 ax.set_xlabel('Crossvalidated R2 per neuron')
-my_savefig(fig,figdir,'cvR2_pertargetneuron_labunldiff_%dneurons' % Nsub)
+my_savefig(fig,figdir,'cvR2_pertargetneuron_labunldiff_%s_' % version)
 
 #%% Are the dimensions which are enhanced in labeled cells unique or express in unlabeled cells as well?
 r2data = np.nanmean(R2_ranks_neurons,axis=(3,6)) #average across kfolds
@@ -282,7 +302,7 @@ for r in range(params['nrankstoplot']):
     ax_nticks(ax,3)
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
-my_savefig(fig,figdir,'R2_neuron_2dhist_perrank_%dneurons_%dsessions' % (Nsub,params['nSessions']))
+my_savefig(fig,figdir,'R2_neuron_2dhist_perrank_%s_%dsessions' % (version,params['nSessions']))
 
 
 #%% Show the correlation between R2 predicted by labeled and unlabeled neurons:
@@ -351,7 +371,7 @@ ax.set_xlabel('dimension')
 ax.set_ylabel('Frac. pos. projection')
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
-my_savefig(fig,figdir,'Frac_pos_weightsout_%dneurons_%dsessions' % (Nsub,params['nSessions']))
+my_savefig(fig,figdir,'Frac_pos_weightsout_%s_%dsessions' % (version,params['nSessions']))
 
 #%% Are those dimensions that are enhanced in V1lab, dimensions that are leading to positive projections?
 r2data = np.nanmean(R2_ranks,axis=(5)) #average across kfolds
@@ -366,7 +386,7 @@ ydata = weightdata.flatten()
 xdata,ydata = filter_sharednan(xdata,ydata)
 sns.regplot(x=xdata,y=ydata,marker="o",color='red',ax=ax,scatter_kws={'s':5, 'facecolors': 'black', 'edgecolors': 'None'})
 ax.text(0.7,0.1,'r=%1.2f' % np.corrcoef(xdata.flatten(),ydata.flatten())[0,1],color='red',transform=ax.transAxes)
-ax.set_ylabel('Frac. pos. projection')
+ax.set_ylabel('Frac. pos. target weights')
 ax.set_xlabel('Diff. R2')
 ax.set_title('Lab-unl')
 ax = axes[1]
@@ -378,7 +398,7 @@ ax.text(0.7,0.1,'r=%1.2f' % np.corrcoef(xdata.flatten(),ydata.flatten())[0,1],co
 ax.set_title('Unl-unl')
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
-my_savefig(fig,figdir,'Corr_pos_weight_%dneurons_%dsessions' % (Nsub,params['nSessions']))
+my_savefig(fig,figdir,'Corr_pos_weight_%s_%dsessions' % (version,params['nSessions']))
 
 ##
 
@@ -399,7 +419,7 @@ ax.axhline(y=0.5,color='grey',linestyle='--')
 ax.set_xticks(np.arange(params['nranks'])[::3]+1)
 # ax.set_xlim([1,10])
 ax.set_xlabel('dimension')
-ax.set_ylabel('Frac. pos. projection')
+ax.set_ylabel('Frac. pos. source weights')
 
 ax = axes[1]
 data = frac_pos_weight_in #take the maximum across all kfolds
@@ -413,7 +433,7 @@ ax.axhline(y=0.5,color='grey',linestyle='--')
 ax.legend(handles,sourcearealabelpairs,frameon=False)
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
-my_savefig(fig,figdir,'Frac_pos_weightsin_%dneurons_%dsessions' % (Nsub,params['nSessions']))
+my_savefig(fig,figdir,'Frac_pos_weightsin_%s_%dsessions' % (version,params['nSessions']))
 
 
 #%% Are those dimensions that are enhanced in V1lab, dimensions that are resulting from positive weights of labeled cells?
@@ -454,7 +474,36 @@ for r in range(params['nrankstoplot']):
 
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
-my_savefig(fig,figdir,'hist_weight_in_%dneurons_%dsessions' % (Nsub,params['nSessions']))
+my_savefig(fig,figdir,'hist_weight_in_%s_%dsessions' % (version,params['nSessions']))
+
+# #%% Are those dimensions that are enhanced in V1lab, dimensions that are associated with positive source weights?
+# r2data = np.nanmean(R2_ranks,axis=(5)) #average across kfolds
+# r2data = np.diff(r2data[:,:,:,:params['nrankstoplot']+1,:],axis=3) #take the difference between rank r and r+1 (uniquely explained variance by rank r)
+
+# weightdata = np.nanmean(weights_in[:,:,:params['nrankstoplot'],:,:],axis=(4)) #average across kfolds
+
+# fig,axes = plt.subplots(1,2,figsize=(8*cm,4*cm),sharey=True,sharex=True)
+# ax = axes[0]
+# xdata = (r2data[3] - r2data[1]).flatten()
+# ydata = weightdata.flatten()
+# xdata,ydata = filter_sharednan(xdata,ydata)
+# sns.regplot(x=xdata,y=ydata,marker="o",color='red',ax=ax,scatter_kws={'s':5, 'facecolors': 'black', 'edgecolors': 'None'})
+# ax.text(0.7,0.1,'r=%1.2f' % np.corrcoef(xdata.flatten(),ydata.flatten())[0,1],color='red',transform=ax.transAxes)
+# ax.set_ylabel('Frac. pos. target weights')
+# ax.set_xlabel('Diff. R2')
+# ax.set_title('Lab-unl')
+# ax = axes[1]
+# xdata = (r2data[2] - r2data[1]).flatten()
+# ydata = weightdata.flatten()
+# xdata,ydata = filter_sharednan(xdata,ydata)
+# sns.regplot(x=xdata.flatten(),y=ydata.flatten(),marker="o",color='blue',ax=ax,scatter_kws={'s':5, 'facecolors': 'black', 'edgecolors': 'None'})
+# ax.text(0.7,0.1,'r=%1.2f' % np.corrcoef(xdata.flatten(),ydata.flatten())[0,1],color='blue',transform=ax.transAxes)
+# ax.set_title('Unl-unl')
+# plt.tight_layout()
+# sns.despine(fig=fig,top=True,right=True,offset=3)
+# # my_savefig(fig,figdir,'Corr_pos_weight_%s_%dsessions' % (version,params['nSessions']))
+
+
 
 #%% 
  #####  ####### #     # ######   #####  #######    #     # #######  #####  #     #    #    #     # ###  #####  #     #  #####  
@@ -479,7 +528,7 @@ ax.set_title('Source variance along\npredictive dimensions')
 ax.set_xticks(np.arange(params['nranks'])[::3]+1)
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
-my_savefig(fig,figdir,'RRR_source_aligned_R2_%dneurons_%dsessions' % (Nsub,params['nSessions']))
+my_savefig(fig,figdir,'RRR_source_aligned_R2_%sversion_%dsessions' % (version,params['nSessions']))
 
 
 #%% Are subpopulations that are more predictive lower dimensional?
@@ -495,7 +544,7 @@ ax.set_ylabel('R2')
 ax.text(0.1,0.05,'r=%1.2f' % np.corrcoef(xdata.flatten(),ydata.flatten())[0,1],color='blue',transform=ax.transAxes)
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
-my_savefig(fig,figdir,'RRR_dimensionality_%s_targetprediction_%dsessions' % (dim_method,params['nSessions']))
+my_savefig(fig,figdir,'RRR_dimensionality_%s_targetprediction_%s_%dsessions' % (dim_method,version,params['nSessions']))
 
 #%% Are subpopulations that are more predictive lower dimensional?
 fig, axes = plt.subplots(1,1,figsize=(4*cm,4*cm))
@@ -509,7 +558,7 @@ ax.set_xlabel('Source area')
 ax.set_ylabel(dim_method)
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
-my_savefig(fig,figdir,'RRR_dimensionality_%s_subpopulations_%dsessions' % (dim_method,params['nSessions']))
+my_savefig(fig,figdir,'RRR_dimensionality_%s_%s_subpopulations_%dsessions' % (dim_method,version,params['nSessions']))
 
 #%% Is the lower dimensionality of labeled population responsible for the increased predictive accuracy?
 fig, axes = plt.subplots(1,1,figsize=(5*cm,4*cm))
@@ -604,8 +653,8 @@ for ises,ses in enumerate(sessions):
         for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
             idx_T               = ses.trialdata['stimCond']==stim
        
-            X1                  = sessions[ises].tensor[np.ix_(idx_areax1_sub,idx_T,idx_resp)]
-            X2                  = sessions[ises].tensor[np.ix_(idx_areax2_sub,idx_T,idx_resp)]
+            X1                  = ses.tensor[np.ix_(idx_areax1_sub,idx_T,idx_resp)]
+            X2                  = ses.tensor[np.ix_(idx_areax2_sub,idx_T,idx_resp)]
 
             # reshape to neurons x time points
             X1                  = X1.reshape(len(idx_areax1_sub),-1).T

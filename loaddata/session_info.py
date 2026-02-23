@@ -167,7 +167,7 @@ def filter_sessions(protocols,load_behaviordata=False, load_calciumdata=False,
 
                 # FILTER DATA TO ONLY LOAD DATA BELOW NOISE LEVEL 20 (rupprecht et al. 2021)
                 if sesflag and filter_noiselevel and hasattr(ses, 'celldata'):
-                    cellfilter = np.array(ses.celldata['noise_level']<20)
+                    cellfilter = np.array(ses.celldata['noise_level']<params['maxnoiselevel'])
                     ses.cellfilter = np.logical_and(ses.cellfilter, cellfilter) if getattr(ses, 'cellfilter', None) is not None else cellfilter
                 
                 # Select based on whether session has subset of natural images with more than 2 repeats:
@@ -292,7 +292,7 @@ def load_resid_tensor(sessions,params,compute_respmat=True,subtract_mean_evoked=
             for area in areas:
                 idx_N    = np.where(np.all((ses.celldata['roi_name']==area,
                                             # idx_nearby,
-                                            ses.celldata['noise_level']<20),axis=0))[0]
+                                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 
                 for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations
                     idx_T               = sessions[ises].trialdata['stimCond']==stim

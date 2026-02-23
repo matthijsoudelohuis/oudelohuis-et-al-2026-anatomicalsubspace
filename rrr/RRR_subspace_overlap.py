@@ -9,7 +9,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 import math, os
 os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 from loaddata.get_data_folder import get_local_drive
-# os.chdir(os.path.join(get_local_drive(),'Python','molanalysis'))
 
 import numpy as np
 import pandas as pd
@@ -44,6 +43,8 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=s
 # sessions,nSessions   = filter_sessions(protocols = 'GN',only_all_areas=areas,filter_areas=areas)
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=areas,filter_areas=areas)
 # sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],filter_areas=areas)
+
+
 
 #%%  Load data properly:        
 # calciumversion = 'deconv'
@@ -1034,7 +1035,7 @@ for ises in range(nSessions):
 print('Number of cells in AL per session:')
 for ises in range(nSessions):
     print('%d: %d' % (ises,np.sum(np.all((sessions[ises].celldata['roi_name']=='AL',
-                                           sessions[ises].celldata['noise_level']<20),axis=0))))
+                                           sessions[ises].celldata['noise_level']<params['maxnoiselevel']),axis=0))))
 
 
 #%% Parameters for decoding from size-matched populations of V1 and PM labeled and unlabeled neurons
@@ -1067,11 +1068,11 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
         for icomb, (areax,areay,areaz) in enumerate(areacombs):
 
             idx_areax           = np.where(np.all((ses.celldata['roi_name']==areax,
-                                    ses.celldata['noise_level']<20),axis=0))[0]
+                                    ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
             idx_areay           = np.where(np.all((ses.celldata['roi_name']==areay,
-                                    ses.celldata['noise_level']<20),axis=0))[0]
+                                    ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
             idx_areaz           = np.where(np.all((ses.celldata['roi_name']==areaz,
-                                    ses.celldata['noise_level']<20),axis=0))[0]
+                                    ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
             
             if len(idx_areax)>=Nsub and len(idx_areay)>=Nsub and len(idx_areaz)>=Nsub:
                 for irbh,regress_out_behavior in enumerate([False,True]):

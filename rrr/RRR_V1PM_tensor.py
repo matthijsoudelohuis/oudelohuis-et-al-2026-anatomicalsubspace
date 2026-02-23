@@ -156,9 +156,9 @@ idx_resp        = np.where((t_axis>=0) & (t_axis<=1.5))[0]
 for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for session:'):
     idx_T               = np.ones(len(ses.trialdata['stimCond']),dtype=bool)
     idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
-                            ses.celldata['noise_level']<20),axis=0))[0]
+                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
     
     #on tensor during the response:
     X                   = sessions[ises].tensor[np.ix_(idx_areax,idx_T,idx_resp)].reshape(len(idx_areax),-1).T
