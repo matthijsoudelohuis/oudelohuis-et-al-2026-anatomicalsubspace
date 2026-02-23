@@ -39,14 +39,14 @@ set_plot_basic_config()
 cm      = 1/2.54  # centimeters in inches
 
 #%% Load the data:
-# version = 'FF_original'
-# filename = 'RRR_Joint_labeled_FF_original_2026-02-19_18-05-04'
+version = 'FF_original'
+filename = 'RRR_Joint_labeled_FF_original_2026-02-19_18-05-04'
 
 # version = 'FF_behavout'
 # filename = 'RRR_Joint_labeled_FF_behavout_2026-02-20_02-00-03'
 
-version = 'FB_original'
-filename = 'RRR_Joint_labeled_FB_original_2026-02-19_21-42-16'
+# version = 'FB_original'
+# filename = 'RRR_Joint_labeled_FB_original_2026-02-19_21-42-16'
 
 # version = 'FB_behavout'
 # filename = 'RRR_Joint_labeled_FB_behavout_2026-02-20_06-11-04'
@@ -807,8 +807,8 @@ set_plot_basic_config()
 cm      = 1/2.54  # centimeters in inches
 
 #%% Load the data:
-version = 'FF_original'
-filename = 'RRR_Joint_labeled_FF_original_2026-02-19_18-05-04'
+version = 'FB_original'
+filename = 'RRR_Joint_labeled_FB_original_2026-02-19_21-42-16'
 
 data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
 
@@ -817,8 +817,8 @@ for key in data.keys():
         print(key)  
         exec(key+'_orig'+'=data[key]')
 
-version = 'FF_behavout'
-filename = 'RRR_Joint_labeled_FF_behavout_2026-02-20_02-00-03'
+version = 'FB_behavout'
+filename = 'RRR_Joint_labeled_FB_behavout_2026-02-20_06-11-04'
 
 data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
 
@@ -863,7 +863,7 @@ add_stat_annotation(ax, 0,1, 0.11, p, h=0.01,color='grey',fontsize=10)
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=True)
-my_savefig(fig,figdir,'RRR_cvR2_FF_diffversions_%dsessions' % (params['nSessions']))
+my_savefig(fig,figdir,'RRR_cvR2_FB_diffversions_%dsessions' % (params['nSessions']))
 
 #%% Plot the R2 for each of the arealabelpairs and each of the dataversions
 # #Residual variance explained goes down with behavior or brainwide activity regressed out: 
@@ -875,7 +875,7 @@ for ialp,alp in enumerate(sourcearealabelpairs):
 # ax.errorbar(x=range(nversions),y=np.nanmean(R2_cv_2[1],axis=1),yerr=np.nanstd(R2_cv_2[1],axis=1)/np.sqrt(ndatasets),color=clrs_arealabelpairs[1])
 ax.set_ylabel("Performance $R^2$")
 ax.axhline(y=0,color='k',linestyle='--')
-ax.set_title('FF')
+ax.set_title('FB')
 
 ax = axes[1]
 for ialp,alp in enumerate(sourcearealabelpairs):
@@ -889,52 +889,52 @@ sns.despine(fig=fig,trim=True)
 # my_savefig(fig,figdir,'RRR_cvR2_FF_FB_labeled_diffversions_%dsessions' % (nSessions))
 
 
-
 #%% Define the ratio of R2 between V1PM and V1ND
-ratiodata_FF_unlunl       = (R2_cv_2[2] / R2_cv_2[1])*100-100 #Unl1 / Unl2
-ratiodata_FF_labunl       = (R2_cv_2[3] / R2_cv_2[1])*100-100 #Lab / Unl1
+ratiodata_FB_unlunl       = (R2_cv_2[2] / R2_cv_2[1])*100-100 #Unl1 / Unl2
+ratiodata_FB_labunl       = (R2_cv_2[3] / R2_cv_2[1])*100-100 #Lab / Unl1
 
 #%% Make the figure of the ratio:
 fig,axes = plt.subplots(1,1,sharex=True,sharey=True,figsize=(4*cm,5*cm))
 ax = axes
-ax.errorbar(x=range(nversions),y=np.nanmean(ratiodata_FF_labunl,axis=1),yerr=np.nanstd(ratiodata_FF_labunl,axis=1)/np.sqrt(np.shape(ratiodata_FF_labunl)[1]),
+ax.errorbar(x=range(nversions),y=np.nanmean(ratiodata_FB_labunl,axis=1),yerr=np.nanstd(ratiodata_FB_labunl,axis=1)/np.sqrt(np.shape(ratiodata_FB_labunl)[1]),
             color='red',marker='o',linestyle='-',capsize=0)
-ax.errorbar(x=range(nversions),y=np.nanmean(ratiodata_FF_unlunl,axis=1),yerr=np.nanstd(ratiodata_FF_unlunl,axis=1)/np.sqrt(np.shape(ratiodata_FF_unlunl)[1]),
+ax.errorbar(x=range(nversions),y=np.nanmean(ratiodata_FB_unlunl,axis=1),yerr=np.nanstd(ratiodata_FB_unlunl,axis=1)/np.sqrt(np.shape(ratiodata_FB_unlunl)[1]),
             color='grey',marker='o',linestyle='-',capsize=0)
 
-ax.legend(['$V1_{PM}$ vs. $V1_{ND1}$','$V1_{ND1}$ vs. $V1_{ND2}$'],
+# ax.legend(['$V1_{PM}$ vs. $V1_{ND1}$','$V1_{ND1}$ vs. $V1_{ND2}$'],
+ax.legend(['$PM_{V1}$ vs. $PM_{ND1}$','$PM_{ND1}$ vs. $PM_{ND2}$'],
 # ax.legend(['$V1_{ND1}$ vs. $V1_{ND2}$','$V1_{PM}$ vs. $V1_{ND1}$'],
           frameon=False,bbox_to_anchor=(1.08,0.8),fontsize=6)
 # my_legend_strip(ax)
 # ax.set_ylabel("Relative performance in %\n$V1_{PM}$ vs. $V1_{ND}$")
 ax.set_ylabel("Relative performance (%)")
 ax.axhline(y=0,color='k',linestyle='--')
-ax.set_title('FF')
+ax.set_title('FB')
 
 # for it,(ix,iy) in enumerate(np.array([[0,1],[0,2],[1,2]])):
 for it,(ix,iy) in enumerate(np.array([[0,1]])):
-    h,p = stats.ttest_rel(ratiodata_FF_unlunl[ix],ratiodata_FF_unlunl[iy],nan_policy='omit')
+    h,p = stats.ttest_rel(ratiodata_FB_unlunl[ix],ratiodata_FB_unlunl[iy],nan_policy='omit')
     add_stat_annotation(ax, ix,iy, 15, p, h=1,color='grey')
-    h,p = stats.ttest_rel(ratiodata_FF_labunl[ix],ratiodata_FF_labunl[iy],nan_policy='omit')
+    h,p = stats.ttest_rel(ratiodata_FB_labunl[ix],ratiodata_FB_labunl[iy],nan_policy='omit')
     add_stat_annotation(ax, ix,iy, 18, p, h=1,color='red')
 ax.set_xticks(range(nversions))
 ax.set_xticklabels(dataversions)
-ax.set_ylim([-5,20])
+# ax.set_ylim([-5,20])
 ax.set_xlim([-0.25,1.25])
 plt.tight_layout()
 sns.despine(fig=fig,trim=True)
-my_savefig(fig,figdir,'RRR_cvR2_ratio_FF_diffversions_%dsessions' % (params['nSessions']))
+my_savefig(fig,figdir,'RRR_cvR2_ratio_FB_diffversions_%dsessions' % (params['nSessions']))
 
 #%% Define the ratio of R2 between V1PM and V1ND
-ratiodata_FF_unlunl       = (optim_rank_2[2] / optim_rank_2[1])*100-100 #Unl1 / Unl2
-ratiodata_FF_labunl       = (optim_rank_2[3] / optim_rank_2[1])*100-100 #Lab / Unl1
+ratiodata_FB_unlunl       = (optim_rank_2[2] / optim_rank_2[1])*100-100 #Unl1 / Unl2
+ratiodata_FB_labunl       = (optim_rank_2[3] / optim_rank_2[1])*100-100 #Lab / Unl1
 
 #%% Make the figure of the ratio:
 fig,axes = plt.subplots(1,1,sharex=True,sharey=True,figsize=(4*cm,5*cm))
 ax = axes
-ax.errorbar(x=range(nversions),y=np.nanmean(ratiodata_FF_labunl,axis=1),yerr=np.nanstd(ratiodata_FF_labunl,axis=1)/np.sqrt(np.shape(ratiodata_FF_labunl)[1]),
+ax.errorbar(x=range(nversions),y=np.nanmean(ratiodata_FB_labunl,axis=1),yerr=np.nanstd(ratiodata_FB_labunl,axis=1)/np.sqrt(np.shape(ratiodata_FB_labunl)[1]),
             color='red',marker='o',linestyle='-',capsize=0)
-ax.errorbar(x=range(nversions),y=np.nanmean(ratiodata_FF_unlunl,axis=1),yerr=np.nanstd(ratiodata_FF_unlunl,axis=1)/np.sqrt(np.shape(ratiodata_FF_unlunl)[1]),
+ax.errorbar(x=range(nversions),y=np.nanmean(ratiodata_FB_unlunl,axis=1),yerr=np.nanstd(ratiodata_FB_unlunl,axis=1)/np.sqrt(np.shape(ratiodata_FB_unlunl)[1]),
             color='grey',marker='o',linestyle='-',capsize=0)
 
 ax.legend(['$V1_{PM}$ vs. $V1_{ND1}$','$V1_{ND1}$ vs. $V1_{ND2}$'],
@@ -944,13 +944,13 @@ ax.legend(['$V1_{PM}$ vs. $V1_{ND1}$','$V1_{ND1}$ vs. $V1_{ND2}$'],
 # ax.set_ylabel("Relative performance in %\n$V1_{PM}$ vs. $V1_{ND}$")
 ax.set_ylabel("Relative rank (%)")
 ax.axhline(y=0,color='k',linestyle='--')
-ax.set_title('FF')
+ax.set_title('FB')
 
 # for it,(ix,iy) in enumerate(np.array([[0,1],[0,2],[1,2]])):
 for it,(ix,iy) in enumerate(np.array([[0,1]])):
-    h,p = stats.ttest_rel(ratiodata_FF_unlunl[ix],ratiodata_FF_unlunl[iy],nan_policy='omit')
+    h,p = stats.ttest_rel(ratiodata_FB_unlunl[ix],ratiodata_FB_unlunl[iy],nan_policy='omit')
     add_stat_annotation(ax, ix,iy, 15, p, h=1,color='grey')
-    h,p = stats.ttest_rel(ratiodata_FF_labunl[ix],ratiodata_FF_labunl[iy],nan_policy='omit')
+    h,p = stats.ttest_rel(ratiodata_FB_labunl[ix],ratiodata_FB_labunl[iy],nan_policy='omit')
     add_stat_annotation(ax, ix,iy, 18, p, h=1,color='red')
 ax.set_xticks(range(nversions))
 ax.set_xticklabels(dataversions)
@@ -958,5 +958,5 @@ ax.set_ylim([-5,20])
 ax.set_xlim([-0.25,1.25])
 plt.tight_layout()
 sns.despine(fig=fig,trim=True)
-my_savefig(fig,figdir,'RRR_Rank_ratio_FF_diffversions_%dsessions' % (params['nSessions']))
+my_savefig(fig,figdir,'RRR_Rank_ratio_FB_diffversions_%dsessions' % (params['nSessions']))
 
