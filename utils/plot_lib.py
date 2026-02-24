@@ -23,10 +23,10 @@ def set_plot_basic_config():
 
 def my_savefig(fig,figdir,filename,formats=['pdf','png']):
     for fmt in formats:
-        if fmt=='png':
-            magfactor = 2
-            dims = fig.get_size_inches()
-            fig.set_size_inches(dims[0]*magfactor,dims[1]*magfactor)
+        # if fmt=='png':
+        #     magfactor = 1
+        #     dims = fig.get_size_inches()
+        #     fig.set_size_inches(dims[0]*magfactor,dims[1]*magfactor)
         fig.savefig(os.path.join(figdir,filename +  '.' + fmt),format = fmt,dpi=600,bbox_inches='tight',transparent=True)
     # fig.savefig(os.path.join(figdir,filename +  '.png'),format = 'png',dpi=300,bbox_inches='tight',transparent=True)
     # fig.savefig(os.path.join(figdir,filename +  '.pdf'),format = 'pdf',dpi=300,bbox_inches='tight',transparent=True)

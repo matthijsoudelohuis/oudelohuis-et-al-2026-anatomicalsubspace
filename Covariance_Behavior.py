@@ -7,7 +7,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
+os.chdir('c:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 from loaddata.get_data_folder import get_local_drive
 
 import numpy as np
@@ -19,6 +19,7 @@ from sklearn.impute import SimpleImputer
 from scipy.stats import zscore
 from skimage.measure import block_reduce
 from tqdm import tqdm
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
 from loaddata.session_info import filter_sessions,load_sessions
 from utils.psth import compute_tensor,compute_respmat
@@ -32,6 +33,11 @@ from params import load_params
 params = load_params()
 figdir = os.path.join(params['figdir'],'Behavior')
 
+#%% Plotting parameters:
+set_plot_basic_config()
+cm      = 1/2.54  # centimeters in inches
+
+
 #%% 
 session_list        = np.array([['LPE12223_2024_06_10'], #GR
                                 ['LPE10919_2023_11_06']]) #GR
@@ -40,6 +46,82 @@ sessions,nSessions   = filter_sessions(protocols = 'GR',only_session_id=session_
 #%% 
 areas = ['V1','PM','AL','RSP']
 sessions,nSessions   = filter_sessions(protocols = ['GR','GN'],only_all_areas=areas,min_lab_cells_V1=50,min_lab_cells_PM=50)
+
+
+#%%
+
+
+from sklearn.preprocessing import MinMaxScaler
+scaler = MinMaxScaler()
+
+ises                = 0 #which session to plot
+
+
+#%% Load data :        
+sessions[ises].load_data(load_behaviordata=True, load_calciumdata=True,load_videodata=True,
+                            calciumversion=params['calciumversion'])
+
+
+#%% Show mean population rate and behavioral variables:
+excerptlength = 100 #seconds to show in the plot, starting from the first trial onset
+t_start = sessions[ises].ts_F[10200]
+t_start = sessions[ises].ts_F[4600]
+t_stop = t_start+excerptlength
+linewidth = 0.6
+t_smooth = 1
+clrs = sns.color_palette('dark',n_colors=5)
+meanV1 = np.nanmean(sessions[ises].calciumdata.iloc[:,(sessions[ises].celldata['roi_name']=='V1').values],axis=1)
+meanPM = np.nanmean(sessions[ises].calciumdata.iloc[:,(sessions[ises].celldata['roi_name']=='PM').values],axis=1)
+
+from scipy.signal import savgol_filter
+
+fig,ax = plt.subplots(1,1,figsize=(10*cm,3*cm))
+
+#Mean V1:
+idx_T = np.where((sessions[ises].ts_F>=t_start) & (sessions[ises].ts_F<=t_stop))[0]
+
+plotdata = np.convolve(meanV1,np.ones(int(t_smooth * sessions[ises].sessiondata['fs'][0])),mode='same')
+plotdata = plotdata[idx_T]
+plotdata = scaler.fit_transform(plotdata.reshape(-1,1)).flatten()
+ax.plot(sessions[ises].ts_F[idx_T],plotdata,color=clrs[0],label='Mean V1 Activity',linewidth=linewidth)
+
+plotdata = np.convolve(meanPM,np.ones(int(t_smooth * sessions[ises].sessiondata['fs'][0])),mode='same')
+plotdata = plotdata[idx_T]
+plotdata = scaler.fit_transform(plotdata.reshape(-1,1)).flatten()
+ax.plot(sessions[ises].ts_F[idx_T],plotdata,color=clrs[1],label='Mean PM Activity',linewidth=linewidth)
+
+idx_T = np.where((sessions[ises].behaviordata['ts']>=t_start) & (sessions[ises].behaviordata['ts']<=t_stop))[0]
+plotdata = np.convolve(sessions[ises].behaviordata['runspeed'],np.ones(int(t_smooth * 100)),mode='same')
+plotdata = plotdata[idx_T]
+plotdata = scaler.fit_transform(plotdata.reshape(-1,1)).flatten()
+ax.plot(sessions[ises].behaviordata['ts'].iloc[idx_T],plotdata,color=clrs[2],label='Run speed',linewidth=linewidth)
+
+idx_T = np.where((sessions[ises].videodata['ts']>=t_start) & (sessions[ises].videodata['ts']<=t_stop))[0]
+plotdata = np.convolve(sessions[ises].videodata['pupil_area'],np.ones(int(t_smooth * sessions[ises].sessiondata['video_fs'][0])),mode='same')
+plotdata = plotdata[idx_T]
+plotdata = scaler.fit_transform(plotdata.reshape(-1,1)).flatten()
+ax.plot(sessions[ises].videodata['ts'].iloc[idx_T],plotdata,color=clrs[3],label='Pupil area',linewidth=linewidth)
+
+plotdata = np.convolve(sessions[ises].videodata['motionenergy'],np.ones(int(t_smooth * sessions[ises].sessiondata['video_fs'][0])),mode='same')
+plotdata = plotdata[idx_T]
+plotdata = scaler.fit_transform(plotdata.reshape(-1,1)).flatten()
+ax.plot(sessions[ises].videodata['ts'].iloc[idx_T],plotdata,color=clrs[4],label='Motion energy',linewidth=linewidth)
+
+ax.set_xlim(t_start,t_stop)
+ax.legend(loc='upper right',fontsize=6,frameon=False,bbox_to_anchor=(1.5,1))
+my_legend_strip(ax)
+# ax.set_ylabel('Normalized signal')
+ax.axis('off')
+sns.despine(fig,top=True,right=True,offset=3)
+plt.tight_layout()
+
+ax.add_artist(AnchoredSizeBar(ax.transData, 10,
+                "10 Sec", loc='upper right', frameon=False))
+
+my_savefig(fig,figdir,'Example_Behavior_V1PM_%s' % sessions[ises].session_id)
+
+
+
 
 #%%  Load data properly:        
 ## Construct tensor: 3D 'matrix' of N neurons by K trials by T time bins
@@ -85,6 +167,7 @@ for ises in tqdm(range(nSessions),total=nSessions,desc='Loading data'):
 #         # #   ####### #     # #       #       #          #       #     #  #   #  
 #        #   #  #     # #     # #       #       #          #     # #     #   # #   
 ####### #     # #     # #     # #       ####### #######     #####  #######    #    
+
 
 
 #%% Show example covariance matrix predicted by behavior:  

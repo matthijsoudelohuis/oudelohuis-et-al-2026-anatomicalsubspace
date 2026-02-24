@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from scipy.stats import zscore
 from scipy import stats
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
 from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
