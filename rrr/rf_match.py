@@ -70,14 +70,18 @@ sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=
 #%% Wrapper function to load the tensor data, 
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'])
 
+#%%
+params['rf_field'] = 'Fneu'
+params['rf_field'] = 'F'
+params['minrfR2']     = 0.2 #minimum R2 of receptive field fit to be included in analysis
 
 #%%
 for ses in sessions:
     # if 'rf_az_Fsmooth' in ses.celldata.columns:
-    if 'rf_az_Fneu' in ses.celldata.columns:
+    if 'rf_az_' + params['rf_field'] in ses.celldata.columns:
         # print(np.sum(~np.isnan( ses.celldata['rf_az_Fsmooth'])) / len(ses.celldata))
-        print(np.sum(~np.isnan( ses.celldata['rf_az_Fneu'])) / len(ses.celldata))
-        # print(np.sum(ses.celldata['rf_r2_Fneu']>0.2) / len(ses.celldata))
+        # print(np.sum(~np.isnan( ses.celldata['rf_az_' + params['rf_field']])) / len(ses.celldata))
+        print(np.sum(ses.celldata['rf_r2_' + params['rf_field']]>0.2) / len(ses.celldata))
 
 
 #%% Matched and mismatched receptive fields across areas: 
@@ -93,8 +97,7 @@ nbins_az            = len(binedges_az)
 nbins_el            = len(binedges_el)
 
 radius_match        = 15 #deg, radius of receptive field to match
-radius_mismatch     = 20 #deg, radius of receptive field to mismatch, if within this radius then excluded
-params['minrfR2']     = 0.2 #minimum R2 of receptive field fit to be included in analysis
+radius_mismatch     = 15 #deg, radius of receptive field to mismatch, if within this radius then excluded
 
 # arealabelpairs      = ['PMunl-V1unl']
 arealabelpairs      = ['V1unl-PMunl','PMunl-V1unl']
@@ -114,7 +117,7 @@ narealabelpairs     = len(arealabelpairs)
 nsampleneurons       = 25
 
 params['nranks']     = 20
-params['nmodelfits'] = 15 #number of times new neurons are resampled 
+params['nmodelfits'] = 50 #number of times new neurons are resampled 
 
 R2_cv               = np.full((nbins_az,nbins_el,narealabelpairs,2,nSessions),np.nan)
 optim_rank          = np.full((nbins_az,nbins_el,narealabelpairs,2,nSessions),np.nan)
@@ -130,13 +133,14 @@ for ises,ses in enumerate(sessions):
         continue
     # sesaz = ses.celldata['rf_az_Fsmooth'].to_numpy()
     # sesel = ses.celldata['rf_el_Fsmooth'].to_numpy()
-    sesaz = ses.celldata['rf_az_Fneu'].to_numpy()
-    sesel = ses.celldata['rf_el_Fneu'].to_numpy()
+    sesaz = ses.celldata['rf_az_' + params['rf_field']].to_numpy()
+    sesel = ses.celldata['rf_el_' + params['rf_field']].to_numpy()
+    sesrfr2 = ses.celldata['rf_r2_' + params['rf_field']].to_numpy()
 
     idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
 
     # idx_T               = ses.trialdata['stimCond']==stim
-    idx_T               = ses.trialdata['stimCond']==0
+    # idx_T               = ses.trialdata['stimCond']==0
 
     for iaz,az in tqdm(enumerate(binedges_az),total=nbins_az,desc='Matching RFs across areas, session %d/%d:' % (ises+1,nSessions)):
         for iel,el in enumerate(binedges_el):
@@ -160,45 +164,46 @@ for ises,ses in enumerate(sessions):
             
                 idx_y_match  = np.where(np.all((ses.celldata['arealabel']==aly,
                                 idx_match,
-                                ses.celldata['rf_r2_Fneu']>params['minrfR2'],
+                                sesrfr2>params['minrfR2'],
                                 ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
             
                 idx_y_mismatch  = np.where(np.all((ses.celldata['arealabel']==aly,
                                 idx_mismatch,
-                                ses.celldata['rf_r2_Fneu']>params['minrfR2'],
+                                sesrfr2>params['minrfR2'],
                                 ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 
                 if len(idx_x)<nsampleneurons or len(idx_y_match)<nsampleneurons or len(idx_y_mismatch)<nsampleneurons: #skip exec if not enough neurons in one of the populations
                     continue
+                print('%d neurons in X, %d neurons in Y match, %d neurons in Y mismatch' % (len(idx_x),len(idx_y_match),len(idx_y_mismatch)))
                 
+                # X                  = sessions[ises].tensor[np.ix_(idx_x,idx_T,idx_resp)]
+                # Y1                 = sessions[ises].tensor[np.ix_(idx_y_match,idx_T,idx_resp)]
+                # Y2                 = sessions[ises].tensor[np.ix_(idx_y_mismatch,idx_T,idx_resp)]
 
-                X                  = sessions[ises].tensor[np.ix_(idx_x,idx_T,idx_resp)]
-                Y1                 = sessions[ises].tensor[np.ix_(idx_y_match,idx_T,idx_resp)]
-                Y2                 = sessions[ises].tensor[np.ix_(idx_y_mismatch,idx_T,idx_resp)]
-
-                # reshape to neurons x time points
-                X                  = X.reshape(len(idx_x),-1).T
-                Y1                 = Y1.reshape(len(idx_y_match),-1).T
-                Y2                 = Y2.reshape(len(idx_y_mismatch),-1).T
+                # # reshape to neurons x time points
+                # X                  = X.reshape(len(idx_x),-1).T
+                # Y1                 = Y1.reshape(len(idx_y_match),-1).T
+                # Y2                 = Y2.reshape(len(idx_y_mismatch),-1).T
                 
-                R2_cv[iaz,iel,iapl,0,ises],optim_rank[iaz,iel,iapl,0,ises],R2_ranks[iaz,iel,iapl,0,ises,:,:,:]  = \
-                    RRR_wrapper(Y1, X, nN=nsampleneurons,nK=None,lam=params['lam'],nranks=params['nranks'],kfold=params['kfold'],nmodelfits=params['nmodelfits'])
+                # R2_cv[iaz,iel,iapl,0,ises],optim_rank[iaz,iel,iapl,0,ises],R2_ranks[iaz,iel,iapl,0,ises,:,:,:]  = \
+                #     RRR_wrapper(Y1, X, nN=nsampleneurons,nK=None,lam=params['lam'],nranks=params['nranks'],kfold=params['kfold'],nmodelfits=params['nmodelfits'])
 
-                R2_cv[iaz,iel,iapl,1,ises],optim_rank[iaz,iel,iapl,1,ises],R2_ranks[iaz,iel,iapl,1,ises,:,:,:]  = \
-                    RRR_wrapper(Y2, X, nN=nsampleneurons,nK=None,lam=params['lam'],nranks=params['nranks'],kfold=params['kfold'],nmodelfits=params['nmodelfits'])
+                # R2_cv[iaz,iel,iapl,1,ises],optim_rank[iaz,iel,iapl,1,ises],R2_ranks[iaz,iel,iapl,1,ises,:,:,:]  = \
+                #     RRR_wrapper(Y2, X, nN=nsampleneurons,nK=None,lam=params['lam'],nranks=params['nranks'],kfold=params['kfold'],nmodelfits=params['nmodelfits'])
 
 #%%
 print('Fraction of array filled with data: %.2f' % (np.sum(~np.isnan(R2_cv)) / R2_cv.size))
 
 #%% Plot the results: 
-fig,axes = plt.subplots(1,narealabelpairs,figsize=(narealabelpairs*2,3),sharey=True,sharex=True)
+fig,axes = plt.subplots(1,narealabelpairs,figsize=(6*cm,7*cm),sharey=True,sharex=True)
 if narealabelpairs == 1:
     axes = np.array([axes])
-
+# ises = 1
 for iapl, arealabelpair in enumerate(arealabelpairs):
     ax = axes[iapl]
 
     datatoplot = np.column_stack((R2_cv[:,:,iapl,0,:].flatten(),R2_cv[:,:,iapl,1,:].flatten())) 
+    # datatoplot = np.column_stack((R2_cv[:,:,iapl,0,ises].flatten(),R2_cv[:,:,iapl,1,ises].flatten())) 
     datatoplot = datatoplot[~np.isnan(datatoplot).any(axis=1)]
 
     ax.scatter(np.zeros(len(datatoplot))+np.random.randn(len(datatoplot))*0.05,datatoplot[:,0],color='k',marker='o',s=10)
@@ -208,13 +213,14 @@ for iapl, arealabelpair in enumerate(arealabelpairs):
     ax.errorbar(1.2,np.nanmean(datatoplot[:,1]),np.nanstd(datatoplot[:,1])/np.sqrt(nSessions),color='r',marker='o',zorder=10)
 
     add_paired_ttest_results(ax,datatoplot[:,0],datatoplot[:,1],pos=[0.5,0.8],fontsize=6)
+
     ax.set_xticks([0,1],['Match','Mismatch'])
     ax.set_ylabel('R2')
     ax.set_title('%s' % arealabelpair,fontsize=8)
 ax.set_ylim([0,my_ceil(np.nanmax(datatoplot),2)])
 sns.despine(top=True,right=True,offset=3)
 plt.tight_layout()
-my_savefig(fig,figdir,'RRR_R2_MatchMismatch_RF_%dsessions' % (nSessions),formats = ['png'])
+# my_savefig(fig,figdir,'RRR_R2_MatchMismatch_RF_%dsessions' % (nSessions),formats = ['png'])
 
 #%% Plot the results: 
 fig,axes = plt.subplots(1,narealabelpairs,figsize=(narealabelpairs*1.3,3),sharey=True,sharex=True)
@@ -241,7 +247,7 @@ for iapl, arealabelpair in enumerate(arealabelpairs):
 axes[0].set_ylabel('Rank')
 sns.despine(top=True,right=True,offset=3)
 plt.tight_layout()
-my_savefig(fig,figdir,'RRR_Rank_MatchMismatch_RF_%dsessions' % (nSessions),formats = ['png'])
+# my_savefig(fig,figdir,'RRR_Rank_MatchMismatch_RF_%dsessions' % (nSessions),formats = ['png'])
 
 
 #%%  Show percentage difference between match and mismatch:
