@@ -7,7 +7,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('c:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
+os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
@@ -72,7 +72,7 @@ sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=
 
 #%%
 params['rf_field'] = 'Fneu'
-params['rf_field'] = 'F'
+# params['rf_field'] = 'F'
 params['minrfR2']     = 0.2 #minimum R2 of receptive field fit to be included in analysis
 
 #%%
@@ -81,7 +81,7 @@ for ses in sessions:
     if 'rf_az_' + params['rf_field'] in ses.celldata.columns:
         # print(np.sum(~np.isnan( ses.celldata['rf_az_Fsmooth'])) / len(ses.celldata))
         # print(np.sum(~np.isnan( ses.celldata['rf_az_' + params['rf_field']])) / len(ses.celldata))
-        print(np.sum(ses.celldata['rf_r2_' + params['rf_field']]>0.2) / len(ses.celldata))
+        print(np.sum(ses.celldata['rf_r2_' + params['rf_field']]>params['minrfR2']) / len(ses.celldata))
 
 
 #%% Matched and mismatched receptive fields across areas: 
@@ -117,7 +117,7 @@ narealabelpairs     = len(arealabelpairs)
 nsampleneurons       = 25
 
 params['nranks']     = 20
-params['nmodelfits'] = 50 #number of times new neurons are resampled 
+params['nmodelfits'] = 100 #number of times new neurons are resampled 
 
 R2_cv               = np.full((nbins_az,nbins_el,narealabelpairs,2,nSessions),np.nan)
 optim_rank          = np.full((nbins_az,nbins_el,narealabelpairs,2,nSessions),np.nan)
@@ -159,7 +159,7 @@ for ises,ses in enumerate(sessions):
                 
                 idx_x       = np.where(np.all((ses.celldata['arealabel']==alx,
                                 idx_match,
-                                ses.celldata['rf_r2_Fneu']>params['minrfR2'],
+                                sesrfr2>params['minrfR2'],
                                 ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
             
                 idx_y_match  = np.where(np.all((ses.celldata['arealabel']==aly,
@@ -174,28 +174,28 @@ for ises,ses in enumerate(sessions):
 
                 if len(idx_x)<nsampleneurons or len(idx_y_match)<nsampleneurons or len(idx_y_mismatch)<nsampleneurons: #skip exec if not enough neurons in one of the populations
                     continue
-                print('%d neurons in X, %d neurons in Y match, %d neurons in Y mismatch' % (len(idx_x),len(idx_y_match),len(idx_y_mismatch)))
+                # print('%d neurons in X, %d neurons in Y match, %d neurons in Y mismatch' % (len(idx_x),len(idx_y_match),len(idx_y_mismatch)))
                 
-                # X                  = sessions[ises].tensor[np.ix_(idx_x,idx_T,idx_resp)]
-                # Y1                 = sessions[ises].tensor[np.ix_(idx_y_match,idx_T,idx_resp)]
-                # Y2                 = sessions[ises].tensor[np.ix_(idx_y_mismatch,idx_T,idx_resp)]
+                X                  = sessions[ises].tensor[np.ix_(idx_x,idx_T,idx_resp)]
+                Y1                 = sessions[ises].tensor[np.ix_(idx_y_match,idx_T,idx_resp)]
+                Y2                 = sessions[ises].tensor[np.ix_(idx_y_mismatch,idx_T,idx_resp)]
 
-                # # reshape to neurons x time points
-                # X                  = X.reshape(len(idx_x),-1).T
-                # Y1                 = Y1.reshape(len(idx_y_match),-1).T
-                # Y2                 = Y2.reshape(len(idx_y_mismatch),-1).T
+                # reshape to neurons x time points
+                X                  = X.reshape(len(idx_x),-1).T
+                Y1                 = Y1.reshape(len(idx_y_match),-1).T
+                Y2                 = Y2.reshape(len(idx_y_mismatch),-1).T
                 
-                # R2_cv[iaz,iel,iapl,0,ises],optim_rank[iaz,iel,iapl,0,ises],R2_ranks[iaz,iel,iapl,0,ises,:,:,:]  = \
-                #     RRR_wrapper(Y1, X, nN=nsampleneurons,nK=None,lam=params['lam'],nranks=params['nranks'],kfold=params['kfold'],nmodelfits=params['nmodelfits'])
+                R2_cv[iaz,iel,iapl,0,ises],optim_rank[iaz,iel,iapl,0,ises],R2_ranks[iaz,iel,iapl,0,ises,:,:,:]  = \
+                    RRR_wrapper(Y1, X, nN=nsampleneurons,nK=None,lam=params['lam'],nranks=params['nranks'],kfold=params['kfold'],nmodelfits=params['nmodelfits'])
 
-                # R2_cv[iaz,iel,iapl,1,ises],optim_rank[iaz,iel,iapl,1,ises],R2_ranks[iaz,iel,iapl,1,ises,:,:,:]  = \
-                #     RRR_wrapper(Y2, X, nN=nsampleneurons,nK=None,lam=params['lam'],nranks=params['nranks'],kfold=params['kfold'],nmodelfits=params['nmodelfits'])
+                R2_cv[iaz,iel,iapl,1,ises],optim_rank[iaz,iel,iapl,1,ises],R2_ranks[iaz,iel,iapl,1,ises,:,:,:]  = \
+                    RRR_wrapper(Y2, X, nN=nsampleneurons,nK=None,lam=params['lam'],nranks=params['nranks'],kfold=params['kfold'],nmodelfits=params['nmodelfits'])
 
 #%%
 print('Fraction of array filled with data: %.2f' % (np.sum(~np.isnan(R2_cv)) / R2_cv.size))
 
 #%% Plot the results: 
-fig,axes = plt.subplots(1,narealabelpairs,figsize=(6*cm,7*cm),sharey=True,sharex=True)
+fig,axes = plt.subplots(1,narealabelpairs,figsize=(5*cm,6*cm),sharey=True,sharex=True)
 if narealabelpairs == 1:
     axes = np.array([axes])
 # ises = 1
@@ -206,21 +206,50 @@ for iapl, arealabelpair in enumerate(arealabelpairs):
     # datatoplot = np.column_stack((R2_cv[:,:,iapl,0,ises].flatten(),R2_cv[:,:,iapl,1,ises].flatten())) 
     datatoplot = datatoplot[~np.isnan(datatoplot).any(axis=1)]
 
-    ax.scatter(np.zeros(len(datatoplot))+np.random.randn(len(datatoplot))*0.05,datatoplot[:,0],color='k',marker='o',s=10)
-    ax.errorbar(0.2,np.nanmean(datatoplot[:,0]),np.nanstd(datatoplot[:,0])/np.sqrt(nSessions),color='g',marker='o',zorder=10)
+    ax.scatter(np.zeros(len(datatoplot))+np.random.randn(len(datatoplot))*0.05,datatoplot[:,0],color='k',marker='o',s=2)
+    # ax.errorbar(-0.2,np.nanmean(datatoplot[:,0]),np.nanstd(datatoplot[:,0]),color='g',marker='o',zorder=10)
+    # ax.errorbar(-0.2,np.nanmean(datatoplot[:,0]),np.nanstd(datatoplot[:,0])/np.sqrt(nSessions),color='g',marker='o',zorder=10)
+    ax.boxplot(datatoplot[:,0],positions=[-0.4],widths=0.3,boxprops=dict(color='g',zorder=9),showfliers=False,showmeans=False,medianprops=dict(color='g',zorder=10))
+    ax.scatter(np.ones(len(datatoplot))+np.random.randn(len(datatoplot))*0.05,datatoplot[:,1],color='k',marker='o',s=2)
+    # ax.errorbar(1.2,np.nanmean(datatoplot[:,1]),np.nanstd(datatoplot[:,1])/np.sqrt(nSessions),color='r',marker='o',zorder=10)
+    # ax.errorbar(1.2,np.nanmean(datatoplot[:,1]),np.nanstd(datatoplot[:,1]),color='r',marker='o',zorder=10)
+    ax.boxplot(datatoplot[:,1],positions=[1.4],widths=0.3,boxprops=dict(color='r',zorder=9),showfliers=False,showmeans=False,medianprops=dict(color='r',zorder=10))   
 
-    ax.scatter(np.ones(len(datatoplot))+np.random.randn(len(datatoplot))*0.05,datatoplot[:,1],color='k',marker='o',s=10)
-    ax.errorbar(1.2,np.nanmean(datatoplot[:,1]),np.nanstd(datatoplot[:,1])/np.sqrt(nSessions),color='r',marker='o',zorder=10)
-
+    ax.plot(datatoplot.T,color='k',linewidth=0.5,alpha=0.5)
     add_paired_ttest_results(ax,datatoplot[:,0],datatoplot[:,1],pos=[0.5,0.8],fontsize=6)
 
     ax.set_xticks([0,1],['Match','Mismatch'])
-    ax.set_ylabel('R2')
-    ax.set_title('%s' % arealabelpair,fontsize=8)
+    if iapl == 0:
+        ax.set_ylabel('R$^2$')
+    ax.set_title('%s' % arealabelpair_to_figlabel(arealabelpair))
+ax.set_xlim(-0.6,1.6)
 ax.set_ylim([0,my_ceil(np.nanmax(datatoplot),2)])
+ax.set_ylim([0,my_ceil(np.nanmax(R2_cv),2)])
+ax.set_yticks(np.arange(0,my_ceil(np.nanmax(R2_cv),2)+0.01,0.03))
 sns.despine(top=True,right=True,offset=3)
 plt.tight_layout()
-# my_savefig(fig,figdir,'RRR_R2_MatchMismatch_RF_%dsessions' % (nSessions),formats = ['png'])
+my_savefig(fig,figdir,'RRR_R2_MatchMismatch_RF_%s_%dsessions' % (params['rf_field'],nSessions))
+
+#%%  Show percentage difference between match and mismatch:
+fig,axes = plt.subplots(1,1,figsize=(2*cm,3*cm),sharey=True,sharex=True)
+
+datatoplot = np.column_stack([R2_cv[:,:,iapl,0,:].flatten() / R2_cv[:,:,iapl,1,:].flatten() for iapl in range(narealabelpairs)]) 
+ax = axes
+
+for iapl, arealabelpair in enumerate(arealabelpairs):
+    # ax.errorbar(iapl+0.5,np.nanmean(datatoplot[iapl,:]),np.nanstd(datatoplot[iapl,:])/np.sqrt(nSessions),color=clrs_arealabelpairs[iapl],marker='o',zorder=10)
+    ax.errorbar(iapl,np.nanmean(datatoplot[:,iapl]),np.nanstd(datatoplot[:,iapl])/np.sqrt(nSessions),color=clrs_arealabelpairs[iapl],marker='o',zorder=10)
+ax.axhline(1, color='k', linewidth=0.5, linestyle='--')
+ax.set_ylabel('R$^2$ Ratio\n(match/mismatch)')
+ax_nticks(ax,4)
+sns.despine(top=True,right=True,offset=3)	
+ax.set_xticks(range(narealabelpairs))
+ax.set_xticklabels(arealabelpair_to_figlabel(arealabelpairs),rotation=45,ha='right',fontsize=8)
+ax.set_xlim([-0.25,1.25])
+# plt.tight_layout()
+# sns.despein
+my_savefig(fig,figdir,'R2_Ratio_MatchMismatch_RF_%s_%dsessions' % (params['rf_field'],nSessions))
+
 
 #%% Plot the results: 
 fig,axes = plt.subplots(1,narealabelpairs,figsize=(narealabelpairs*1.3,3),sharey=True,sharex=True)
@@ -249,12 +278,10 @@ sns.despine(top=True,right=True,offset=3)
 plt.tight_layout()
 # my_savefig(fig,figdir,'RRR_Rank_MatchMismatch_RF_%dsessions' % (nSessions),formats = ['png'])
 
-
 #%%  Show percentage difference between match and mismatch:
-
 fig,axes = plt.subplots(1,1,figsize=(2,3),sharey=True,sharex=True)
 
-datatoplot = np.column_stack([R2_cv[:,:,iapl,0,:].flatten() / R2_cv[:,:,iapl,1,:].flatten() for iapl in range(narealabelpairs)]) 
+datatoplot = np.column_stack([optim_rank[:,:,iapl,0,:].flatten() / optim_rank[:,:,iapl,1,:].flatten() for iapl in range(narealabelpairs)]) 
 ax = axes
 
 for iapl, arealabelpair in enumerate(arealabelpairs):
@@ -266,9 +293,7 @@ ax_nticks(ax,4)
 sns.despine(top=True,right=True,offset=3)	
 ax.set_xticks(range(narealabelpairs))
 ax.set_xticklabels(arealabelpairs,rotation=45,ha='right',fontsize=8)
-my_savefig(fig,savedir,'R2_Ratio_MatchMismatch_RF_%dsessions' % (nSessions),formats = ['png'])
-
-
+# my_savefig(fig,figdir,'R2_Ratio_MatchMismatch_RF_%dsessions' % (nSessions),formats = ['png'])
 
 
 #%% 

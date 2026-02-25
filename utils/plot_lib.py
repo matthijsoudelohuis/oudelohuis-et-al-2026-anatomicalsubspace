@@ -709,9 +709,8 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
     fig.tight_layout()
     return fig
 
-
 def arealabeled_to_figlabels(arealabeled):
-    if type(arealabeled) == str:
+    if type(arealabeled) == str or type(arealabeled) == np.str_:
         arealabeled = [arealabeled]
     # arealabeled_fig = np.array(np.shape(arealabeled),dtype=object)
     table       = {'V1unl': "$V1_{ND}$",
@@ -725,8 +724,16 @@ def arealabeled_to_figlabels(arealabeled):
         'ALunl':    "$AL_{ND}$",
         'ALlab' :   "$AL_{PM}$",
         'RSPunl' :  "$RSP_{ND}$",
-        'RSPlab' :  "$RSP_{PM}$"}
+        'RSPlab' :  "$RSP_{PM}$"
+        }
     return itemgetter(*arealabeled)(table)
+
+def arealabelpair_to_figlabel(arealabelpairs):
+    if type(arealabelpairs) == str or type(arealabelpairs) == np.str_:
+        arealabelpairs = [arealabelpairs]
+    
+    arealabelpair_fig = ['-'.join(arealabeled_to_figlabels([arealabel.split('-')[0],arealabel.split('-')[1]])) for arealabel in arealabelpairs]
+    return arealabelpair_fig
 
 ################################################################
 ## Series of function that spit out lists of colors for different combinations of 
