@@ -261,14 +261,14 @@ def load_resid_tensor(sessions,params,compute_respmat=True,subtract_mean_evoked=
         for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Subtracting mean response across trials'):
             N = len(sessions[ises].celldata)
             idx_resp = t_axis>0
-            for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
+            for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over stimuli 
                 idx_T               = sessions[ises].trialdata['stimCond']==stim
 
                 #on tensor during the response:
                 sessions[ises].tensor[np.ix_(range(N),idx_T,idx_resp)] -= np.nanmean(sessions[ises].tensor[np.ix_(range(N),idx_T,idx_resp)],axis=1,keepdims=True)
             
-            idx_resp = t_axis<0
-            for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
+            idx_resp = t_axis<=0 #subtract mean response of previous trial
+            for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over stimuli 
                 idx_T               = np.concatenate([[0],sessions[ises].trialdata['stimCond'][:-1]])==stim
 
                 #on tensor during the response:

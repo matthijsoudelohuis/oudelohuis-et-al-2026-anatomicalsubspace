@@ -31,6 +31,6 @@ def load_params():
                 
                 
                 filter_nearby = True,
-                radius = 30, # distance in um to look for nearby cells
+                radius = 50, # distance in um to look for nearby cells
                 )
     return params

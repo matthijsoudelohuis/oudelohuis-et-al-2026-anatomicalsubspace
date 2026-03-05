@@ -10,29 +10,19 @@ import math, os
 os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from scipy.stats import zscore
-from scipy import stats
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import pickle
 
 from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
-from utils.plot_lib import * #get all the fixed color schemes
-# from utils.corr_lib import *
 from utils.RRRlib import *
 from utils.regress_lib import *
-from utils.pair_lib import value_matching
-from utils.psth import compute_tensor
 from params import load_params
-from utils.corr_lib import filter_sharednan
 from datetime import datetime
 
 #%% Load parameters and settings:
 params = load_params()
-params['radius'] = 50
 
 # params['regress_behavout'] = True
 params['regress_behavout'] = False
@@ -92,7 +82,6 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=s
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
 # sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],min_lab_cells_V1=20,filter_noiselevel=True)
 report_sessions(sessions)
-sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=True)
 
 #%% Wrapper function to load the tensor data, 
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'])

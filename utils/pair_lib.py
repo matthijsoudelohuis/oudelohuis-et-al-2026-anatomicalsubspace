@@ -170,7 +170,7 @@ def value_matching(idx,group,values,bins=20,showFig=False):
     if showFig:
         values_new = values[idx_subsampled]
         group_new = group[idx_subsampled]
-        fig,ax = plt.subplots(1,2,sharey=True)
+        fig,ax = plt.subplots(1,2,figsize=(6,3),sharey=True)
         ax[0].set_title('Original distributions')
         for g in np.unique(group):  
             ax[0].hist(values[group==g],bins=bin_edges,label=g,alpha=0.5,histtype='step')  

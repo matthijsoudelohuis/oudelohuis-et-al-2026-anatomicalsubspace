@@ -6,33 +6,23 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 """
 
 #%% ###################################################
-import math, os
+import os
 os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from scipy.stats import zscore
-from scipy import stats
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import pickle
 
 from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
-from utils.plot_lib import * #get all the fixed color schemes
-# from utils.corr_lib import *
 from utils.RRRlib import *
 from utils.regress_lib import *
-from utils.pair_lib import value_matching
-from utils.psth import compute_tensor
 from params import load_params
-from utils.corr_lib import filter_sharednan
 from datetime import datetime
 
 #%% Load parameters and settings:
 params = load_params()
-params['radius'] = 50
 
 params['regress_behavout'] = True
 # params['regress_behavout'] = False
@@ -76,7 +66,7 @@ session_list        = np.array([
                                 ]) 
 
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list,
-                                       min_lab_cells_V1=20,filter_noiselevel=False)
+                                       filter_noiselevel=False)
 
 #%% Get all data 
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
