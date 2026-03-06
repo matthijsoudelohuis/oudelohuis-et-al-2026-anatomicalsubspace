@@ -110,8 +110,8 @@ R2_cv               = np.full((nvaluefields,narealabelpairs+1,nSessions,params['
 optim_rank          = np.full((nvaluefields,narealabelpairs+1,nSessions,params['nStim']),np.nan)
 R2_ranks            = np.full((nvaluefields,narealabelpairs+1,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
 
-# for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR across sessions'):
-for ises,ses in enumerate(sessions[:2]):
+for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR across sessions'):
+# for ises,ses in enumerate(sessions[:2]):
     if params['filter_nearby']:
         idx_nearby  = filter_nearlabeled(ses,radius=params['radius'])
     else:
@@ -203,7 +203,7 @@ for ises,ses in enumerate(sessions[:2]):
 
 #%% Find best rank and cvR2 at this rank:
 fixed_rank = None
-for ivalematch in range(nvaluefields):
+for ivaluematch in range(nvaluefields):
     for ises in range(nSessions):
         if np.any(~np.isnan(R2_ranks[0][0][ises])):
             for istim in range(params['nStim']):
@@ -214,9 +214,9 @@ for ivalematch in range(nvaluefields):
                     R2_cv[ivaluematch,2,ises,istim] = np.nanmean(R2_ranks[ivaluematch,2,ises,istim,rank,:,:])
                 else:
                     if not np.isnan(R2_ranks[0][0][ises][istim]).all():
-                        R2_cv[ivaluematch,0,ises,istim],optim_rank[0,ises,istim] = rank_from_R2(R2_ranks[ivaluematch,0,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-                        R2_cv[ivaluematch,1,ises,istim],optim_rank[1,ises,istim] = rank_from_R2(R2_ranks[ivaluematch,1,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-                        R2_cv[ivaluematch,2,ises,istim],optim_rank[2,ises,istim] = rank_from_R2(R2_ranks[ivaluematch,2,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
+                        R2_cv[ivaluematch,0,ises,istim],optim_rank[ivaluematch,0,ises,istim] = rank_from_R2(R2_ranks[ivaluematch,0,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
+                        R2_cv[ivaluematch,1,ises,istim],optim_rank[ivaluematch,1,ises,istim] = rank_from_R2(R2_ranks[ivaluematch,1,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
+                        R2_cv[ivaluematch,2,ises,istim],optim_rank[ivaluematch,2,ises,istim] = rank_from_R2(R2_ranks[ivaluematch,2,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
 
 #%%
 params['Nsub']     = Nsub
