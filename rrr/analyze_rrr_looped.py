@@ -6,18 +6,13 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 """
 
 #%% ###################################################
-import math, os
-
-from rrr.RRR_V1PM_labeling import R2_ranks
+import os
 os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
-from scipy.stats import zscore
 from scipy import stats
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import pickle
 from statsmodels.stats.multitest import multipletests
 
@@ -25,12 +20,9 @@ from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
 from utils.plot_lib import * #get all the fixed color schemes
 # from utils.corr_lib import *
-from utils.RRRlib import *
+# from utils.RRRlib import *
 from utils.regress_lib import *
-from utils.pair_lib import value_matching
-from utils.psth import compute_tensor
 from params import load_params
-from utils.corr_lib import filter_sharednan
 
 params = load_params()
 figdir = os.path.join(params['figdir'],'RRR','Labeling','Looped')
@@ -57,7 +49,7 @@ filename = 'RRR_Joint_looped_FB_behavout_2026-02-24_10-57-25'
 data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
 
 for key in data.keys():
-    if key not in ['R2_ranks_neurons']:
+    if key not in ['R2_ranks_neurons','weights_in']:
         print(key)  
         exec(key+'=data[key]')
 
@@ -92,34 +84,38 @@ ax.set_xticks(np.arange(params['nranks'])[::3]+1)
 ax.set_title('Example session')
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
-my_savefig(fig,figdir,'RRR_joint_looped_cvR2_ranks_%s_ExampleSesion' % (version))
+# my_savefig(fig,figdir,'RRR_joint_looped_cvR2_ranks_%s_ExampleSesion' % (version))
+
 
 #%% Show for all sessions:
-fig, axes = plt.subplots(1,1,figsize=(6*cm,5*cm))
-ax = axes
+import matplotlib.gridspec as gridspec
+
+fig = plt.figure(figsize=(6*cm,5*cm))
+gs = gridspec.GridSpec(3, 3)  # 3x3 grid
+
+ax = fig.add_subplot(gs[1:3, 0:2])     
+
 handles = []
 labels = []
 for isa,sourcearea in enumerate(sourcearealabelpairs):
     for ita,targetarea in enumerate(targetarealabelpairs):
         ymeantoplot = np.nanmean(R2_ranks[isa][ita],axis=(0,1,3,4))
         yerrortoplot = np.nanstd(R2_ranks[isa][ita],axis=(0,1,3,4)) / np.sqrt(params['nSessions']*params['nStim'])
-        handles.append(shaded_error(np.arange(params['nranks'])+1,ymeantoplot,yerrortoplot,ax=ax,color=clrs_arealabelpairs[isa,ita],alpha=0.3))
+        handles.append(shaded_error(np.arange(params['nranks']),ymeantoplot,yerrortoplot,ax=ax,color=clrs_arealabelpairs[isa,ita],alpha=0.3))
         labels.append(arealabeled_to_figlabels(sourcearea) + ' - ' + arealabeled_to_figlabels(targetarea))
+    
+        ax.plot(np.nanmean(optim_rank[isa][ita]),np.nanmean(R2_cv[isa][ita])+0.005,color=clrs_arealabelpairs[isa,ita],marker='v',markersize=5)
 
 leg = ax.legend(handles,labels,frameon=False, reverse=True)
 my_legend_strip(ax)
 ax.set_xlabel('Rank')
 ax.set_ylabel('Cross-validated R2')
+# ax.set_xticks(np.arange(params['nranks'])[::3]+1)
 ax.set_xticks(np.arange(params['nranks'])[::3]+1)
+ax.set_xlim([0,nrankstoplot])
 
-plt.tight_layout()
-sns.despine(fig=fig,trim=False,top=True,right=True)
-my_savefig(fig,figdir,'RRR_joint_looped_cvR2_ranks_%s_%dsessions' % (version,params['nSessions']))
-
-
-#%% Show Perofmrance R2 across stim and sessions:
-fig, axes = plt.subplots(1,1,figsize=(6*cm,5*cm))
-ax = axes
+#Show Performance R2 across stim and sessions:
+ax = fig.add_subplot(gs[1:3, 2])     
 handles = []
 labels = []
 
@@ -130,14 +126,13 @@ for isa,sourcearea in enumerate(sourcearealabelpairs):
         data[isa*ntargetarealabelpairs+ita] = R2_cv[isa][ita].flatten()
         labels[isa*ntargetarealabelpairs+ita] = arealabeled_to_figlabels(sourcearea) + ' - ' + arealabeled_to_figlabels(targetarea)
 
-ax.plot(np.arange(4),data,color='black',marker='o',linestyle='-',alpha=0.1,markersize=2)
-ax.errorbar(np.arange(4),np.nanmean(data,axis=1),yerr=np.nanstd(data,axis=1)/np.sqrt(params['nSessions']*params['nStim']),
-            color='black',marker='',linestyle='-',alpha=1,markersize=8)
-for i in range(4):
-    ax.plot(i,np.nanmean(data,axis=1)[i],color=clrs_arealabelpairs.flatten()[i],marker='o',linestyle='',alpha=1,markersize=8)
+# ax.plot(np.arange(4),data,color='black',marker='o',linestyle='-',alpha=0.1,markersize=2)
+# ax.errorbar(np.arange(4),np.nanmean(data,axis=1),yerr=np.nanstd(data,axis=1)/np.sqrt(params['nSessions']*params['nStim']),
+            # color='black',marker='',linestyle='-',alpha=1,markersize=8)
+# for i in range(4):
+#     ax.plot(i,np.nanmean(data,axis=1)[i],color=clrs_arealabelpairs.flatten()[i],marker='o',linestyle='',alpha=1,markersize=8)
 
-ax.set_ylabel('Cross-validated R2')
-ax.set_ylim([0,my_ceil(np.nanmax(data),2)])
+ax.set_axis_off()
 
 # Perform pairwise t-tests between the groups and multipletests correction for multiple comparisons:
 df = pd.DataFrame(data.T,columns=labels)
@@ -162,35 +157,21 @@ for icomb, comb in enumerate(combinations):
         x1 = np.where(labels == comb[0])[0][0]
         x2 = np.where(labels == comb[1])[0][0]
         add_stat_annotation(ax, x1, x2, np.nanpercentile(data,90) + icomb*0.0015, pvalues[icomb], h=0)
-        
-ax_nticks(ax,4)
-plt.tight_layout()
-sns.despine(fig=fig,trim=False,top=True,right=True,offset=3)
-ax.set_xticks(np.arange(4),labels,rotation=45,ha='right')
-my_savefig(fig,figdir,'RRR_joint_looped_cvR2_%s_%dsessions' % (version,params['nSessions']))
 
-#%% Show optimal rank across stim and sessions:
-fig, axes = plt.subplots(1,1,figsize=(6*cm,5*cm))
-ax = axes
-handles = []
+# Show optimal rank across stim and sessions:
+ax = fig.add_subplot(gs[0,0:2])     
 labels = []
-
 data = np.full((nsourcearealabelpairs*ntargetarealabelpairs,params['nSessions']*params['nStim']),np.nan)
 labels = np.full((nsourcearealabelpairs*ntargetarealabelpairs),'',dtype=object)
 for isa,sourcearea in enumerate(sourcearealabelpairs):
     for ita,targetarea in enumerate(targetarealabelpairs):
         data[isa*ntargetarealabelpairs+ita] = optim_rank[isa][ita].flatten()
         labels[isa*ntargetarealabelpairs+ita] = arealabeled_to_figlabels(sourcearea) + ' - ' + arealabeled_to_figlabels(targetarea)
-
-ax.plot(np.arange(4),data,color='black',marker='o',linestyle='-',alpha=0.1,markersize=2)
-ax.errorbar(np.arange(4),np.nanmean(data,axis=1),yerr=np.nanstd(data,axis=1)/np.sqrt(params['nSessions']*params['nStim']),
-            color='black',marker='',linestyle='-',alpha=1,markersize=8)
-for i in range(4):
-    ax.plot(i,np.nanmean(data,axis=1)[i],color=clrs_arealabelpairs.flatten()[i],marker='o',linestyle='',alpha=1,markersize=8)
-ax.set_ylabel('Optimal rank')
-ax.set_ylim([0,9])
-ax_nticks(ax,4)
-ax.set_yticks(np.arange(0,10,2))
+# ax.set_ylabel('Optimal rank')
+# ax.set_ylim([0,9])
+# ax_nticks(ax,4)
+# ax.set_yticks(np.arange(0,10,2))
+ax.set_axis_off()
 
 # Perform pairwise t-tests between the groups and multipletests correction for multiple comparisons:
 df = pd.DataFrame(data.T,columns=labels)
@@ -216,10 +197,136 @@ for icomb, comb in enumerate(combinations):
         x2 = np.where(labels == comb[1])[0][0]
         add_stat_annotation(ax, x1, x2,8 + icomb*0.2, pvalues[icomb], h=0)
 
-plt.tight_layout()
+# plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=3)
 ax.set_xticks(np.arange(4),labels,rotation=45,ha='right')
-my_savefig(fig,figdir,'RRR_joint_looped_optimrank_%s_%dsessions' % (version,params['nSessions']))
+my_savefig(fig,figdir,'RRR_joint_looped_%s_%dsessions' % (version,params['nSessions']))
+
+#%% Show for all sessions:
+# fig, axes = plt.subplots(1,1,figsize=(6*cm,5*cm))
+# ax = axes
+# handles = []
+# labels = []
+# for isa,sourcearea in enumerate(sourcearealabelpairs):
+#     for ita,targetarea in enumerate(targetarealabelpairs):
+#         ymeantoplot = np.nanmean(R2_ranks[isa][ita],axis=(0,1,3,4))
+#         yerrortoplot = np.nanstd(R2_ranks[isa][ita],axis=(0,1,3,4)) / np.sqrt(params['nSessions']*params['nStim'])
+#         handles.append(shaded_error(np.arange(params['nranks'])+1,ymeantoplot,yerrortoplot,ax=ax,color=clrs_arealabelpairs[isa,ita],alpha=0.3))
+#         labels.append(arealabeled_to_figlabels(sourcearea) + ' - ' + arealabeled_to_figlabels(targetarea))
+
+# leg = ax.legend(handles,labels,frameon=False, reverse=True)
+# my_legend_strip(ax)
+# ax.set_xlabel('Rank')
+# ax.set_ylabel('Cross-validated R2')
+# ax.set_xticks(np.arange(params['nranks'])[::3]+1)
+
+# plt.tight_layout()
+# sns.despine(fig=fig,trim=False,top=True,right=True)
+# # my_savefig(fig,figdir,'RRR_joint_looped_cvR2_ranks_%s_%dsessions' % (version,params['nSessions']))
+
+# #%% Show Performance R2 across stim and sessions:
+# fig, axes = plt.subplots(1,1,figsize=(6*cm,5*cm))
+# ax = axes
+# handles = []
+# labels = []
+
+# data = np.full((nsourcearealabelpairs*ntargetarealabelpairs,params['nSessions']*params['nStim']),np.nan)
+# labels = np.full((nsourcearealabelpairs*ntargetarealabelpairs),'',dtype=object)
+# for isa,sourcearea in enumerate(sourcearealabelpairs):
+#     for ita,targetarea in enumerate(targetarealabelpairs):
+#         data[isa*ntargetarealabelpairs+ita] = R2_cv[isa][ita].flatten()
+#         labels[isa*ntargetarealabelpairs+ita] = arealabeled_to_figlabels(sourcearea) + ' - ' + arealabeled_to_figlabels(targetarea)
+
+# ax.plot(np.arange(4),data,color='black',marker='o',linestyle='-',alpha=0.1,markersize=2)
+# ax.errorbar(np.arange(4),np.nanmean(data,axis=1),yerr=np.nanstd(data,axis=1)/np.sqrt(params['nSessions']*params['nStim']),
+#             color='black',marker='',linestyle='-',alpha=1,markersize=8)
+# for i in range(4):
+#     ax.plot(i,np.nanmean(data,axis=1)[i],color=clrs_arealabelpairs.flatten()[i],marker='o',linestyle='',alpha=1,markersize=8)
+
+# ax.set_ylabel('Cross-validated R2')
+# ax.set_ylim([0,my_ceil(np.nanmax(data),2)])
+
+# # Perform pairwise t-tests between the groups and multipletests correction for multiple comparisons:
+# df = pd.DataFrame(data.T,columns=labels)
+# from itertools import combinations
+# group_labels = df.columns
+# combinations = list(combinations(group_labels, 2))
+# pvalues = np.full((len(combinations)),np.nan)
+# xlocs = np.full((len(combinations),2),np.nan)
+
+# for icomb, comb in enumerate(combinations):
+#     group1 = df[comb[0]]
+#     group2 = df[comb[1]]
+#     t_stat, p_value = stats.ttest_rel(group1, group2, nan_policy='omit')
+    
+#     pvalues[icomb] = p_value
+#     xlocs[icomb] = [np.where(labels == comb[0])[0][0], np.where(labels == comb[1])[0][0]]
+# pvalues_corrected = multipletests(pvalues, method=params['multcomp_method'])[1]
+
+# for icomb, comb in enumerate(combinations):
+#     if pvalues_corrected[icomb] < 0.05:
+#         print(f"Comparison: {comb[0]} vs {comb[1]}, p-value: {pvalues[icomb]:.4f}")
+#         x1 = np.where(labels == comb[0])[0][0]
+#         x2 = np.where(labels == comb[1])[0][0]
+#         add_stat_annotation(ax, x1, x2, np.nanpercentile(data,90) + icomb*0.0015, pvalues[icomb], h=0)
+        
+# ax_nticks(ax,4)
+# plt.tight_layout()
+# sns.despine(fig=fig,trim=False,top=True,right=True,offset=3)
+# ax.set_xticks(np.arange(4),labels,rotation=45,ha='right')
+# # my_savefig(fig,figdir,'RRR_joint_looped_cvR2_%s_%dsessions' % (version,params['nSessions']))
+
+# #%% Show optimal rank across stim and sessions:
+# fig, axes = plt.subplots(1,1,figsize=(6*cm,5*cm))
+# ax = axes
+# handles = []
+# labels = []
+
+# data = np.full((nsourcearealabelpairs*ntargetarealabelpairs,params['nSessions']*params['nStim']),np.nan)
+# labels = np.full((nsourcearealabelpairs*ntargetarealabelpairs),'',dtype=object)
+# for isa,sourcearea in enumerate(sourcearealabelpairs):
+#     for ita,targetarea in enumerate(targetarealabelpairs):
+#         data[isa*ntargetarealabelpairs+ita] = optim_rank[isa][ita].flatten()
+#         labels[isa*ntargetarealabelpairs+ita] = arealabeled_to_figlabels(sourcearea) + ' - ' + arealabeled_to_figlabels(targetarea)
+
+# ax.plot(np.arange(4),data,color='black',marker='o',linestyle='-',alpha=0.1,markersize=2)
+# ax.errorbar(np.arange(4),np.nanmean(data,axis=1),yerr=np.nanstd(data,axis=1)/np.sqrt(params['nSessions']*params['nStim']),
+#             color='black',marker='',linestyle='-',alpha=1,markersize=8)
+# for i in range(4):
+#     ax.plot(i,np.nanmean(data,axis=1)[i],color=clrs_arealabelpairs.flatten()[i],marker='o',linestyle='',alpha=1,markersize=8)
+# ax.set_ylabel('Optimal rank')
+# ax.set_ylim([0,9])
+# ax_nticks(ax,4)
+# ax.set_yticks(np.arange(0,10,2))
+
+# # Perform pairwise t-tests between the groups and multipletests correction for multiple comparisons:
+# df = pd.DataFrame(data.T,columns=labels)
+# from itertools import combinations
+# group_labels = df.columns
+# combinations = list(combinations(group_labels, 2))
+# pvalues = np.full((len(combinations)),np.nan)
+# xlocs = np.full((len(combinations),2),np.nan)
+
+# for icomb, comb in enumerate(combinations):
+#     group1 = df[comb[0]]
+#     group2 = df[comb[1]]
+#     t_stat, p_value = stats.ttest_rel(group1, group2, nan_policy='omit')
+    
+#     pvalues[icomb] = p_value
+#     xlocs[icomb] = [np.where(labels == comb[0])[0][0], np.where(labels == comb[1])[0][0]]
+# pvalues_corrected = multipletests(pvalues, method=params['multcomp_method'])[1]
+
+# for icomb, comb in enumerate(combinations):
+#     if pvalues_corrected[icomb] < 0.05:
+#         print(f"Comparison: {comb[0]} vs {comb[1]}, p-value: {pvalues[icomb]:.4f}")
+#         x1 = np.where(labels == comb[0])[0][0]
+#         x2 = np.where(labels == comb[1])[0][0]
+#         add_stat_annotation(ax, x1, x2,8 + icomb*0.2, pvalues[icomb], h=0)
+
+# plt.tight_layout()
+# sns.despine(fig=fig,trim=False,top=True,right=True,offset=3)
+# ax.set_xticks(np.arange(4),labels,rotation=45,ha='right')
+# # my_savefig(fig,figdir,'RRR_joint_looped_optimrank_%s_%dsessions' % (version,params['nSessions']))
 
 
 #%% Identify which dimensions are particularly enhanced in labeled cells:

@@ -65,6 +65,62 @@ nmodelfits = 100
 Nsub = 25
 dim_method = 'PCA_shuffle'
 
+#%% Show the mean across sessions:
+clrs_arealabelpairs = ['grey','grey','red']
+
+nrankstoplot = 12
+xposrank = 10
+idxs = np.array([1,3])
+meanranks = np.nanmean(optim_rank,axis=(-1,-2))
+meanR2 = np.nanmean(R2_cv,axis=(-1,-2))
+
+fig, axes = plt.subplots(1,1,figsize=(5*cm,4.5*cm))
+ax = axes
+handles = []
+# ax.plot(np.nanmean(R2_ranks[idxs[0]],axis=(0,1,3,4)),label=arealabeled_to_figlabels(sourcearealabelpairs[idxs[0]-1]),
+#         color=clrs_arealabelpairs[idxs[0]-1],linewidth=2)
+# ax.plot(np.nanmean(R2_ranks[idxs[1]],axis=(0,1,3,4)),label=arealabeled_to_figlabels(sourcearealabelpairs[idxs[1]-1]),
+#         color=clrs_arealabelpairs[idxs[1]-1],linewidth=2)
+ydata = np.nanmean(R2_ranks[idxs[0]],axis=(3,4))
+ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
+handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
+                            color=clrs_arealabelpairs[idxs[0]-1],alpha=0.3))
+ydata = np.nanmean(R2_ranks[idxs[1]],axis=(3,4))
+ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
+handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
+                            color=clrs_arealabelpairs[idxs[1]-1],alpha=0.3))
+for idx in idxs:
+    ax.plot(meanranks[idx],meanR2[idx]+0.005,color=clrs_arealabelpairs[idx-1],marker='v',markersize=5)
+
+leg = ax.legend(handles,arealabeled_to_figlabels(sourcearealabelpairs[idxs-1]),frameon=False)
+my_legend_strip(ax)
+ax.set_xlabel('Rank')
+ax.set_ylabel('Cross-validated R2')
+
+x = optim_rank[idxs[0],:]
+y = optim_rank[idxs[1],:]
+nas = np.logical_or(np.isnan(x), np.isnan(y))
+t,p = ttest_rel(x[~nas], y[~nas])
+print('Paired t-test (Rank): p=%.3f' % (p))
+ax.plot(meanranks[idxs],np.repeat(np.nanmean(meanR2[idxs]),2)+0.007,linestyle='-',color='k',linewidth=2)
+ax.text(np.nanmean(meanranks),np.nanmean(meanR2[idxs])+0.009,'%s' % get_sig_asterisks(p,return_ns=True),ha='center',va='center',color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
+
+x = R2_cv[idxs[0],:]
+y = R2_cv[idxs[1],:]
+nas = np.logical_or(np.isnan(x), np.isnan(y))
+t,p = ttest_rel(x[~nas], y[~nas])
+print('Paired t-test (R2): p=%.3f' % (p))
+ax.plot([xposrank,xposrank],meanR2[idxs],linestyle='-',color='k',linewidth=2)
+ax.text(xposrank+0.5,np.nanmean(meanR2[idxs])+0.005,'%s' % get_sig_asterisks(p,return_ns=True),ha='center',va='center',color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
+
+ax.set_xticks(np.arange(params['nranks'])[::3]+1)
+ax.set_xlim([0,nrankstoplot])
+
+plt.tight_layout()
+sns.despine(fig=fig,trim=False,top=True,right=True)
+my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_%dsessions' % (version,params['nSessions']))
+
+
 #%% 
 clrs_arealabelpairs = ['grey','grey','red']
 narealabelpairs = 3

@@ -43,6 +43,7 @@ sessions,nSessions   = filter_sessions(protocols = 'GR',only_session_id=session_
 ises                = 0 #which session to plot
 sessions[ises].load_data(load_behaviordata=True, load_calciumdata=True,load_videodata=True,
                             calciumversion=params['calciumversion'])
+
 #%% Show mean population rate and behavioral variables:
 scaler = MinMaxScaler()
 excerptlength = 100 #seconds to show in the plot, starting from the first trial onset
@@ -240,7 +241,7 @@ Y_cov_joint[idx_tri_lower] = Y_cov_rrr_sort[idx_tri_lower]
 vmin,vmax       = np.nanpercentile(Y_cov_joint,15),np.nanpercentile(Y_cov_joint,90)
 
 fig,ax = plt.subplots(1,1,figsize=(8*cm,8*cm))
-ax.imshow(Y_cov_joint,vmin=vmin,vmax=vmax,cmap='magma')
+im = ax.imshow(Y_cov_joint,vmin=vmin,vmax=vmax,cmap='magma')
 # ax.pcolor(np.arange(N),np.arange(N),Y_cov_joint,vmin=vmin,vmax=vmax,cmap='magma')
 # ax.set_title('Covariance\n(original)')
 ax.set_yticks([])
@@ -260,9 +261,12 @@ ax.set_xlabel('Behavior-predicted',labelpad=3)
 ax.set_ylabel('Original',labelpad=3)
 ax.set_xticks([])
 ax.set_yticks([])
+fig.colorbar(im,ax=ax,shrink=0.3,location='right',label='Covariance')
+# fig.colorbar(cm.ScalarMappable(norm=norm, cmap='magma'),
+            #  ax=ax,shrink=0.6,location='right',label='R$^2$')
 ax.yaxis.set_label_position("right")
 plt.tight_layout()
-# my_savefig(fig,figdir,'CovarianceMatrix_V1PM_Behavior_%s' % sessions[ises].session_id)
+my_savefig(fig,figdir,'CovarianceMatrix_V1PM_Behavior_%s' % sessions[ises].session_id)
 
 
 #%% Make as separate figures: 

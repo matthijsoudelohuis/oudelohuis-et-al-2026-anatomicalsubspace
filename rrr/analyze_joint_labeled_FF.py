@@ -6,7 +6,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 """
 
 #%% ###################################################
-import math, os
+import os
 os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
@@ -15,23 +15,18 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from scipy.stats import zscore
 from scipy import stats
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import pickle
 
-from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
 from utils.plot_lib import * #get all the fixed color schemes
-# from utils.corr_lib import *
 from utils.RRRlib import *
 from utils.regress_lib import *
-from utils.pair_lib import value_matching
-from utils.psth import compute_tensor
 from params import load_params
 from utils.corr_lib import filter_sharednan
 
 params = load_params()
-# figdir = os.path.join(params['figdir'],'RRR','Labeling','FeedForward')
-figdir = os.path.join(params['figdir'],'RRR','Labeling','Feedback')
+figdir = os.path.join(params['figdir'],'RRR','Labeling','FeedForward')
+# figdir = os.path.join(params['figdir'],'RRR','Labeling','Feedback')
 resultdir = params['resultdir']
 
 #%% Plotting parameters:
@@ -39,8 +34,8 @@ set_plot_basic_config()
 cm      = 1/2.54  # centimeters in inches
 
 #%% Load the data:
-# version = 'FF_original'
-# filename = 'RRR_Joint_labeled_FF_original_2026-02-19_18-05-04'
+version = 'FF_original'
+filename = 'RRR_Joint_labeled_FF_original_2026-02-19_18-05-04'
 
 # version = 'FF_behavout'
 # filename = 'RRR_Joint_labeled_FF_behavout_2026-02-20_02-00-03'
@@ -51,11 +46,12 @@ filename = 'RRR_Joint_labeled_FB_original_2026-02-19_21-42-16'
 # version = 'FB_behavout'
 # filename = 'RRR_Joint_labeled_FB_behavout_2026-02-20_06-11-04'
 
-#%% Save the data:
+#%% Load the data:
 data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
 
 for key in data.keys():
-    if key not in ['R2_ranks_neurons']:
+    if key not in ['R2_ranks_neurons','weights_in']:
+    # if key in ['R2_ranks','R2_cv','optim_rank']:
         print(key)  
         exec(key+'=data[key]')
 
@@ -93,20 +89,56 @@ sns.despine(fig=fig,trim=False,top=True,right=True)
 my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_ExampleSesion' % (version))
 
 
-#%% 
+#%% Show the mean across sessions:
 clrs_arealabelpairs = ['grey','grey','red']
-narealabelpairs = 3
-fig, axes = plt.subplots(1,1,figsize=(6*cm,5*cm))
-# ax = axes[0]
+
+nrankstoplot = 12
+xposrank = 10
+idxs = np.array([1,3])
+meanranks = np.nanmean(optim_rank,axis=(-1,-2))
+meanR2 = np.nanmean(R2_cv,axis=(-1,-2))
+
+fig, axes = plt.subplots(1,1,figsize=(5*cm,4.5*cm))
 ax = axes
-# ax.plot(range(params['nranks']),np.nanmean(R2_ranks[0],axis=(0,1,3,4)),label='All neurons',color='grey')
-ax.plot(np.nanmean(R2_ranks[1],axis=(0,1,3,4)),label=sourcearealabelpairs[0],color=clrs_arealabelpairs[0])
-ax.plot(np.nanmean(R2_ranks[2],axis=(0,1,3,4)),label=sourcearealabelpairs[1],color=clrs_arealabelpairs[1])
-ax.plot(np.nanmean(R2_ranks[3],axis=(0,1,3,4)),label=sourcearealabelpairs[2],color=clrs_arealabelpairs[2])
-leg = ax.legend(frameon=False)
+handles = []
+# ax.plot(np.nanmean(R2_ranks[idxs[0]],axis=(0,1,3,4)),label=arealabeled_to_figlabels(sourcearealabelpairs[idxs[0]-1]),
+#         color=clrs_arealabelpairs[idxs[0]-1],linewidth=2)
+# ax.plot(np.nanmean(R2_ranks[idxs[1]],axis=(0,1,3,4)),label=arealabeled_to_figlabels(sourcearealabelpairs[idxs[1]-1]),
+#         color=clrs_arealabelpairs[idxs[1]-1],linewidth=2)
+ydata = np.nanmean(R2_ranks[idxs[0]],axis=(3,4))
+ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
+handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
+                            color=clrs_arealabelpairs[idxs[0]-1],alpha=0.3))
+ydata = np.nanmean(R2_ranks[idxs[1]],axis=(3,4))
+ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
+handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
+                            color=clrs_arealabelpairs[idxs[1]-1],alpha=0.3))
+for idx in idxs:
+    ax.plot(meanranks[idx],meanR2[idx]+0.005,color=clrs_arealabelpairs[idx-1],marker='v',markersize=5)
+
+leg = ax.legend(handles,arealabeled_to_figlabels(sourcearealabelpairs[idxs-1]),frameon=False)
 my_legend_strip(ax)
 ax.set_xlabel('Rank')
 ax.set_ylabel('Cross-validated R2')
+
+x = optim_rank[idxs[0],:]
+y = optim_rank[idxs[1],:]
+nas = np.logical_or(np.isnan(x), np.isnan(y))
+t,p = ttest_rel(x[~nas], y[~nas])
+print('Paired t-test (Rank): p=%.3f' % (p))
+ax.plot(meanranks[idxs],np.repeat(np.nanmean(meanR2[idxs]),2)+0.007,linestyle='-',color='k',linewidth=2)
+ax.text(np.nanmean(meanranks),np.nanmean(meanR2[idxs])+0.009,'%s' % get_sig_asterisks(p,return_ns=True),ha='center',va='center',color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
+
+x = R2_cv[idxs[0],:]
+y = R2_cv[idxs[1],:]
+nas = np.logical_or(np.isnan(x), np.isnan(y))
+t,p = ttest_rel(x[~nas], y[~nas])
+print('Paired t-test (R2): p=%.3f' % (p))
+ax.plot([xposrank,xposrank],meanR2[idxs],linestyle='-',color='k',linewidth=2)
+ax.text(xposrank+0.5,np.nanmean(meanR2[idxs])+0.005,'%s' % get_sig_asterisks(p,return_ns=True),ha='center',va='center',color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
+
+ax.set_xticks(np.arange(params['nranks'])[::3]+1)
+ax.set_xlim([0,nrankstoplot])
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
@@ -136,7 +168,6 @@ diffmetric = 'ratio' #'difference'
 # diffmetric = 'difference' #'difference'
 noise_constant = 1e-3
 # noise_constant = 0
-nrankstoplot = 12
 fig,axes = plt.subplots(1,1,figsize=(4*cm,4*cm),sharey=True,sharex=True)
 ax = axes
 handles = []
@@ -215,7 +246,7 @@ elif diffmetric == 'difference':
     ax.axhline(y=0,color='grey',linestyle='--')
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
-my_savefig(fig,figdir,'RRR_R2_%s_rank_noiseconstant_%s_%dsessions' % (diffmetric,version,params['nSessions']))
+# my_savefig(fig,figdir,'RRR_R2_%s_rank_noiseconstant_%s_%dsessions' % (diffmetric,version,params['nSessions']))
 # my_savefig(fig,figdir,'RRR_unique_cvR2_V1lab_V1unl_V1unl_%dneurons' % Nsub)
 
 #%% Are the dimensions which are enhanced in labeled cells unique or express in unlabeled cells as well?
@@ -297,6 +328,13 @@ for r in range(params['nrankstoplot']):
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
 my_savefig(fig,figdir,'R2_2dhist_perrank_%s_%dsessions' % (version,params['nSessions']))
+
+#%% Load the ranks per target neuron:
+
+
+
+
+
 
 
 #%% Which neurons are well predicted? Is this distribution Gaussian, or skewed?

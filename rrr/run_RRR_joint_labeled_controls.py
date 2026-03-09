@@ -18,6 +18,7 @@ from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
 from utils.RRRlib import *
 from utils.regress_lib import *
+from utils.tuning import compute_tuning_wrapper
 from utils.pair_lib import value_matching
 from params import load_params
 from datetime import datetime
@@ -85,7 +86,11 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=on
 report_sessions(sessions)
 
 #%% Wrapper function to load the tensor data, 
-[sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'])
+[sessions,t_axis] = load_resid_tensor(sessions,params,compute_respmat=True,
+                                      regressbehavout=params['regress_behavout'])
+
+#%% Compute tuning metrics
+sessions = compute_tuning_wrapper(sessions)
 
 #%% 
 narealabelpairs     = len(sourcearealabelpairs)
@@ -93,15 +98,15 @@ narealabelpairs     = len(sourcearealabelpairs)
 Nsub                = 25
 nranks              = 20 #number of ranks of RRR to be evaluated
 nmodelfits          = 100
-params['radius'] = 30
-# params['dim_method'] = 'pca_shuffle'
+params['radius']    = 30
 params['nStim']     = 16
 
 idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
 ntimebins           = len(idx_resp)
 
+# valuematch_fields   = np.array(['depth','radius','noise_level','event_rate','skew','meanF'])
+valuematch_fields   = np.array(['radius','noise_level','event_rate','gOSI'])
 
-valuematch_fields   = np.array(['noise_level','event_rate','skew','meanF'])
 nvaluefields        = len(valuematch_fields)
 # valuematching       = None
 nmatchbins          = 10
@@ -130,9 +135,9 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR acros
                                                 idx_nearby
                                                 ),axis=0))[0]
 
-        if len(idx_areax1)<Nsub or len(idx_areax2)<Nsub or len(idx_areay)<narealabelpairs*Nsub: #skip exec if not enough neurons in one of the populations
+        if not valuematching in ses.celldata.keys():
             continue
-
+        
         #Get value to match from celldata:
         values      = sessions[ises].celldata[valuematching].to_numpy()
         idx_joint   = np.concatenate((idx_areax1,idx_areax2))
@@ -141,10 +146,13 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR acros
         idx_areax1   = np.intersect1d(idx_areax1,idx_sub) #recover subset from idx_joint
         idx_areax2   = np.intersect1d(idx_areax2,idx_sub)
 
+        if len(idx_areax1)<Nsub or len(idx_areax2)<Nsub or len(idx_areay)<narealabelpairs*Nsub: #skip exec if not enough neurons in one of the populations
+            continue
+
         # for imf in tqdm(range(nmodelfits),total=nmodelfits,desc='Fitting RRR model for session %d/%d' % (ises+1,nSessions)):
         for imf in range(nmodelfits):
             idx_areax1_sub       = np.random.choice(idx_areax1,Nsub,replace=False)
-            idx_areax2_sub       = np.random.choice(np.setdiff1d(idx_areax2,idx_areax1_sub),Nsub,replace=False)
+            idx_areax2_sub       = np.random.choice(idx_areax2,Nsub,replace=False)
             idx_areay_sub        = np.random.choice(idx_areay,Nsub*narealabelpairs,replace=False)
 
             for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
@@ -213,7 +221,7 @@ for ivaluematch in range(nvaluefields):
                     R2_cv[ivaluematch,1,ises,istim] = np.nanmean(R2_ranks[ivaluematch,1,ises,istim,rank,:,:])
                     R2_cv[ivaluematch,2,ises,istim] = np.nanmean(R2_ranks[ivaluematch,2,ises,istim,rank,:,:])
                 else:
-                    if not np.isnan(R2_ranks[0][0][ises][istim]).all():
+                    if not np.isnan(R2_ranks[ivaluematch][0][ises][istim]).all():
                         R2_cv[ivaluematch,0,ises,istim],optim_rank[ivaluematch,0,ises,istim] = rank_from_R2(R2_ranks[ivaluematch,0,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
                         R2_cv[ivaluematch,1,ises,istim],optim_rank[ivaluematch,1,ises,istim] = rank_from_R2(R2_ranks[ivaluematch,1,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
                         R2_cv[ivaluematch,2,ises,istim],optim_rank[ivaluematch,2,ises,istim] = rank_from_R2(R2_ranks[ivaluematch,2,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])

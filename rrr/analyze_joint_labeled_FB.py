@@ -6,7 +6,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 """
 
 #%% ###################################################
-import math, os
+import os
 os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
@@ -15,17 +15,13 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from scipy.stats import zscore
 from scipy import stats
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import pickle
 
 from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
 from utils.plot_lib import * #get all the fixed color schemes
 # from utils.corr_lib import *
-from utils.RRRlib import *
 from utils.regress_lib import *
-from utils.pair_lib import value_matching
-from utils.psth import compute_tensor
 from params import load_params
 from utils.corr_lib import filter_sharednan
 
@@ -45,13 +41,13 @@ filename = 'RRR_Joint_labeled_FF_original_2026-02-19_18-05-04'
 # version = 'FF_behavout'
 # filename = 'RRR_Joint_labeled_FF_behavout_2026-02-20_02-00-03'
 
-# version = 'FB_original'
-# filename = 'RRR_Joint_labeled_FB_original_2026-02-19_21-42-16'
+version = 'FB_original'
+filename = 'RRR_Joint_labeled_FB_original_2026-02-19_21-42-16'
 
 # version = 'FB_behavout'
 # filename = 'RRR_Joint_labeled_FB_behavout_2026-02-20_06-11-04'
 
-#%% Save the data:
+#%% Load the data:
 data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
 
 for key in data.keys():
@@ -215,7 +211,7 @@ elif diffmetric == 'difference':
     ax.axhline(y=0,color='grey',linestyle='--')
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
-my_savefig(fig,figdir,'RRR_R2_%s_rank_noiseconstant_%s_%dsessions' % (diffmetric,version,params['nSessions']))
+# my_savefig(fig,figdir,'RRR_R2_%s_rank_noiseconstant_%s_%dsessions' % (diffmetric,version,params['nSessions']))
 # my_savefig(fig,figdir,'RRR_unique_cvR2_V1lab_V1unl_V1unl_%dneurons' % Nsub)
 
 #%% Are the dimensions which are enhanced in labeled cells unique or express in unlabeled cells as well?
@@ -259,7 +255,7 @@ ax.set_title('Difference')
 ax.plot([0,r2lim],[0,r2lim],color='grey',linestyle='--')
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
-my_savefig(fig,figdir,'R2_2dhist_%s_%dsessions' % (version,params['nSessions']))
+# my_savefig(fig,figdir,'R2_2dhist_%s_%dsessions' % (version,params['nSessions']))
 
 #%% Are the dimensions which are enhanced in labeled cells unique or express in unlabeled cells as well?
 r2data = np.nanmean(R2_ranks,axis=(5)) #average across kfolds
