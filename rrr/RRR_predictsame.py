@@ -55,13 +55,13 @@ session_list        = np.array([
                                 ]) 
 
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list,
-                                       min_lab_cells_V1=20,filter_noiselevel=False)
+                                       min_lab_cells_V1=20)
 # np.sum(np.logical_and(sessions[0].celldata['roi_name']=='V1',sessions[0].celldata['redcell']==1))
 
 #%% Get all data 
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],filter_noiselevel=False)
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
-# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],min_lab_cells_V1=20,filter_noiselevel=True)
+sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
+sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],min_lab_cells_V1=20,min_lab_cells_PM=20)
+# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],min_lab_cells_V1=20,only_all_areas=['V1','PM','AL'])
 report_sessions(sessions)
 sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=True)
 
@@ -72,42 +72,41 @@ sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=
 
 
 #%% Do RRR of V1 and PM labeled and unlabeled neurons
-sourcearealabelpairs = ['V1unl','V1lab']
-targetarealabelpair = 'PMunl'
+version = 'FF'
+if version == 'FF': 
+    sourcearealabelpairs = ['V1unl','V1lab']
+    crossarealabelpairs  = ['V1unl','V1lab','ALunl']
+    targetarealabelpair = 'PMunl'
+elif version == 'FB': 
+    sourcearealabelpairs = ['PMunl','PMlab']
+    crossarealabelpairs  = ['PMunl','PMlab','ALunl']
+    targetarealabelpair = 'V1unl'
 
-# clrs_arealabelpairs = get_clr_area_labeled(sourcearealabelpairs)
-narealabelpairs     = len(sourcearealabelpairs)
+nsourcearealabelpairs   = len(sourcearealabelpairs)
+ncrossarealabelpairs    = len(crossarealabelpairs)
 
 Nsub                = 25
 Nsub_pops           = np.array([5,10,15,20,25,30,35,40,45,50])
-# Nsub_pops           = np.array([10,20,30,40,50])
 # Nsub_pops           = np.array([10,20,30,50,100])
-# Nsub_pops           = np.array([10,50,100])
+Nsub_pops           = np.array([5,10,25,50,100])
 
-Nsub                = 20
-Nsub_pops           = np.array([5,10,15,20,25,30,35,40])
+# Nsub                = 25
+# Nsub_pops           = np.array([5,10,15,20,25,30,40,50,75,100,150,200,250,300])
+# Nsub_pops           = np.array([5,10,15,20,25,30,40,50,75,100,150,200,250,300])
 
 nsub_pops           = len(Nsub_pops)
-nranks              = 20 #number of ranks of RRR to be evaluated
-nmodelfits          = 100
+nranks              = 10 #number of ranks of RRR to be evaluated
+nmodelfits          = 50
 
 nStim               = 16
 
 idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
 ntimebins           = len(idx_resp)
-# minsampleneurons    = 10
 
 fixed_rank          = 4
 
-# R2_cv               = np.full((narealabelpairs,nSessions,nStim),np.nan) #dim1: 3 = allneurons, V1unl, V1lab separately
-# optim_rank          = np.full((narealabelpairs,nSessions,nStim),np.nan)
-
-# R2_Y1_X1            = np.full((narealabelpairs,nSessions,nStim,nmodelfits,params['kfold']),np.nan)
-# R2_X1_Z            = np.full((narealabelpairs,nSessions,nStim,nsub_pops,nmodelfits,params['kfold']),np.nan)
-# R2_X2_Z            = np.full((narealabelpairs,nSessions,nStim,nsub_pops,nmodelfits,params['kfold']),np.nan)
-
-R2_X1_Z            = np.full((narealabelpairs,nSessions,nStim,nsub_pops,nmodelfits),np.nan)
-R2_X2_Z            = np.full((narealabelpairs,nSessions,nStim,nsub_pops,nmodelfits),np.nan)
+R2_Z_Xpred           = np.full((nsourcearealabelpairs,ncrossarealabelpairs,nSessions,nStim,nsub_pops,nmodelfits),np.nan)
+R2_Z_Xpred_perrank   = np.full((nsourcearealabelpairs,ncrossarealabelpairs,nSessions,nStim,nsub_pops,fixed_rank,nmodelfits),np.nan)
 
 params['radius']    = 50
 # params['radius'] = 30
@@ -121,8 +120,6 @@ for ises,ses in enumerate(sessions):
 
     for iapl, sourcearealabelpair in enumerate(sourcearealabelpairs):
         
-        # alx1,alx2       = sourcearealabelpair.split('-')
-
         idx_areax      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpair,
                                     ses.celldata['noise_level']<params['maxnoiselevel'],
                                     idx_nearby),axis=0))[0]
@@ -130,42 +127,26 @@ for ises,ses in enumerate(sessions):
                                                 ses.celldata['noise_level']<params['maxnoiselevel'],
                                                 idx_nearby),axis=0))[0]
         
-        idx_areax1      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpairs[0],
-                                ses.celldata['noise_level']<params['maxnoiselevel'],
-                                idx_nearby),axis=0))[0]
-        
-        idx_areax2      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpairs[1],
-                                ses.celldata['noise_level']<params['maxnoiselevel'],
-                                idx_nearby),axis=0))[0]
-        
-        if len(idx_areax1)<max(Nsub_pops)+Nsub or len(idx_areax2)<max(Nsub_pops)+Nsub or len(idx_areay)<Nsub: #skip exec if not enough neurons in one of the populations
+        if len(idx_areax)<Nsub or len(idx_areay)<Nsub: #skip exec if not enough neurons in one of the populations
             print('Not enough neurons in one of the populations for session %s, skipping...' % ses.session_id)
             continue
         
         for imf in tqdm(range(nmodelfits),total=nmodelfits,desc='Fitting RRR model for session %d/%d' % (ises+1,nSessions)):
             
             idx_areax_sub        = np.random.choice(idx_areax,Nsub,replace=False)
-            idx_areax1_sub       = np.random.choice(np.setdiff1d(idx_areax1,idx_areax_sub),max(Nsub_pops),replace=False)
-            idx_areax2_sub       = np.random.choice(np.setdiff1d(idx_areax2,idx_areax_sub),max(Nsub_pops),replace=False)
             idx_areay_sub        = np.random.choice(idx_areay,Nsub,replace=False)
 
             for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
                 idx_T               = ses.trialdata['stimCond']==stim
 
-                X                  = ses.tensor[np.ix_(idx_areax_sub,idx_T,idx_resp)]
-                X1                  = ses.tensor[np.ix_(idx_areax1_sub,idx_T,idx_resp)]
-                X2                  = ses.tensor[np.ix_(idx_areax2_sub,idx_T,idx_resp)]
+                X                   = ses.tensor[np.ix_(idx_areax_sub,idx_T,idx_resp)]
                 Y                   = ses.tensor[np.ix_(idx_areay_sub,idx_T,idx_resp)]
 
                 # reshape to neurons x time points
                 X                   = X.reshape(len(idx_areax_sub),-1).T
-                X1                  = X1.reshape(len(idx_areax1_sub),-1).T
-                X2                  = X2.reshape(len(idx_areax2_sub),-1).T
                 Y                   = Y.reshape(len(idx_areay_sub),-1).T
 
                 X                   = zscore(X,axis=0)
-                X1                  = zscore(X1,axis=0) #zscore the activity per neuron
-                X2                  = zscore(X2,axis=0)
                 Y                   = zscore(Y,axis=0)
 
                 # OUTPUT: MAX PERF, OPTIM RANK, PERF FOR EACH RANK ACROSS FOLDS AND MODELFITS    
@@ -192,76 +173,27 @@ for ises,ses in enumerate(sessions):
 
                 Q, R = np.linalg.qr(W)   # Orthonormalize predictive X subspace
 
-                Z = X @ Q   # Project X onto predictive dimensions
+                Xpred = X @ Q   # Project X onto predictive dimensions
 
-                for ipop,pop in enumerate(Nsub_pops):
-                    X1_sub = X1[:,:pop]
-                    clf = RidgeCV(alphas=[1e-3, 1e-2, 1e-1, 1]).fit(X1_sub, Z)
-                    R2_X1_Z[iapl,ises,istim,ipop,imf] = clf.score(X1_sub, Z)
+                for icpl,crossarealabelpair in enumerate(crossarealabelpairs):
                     
-                    X2_sub = X2[:,:pop]
-                    clf = RidgeCV(alphas=[1e-3, 1e-2, 1e-1, 1]).fit(X2_sub, Z)
-                    R2_X2_Z[iapl,ises,istim,ipop,imf] = clf.score(X2_sub, Z)
+                    idx_areaz      = np.where(np.all((ses.celldata['arealabel']==crossarealabelpair,
+                                    ses.celldata['noise_level']<params['maxnoiselevel'],
+                                    idx_nearby),axis=0))[0] 
+                    idx_areaz       = np.setdiff1d(idx_areaz,idx_areax_sub)
 
-                # for ikf, (idx_train, idx_test) in enumerate(kf.split(X1)):
-                #     X_train, X_test     = X1[idx_train], X1[idx_test]
-                #     Z_train, Z_test     = Z[idx_train], Z[idx_test]
+                    for ipop,pop in enumerate(Nsub_pops):
+                        if len(idx_areaz)<pop: #skip exec if not enough neurons in one of the populations
+                            continue
+                        idx_areaz_sub       = np.random.choice(idx_areaz,pop,replace=False)
 
-                #     from sklearn.linear_model import RidgeCV
-                #     # X, y = load_diabetes(return_X_y=True)
+                        Z                  = ses.tensor[np.ix_(idx_areaz_sub,idx_T,idx_resp)]
+                        Z                  = Z.reshape(len(idx_areaz_sub),-1).T
+                        Z                  = zscore(Z,axis=0) #zscore the activity per neuron
 
-
-                #     #RRR X to Y
-                #     B_hat_train         = LM(Z_train,X_train, lam=params['lam'])
-                #     Y_hat_train         = X_train @ B_hat_train
-
-                #     R2_Y1_X1[iapl,ises,istim,imf,ikf] = EV(Y_test,Y_hat_X1_test)
-
-                #     for ipop,pop in enumerate(Nsub_pops):
-                #         X2_sub = X2[:,:pop]
-                #         #Now see if the same activity is predicted by X2 for different population sizes:
-                #         X2_train, X2_test     = X2_sub[idx_train], X2_sub[idx_test]
-
-                #         #RRR X to Y
-                #         B_hat_train         = LM(Y_train,X2_train, lam=params['lam'])
-                #         Y_hat_train         = X2_train @ B_hat_train
-
-                #         # decomposing and low rank approximation of Y_hat
-                #         U, s, V = svds(Y_hat_train,k=nranks,which='LM')
-                #         U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
-
-                #         for r in range(nranks):
-                #             B_rrr           = B_hat_train @ V[:r,:].T @ V[:r,:] #project beta coeff into low rank subspace
-                #             Y_hat_X2_test   = X2_test @ B_rrr
-
-                #             R2_Y2_X2[iapl,ises,istim,ipop,r,imf,ikf] = EV(Y_test,Y_hat_X2_test)
-                            # R2_Y1_X2[iapl,ises,istim,ipop,r,imf,ikf] = EV(Y_test-Y_hat_X1_test,Y_hat_X2_test)
-                            # R2_Y1_X2[iapl,ises,istim,ipop,r,imf,ikf] = EV(Y_hat_X1_test,Y_hat_X2_test)
-                            # R2_Y1_X2[iapl,ises,istim,ipop,r,imf,ikf] = np.corrcoef(Y_hat_X1_test.flatten(),Y_hat_X2_test.flatten())[0,1]
-
-#%%
-# plt.imshow(Y_test,aspect='auto',vmin=-1,vmax=1)
-# plt.imshow(Y_hat_X1_test,aspect='auto',vmin=-1,vmax=1)
-# plt.imshow(Y_test-Y_hat_X1_test,aspect='auto',vmin=-1,vmax=1)
-# plt.imshow(Y_hat_X2_test,aspect='auto',vmin=-1,vmax=1)
-
-# #%%
-# fixed_rank = 5
-# for ises in range(nSessions):
-#     if np.any(~np.isnan(R2_ranks[0,ises,:,:,:,:])):
-#         for istim in range(nStim):
-#             if fixed_rank is not None:
-#                 rank = fixed_rank
-#                 R2_cv[0,ises,istim] = np.nanmean(R2_ranks[0,ises,istim,rank,:,:])
-#                 R2_cv[1,ises,istim] = np.nanmean(R2_ranks[1,ises,istim,rank,:,:])
-#                 R2_cv[2,ises,istim] = np.nanmean(R2_ranks[2,ises,istim,rank,:,:])
-#                 R2_cv[3,ises,istim] = np.nanmean(R2_ranks[3,ises,istim,rank,:,:])
-#             else:
-#                 if not np.isnan(R2_ranks[0,ises,istim,:,:,:]).all():
-#                     R2_cv[0,ises,istim],optim_rank[0,ises,istim] = rank_from_R2(R2_ranks[0,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-#                     R2_cv[1,ises,istim],optim_rank[1,ises,istim] = rank_from_R2(R2_ranks[1,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-#                     R2_cv[2,ises,istim],optim_rank[2,ises,istim] = rank_from_R2(R2_ranks[2,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-#                     R2_cv[3,ises,istim],optim_rank[3,ises,istim] = rank_from_R2(R2_ranks[3,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
+                        clf = RidgeCV(alphas=[1e-3, 1e-2, 1e-1, 1]).fit(Z, Xpred)
+                        R2_Z_Xpred[iapl,icpl,ises,istim,ipop,imf] = clf.score(Z, Xpred)
+                        R2_Z_Xpred_perrank[iapl,icpl,ises,istim,ipop,:,imf] = r2_score(Xpred,clf.predict(Z), multioutput='raw_values')
 
 #%% 
 from scipy.optimize import curve_fit
@@ -269,43 +201,83 @@ from scipy.optimize import curve_fit
 def power_law_func(x, a, b):
     return a * x**b
 
-fig, axes = plt.subplots(1,2,figsize=(12*cm,5*cm),sharex=True,sharey=True)
+#%%
+idx_ses = sessiondata['session_id']=='LPE11622_2024_03_25'
+R2_Z_Xpred[:,:,idx_ses] = np.nan
+R2_Z_Xpred_perrank[:,:,idx_ses] = np.nan
 
-fixed_rank = 5
-clrs = ['grey','red']
-for iapl in range(narealabelpairs):
+normalize = False
+fig, axes = plt.subplots(1,2,figsize=(12*cm,6*cm),sharex=True,sharey=True)
+
+clrs_crossarealabelpairs = ['grey','red','blue']
+for iapl in range(nsourcearealabelpairs):
     ax = axes[iapl]
+    handles = []
+    for icpl,crossarealabelpair in enumerate(crossarealabelpairs):
     # refperf = np.nanmean(R2_Y1_X1[iapl])
     # ax.plot(Nsub,refperf,marker='o',color=clrs[iapl],label=sourcearealabelpairs[iapl])
     
-    meantoplot = np.nanmean(R2_X1_Z[iapl],axis=(0,1,3))
-    # meantoplot = meantoplot[:,fixed_rank]
-    ax.plot(Nsub_pops,meantoplot,marker='o',color=clrs[0],label=sourcearealabelpairs[0])
-    
-    # popt, pcov = curve_fit(power_law_func, Nsub_pops, meantoplot, p0=[1., 1.])
-    # x_domain = np.arange(0,50)
-    # y_domain = power_law_func(x_domain, *popt)
+        meantoplot = np.nanmean(R2_Z_Xpred[iapl,icpl],axis=(0,1,3))
 
-    # ax.plot(x_domain, y_domain, color=clrs[1-iapl], linestyle='--', label='power law fit')
-   
-    meantoplot = np.nanmean(R2_X2_Z[iapl],axis=(0,1,3))
-    # meantoplot = meantoplot[:,fixed_rank]
-    ax.plot(Nsub_pops,meantoplot,marker='o',color=clrs[1],label=sourcearealabelpairs[1])
+        if normalize:
+            meantoplot = meantoplot / np.nanmean(R2_Z_Xpred[iapl,0],axis=(0,1,3))
+
+        handles.append(ax.plot(Nsub_pops,meantoplot,marker='o',markersize=5,
+                               color=clrs_crossarealabelpairs[icpl],label=crossarealabelpair)[0])
+        curve_fit(power_law_func,Nsub_pops,meantoplot,p0=[1,1])
+       
+        popt, pcov = curve_fit(power_law_func, Nsub_pops, meantoplot, p0=[1., 1.])
+        x_domain = np.arange(0,np.max(Nsub_pops))
+        y_domain = power_law_func(x_domain, *popt)
+
+        # ax.plot(x_domain, y_domain, color=clrs_crossarealabelpairs[icpl], linestyle='--', label='power law fit')
     
-    # ax.plot(Nsub_pops,meantoplot,marker='o',color=clrs[iapl],label=sourcearealabelpairs[iapl])
-    # nNeurons =  x_domain[np.where(y_domain>refperf)[0][0]]
-    # ax.text(0.7,0.1,'%d neurons\n%1.2f%%' % (nNeurons,100 - 100*Nsub/nNeurons), transform=ax.transAxes,color=clrs[1-iapl])
-    # ax.plot([nNeurons,nNeurons],[0,refperf],color=clrs[1-iapl],linestyle='--')
-    leg = ax.legend(arealabeled_to_figlabels(sourcearealabelpairs),frameon=False)
+        sestoplot = np.nanmean(R2_Z_Xpred[iapl,icpl],axis=(1,3))
+        if normalize:
+            sestoplot = sestoplot / np.nanmean(R2_Z_Xpred[iapl,0],axis=(1,3))
+        ax.plot(Nsub_pops,sestoplot.T,marker=None,color=clrs_crossarealabelpairs[icpl],lw=0.4)
+
+    leg = ax.legend(handles,arealabeled_to_figlabels(crossarealabelpairs),frameon=False)
     # my_legend_strip(ax)
     ax.set_title('Predicting %s latents' % arealabeled_to_figlabels(sourcearealabelpairs[iapl]))
-    ax.set_xlabel('#Neurons')
+    ax.set_xlabel('# Neurons')
     if iapl==0: 
-        ax.set_ylabel('Cross-validated R2')
+        ax.set_ylabel(r'R$^2$')
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=0)
-my_savefig(fig,figdir,'Rdige_Latents_popsize_cvR2_labunl_FF_%dsessions' % (nSessions))
+my_savefig(fig,figdir,'Ridge_Latents_popsize_cvR2_labunl_%s_%dsessions' % (version,nSessions))
+
+#%% 
+normalize = True
+# normalize = False
+fig, axes = plt.subplots(fixed_rank,2,figsize=(12*cm,fixed_rank*5*cm),sharex=True,sharey=True)
+clrs_crossarealabelpairs = ['grey','red','blue']
+for iapl in range(nsourcearealabelpairs):
+    for idim in range(fixed_rank):
+        ax = axes[idim,iapl]
+        handles = []
+        for icpl,crossarealabelpair in enumerate(crossarealabelpairs):
+            meantoplot = np.nanmean(R2_Z_Xpred_perrank[iapl,icpl,:,:,:,idim,:],axis=(0,1,3))
+            if normalize:
+                meantoplot = meantoplot / np.nanmean(R2_Z_Xpred_perrank[iapl,0,:,:,:,idim,:],axis=(0,1,3))
+
+            handles.append(ax.plot(Nsub_pops,meantoplot,marker='o',color=clrs_crossarealabelpairs[icpl],label=crossarealabelpair)[0])
+
+        if idim==0 and iapl==0: 
+            leg = ax.legend(handles,arealabeled_to_figlabels(crossarealabelpairs),frameon=False)
+        # my_legend_strip(ax)
+        if idim==0: 
+            ax.set_title('Predicting %s latents' % arealabeled_to_figlabels(sourcearealabelpairs[iapl]))
+        if idim == fixed_rank-1: 
+            ax.set_xlabel('# Neurons')
+        if iapl==0: 
+            ax.set_ylabel(r'R$^2$')
+        # ax.set_xscale('log')
+plt.tight_layout()
+sns.despine(fig=fig,trim=False,top=True,right=True,offset=0)
+my_savefig(fig,figdir,'Latent_Crossprediction_%s_%dsessions_perrank%s' % (version,nSessions,'_norm' if normalize else ''))
+
 
 #%% 
 

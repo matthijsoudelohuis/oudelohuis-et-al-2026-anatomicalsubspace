@@ -97,18 +97,14 @@ params['dim_method'] = 'pca_shuffle'
 params['nStim']     = 16
 # params['radius']     = 30
 
-idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
+# idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
+idx_resp            = np.where((t_axis>=-99) & (t_axis<=99))[0]
 ntimebins           = len(idx_resp)
 
-R2_cv               = np.full((narealabelpairs+1,nSessions,params['nStim']),np.nan) #dim1: 3 = allneurons, V1unl, V1lab separately
-optim_rank          = np.full((narealabelpairs+1,nSessions,params['nStim']),np.nan)
+R2_cv               = np.full((narealabelpairs+1,nSessions,params['nStim'],ntimebins),np.nan) #dim1: 3 = allneurons, V1unl, V1lab separately
+optim_rank          = np.full((narealabelpairs+1,nSessions,params['nStim'],ntimebins),np.nan)
 R2_ranks            = np.full((narealabelpairs+1,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
 R2_ranks_neurons    = np.full((narealabelpairs+1,Nsub*narealabelpairs,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
-source_dim          = np.full((narealabelpairs+1,nSessions,params['nStim'],nmodelfits),np.nan)
-R2_sourcealigned    = np.full((narealabelpairs+1,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
-frac_pos_weight_out = np.full((nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
-frac_pos_weight_in  = np.full((narealabelpairs+1,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
-weights_in          = np.full((narealabelpairs+1,Nsub,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
 
 for ises,ses in enumerate(sessions):
     if params['filter_nearby']:
@@ -126,9 +122,8 @@ for ises,ses in enumerate(sessions):
                                 ses.celldata['noise_level']<params['maxnoiselevel'],
                                 idx_nearby),axis=0))[0]
     idx_areay       = np.where(np.all((ses.celldata['arealabel']==targetarealabelpair,
-                                            ses.celldata['noise_level']<params['maxnoiselevel'],
-                                            idx_nearby
-                                            ),axis=0))[0]
+                                ses.celldata['noise_level']<params['maxnoiselevel'],
+                                idx_nearby),axis=0))[0]
     
     if len(idx_areax1)<Nsub*2 or len(idx_areax2)<Nsub*2 or len(idx_areax3)<Nsub or len(idx_areay)<narealabelpairs*Nsub: #skip exec if not enough neurons in one of the populations
         print('%d in %s, %d in %s' % (len(idx_areax3),sourcearealabelpairs[2],
@@ -161,9 +156,6 @@ for ises,ses in enumerate(sessions):
             Y                   = zscore(Y,axis=0)
 
             X                   = np.concatenate((X1,X2,X3),axis=1) #use this as source to predict the activity in Y with RRR
-
-            for i,data in enumerate([X,X1,X2,X3]):
-                source_dim[i,ises,istim,imf] = estimate_dimensionality(data,method=params['dim_method'])
 
             # OUTPUT: MAX PERF, OPTIM RANK, PERF FOR EACH RANK ACROSS FOLDS AND MODELFITS    
             R2_kfold    = np.zeros((params['kfold']))
@@ -208,39 +200,6 @@ for ises,ses in enumerate(sessions):
 
                     R2_ranks[3,ises,istim,r,imf,ikf] = EV(Y_test,Y_hat_test_rr)
                     R2_ranks_neurons[3,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_test_rr, multioutput='raw_values')
-
-                for i,data in enumerate([X_test,X_test_1,X_test_2,X_test_3]):
-                    # How much of the variance in the source area is aligned with the predictive subspace:
-                    R2_sourcealigned[i,ises,istim,:,imf,ikf] = compute_rrr_sourcevariance(data, B_hat_train,nranks=20)
-
-                #Fraction of weights that is projecting positively onto firing rate:
-                for r in range(nranks): #for each rank
-                    #find correct sign of weight by sign of inner product mean firing rate and left singular vector
-                    frac_pos_weight_out[ises,istim,r,imf,ikf] = np.sum(np.sign(V[r,:])==np.sign(U[:,r].T @ np.nanmean(Y_train, axis=1))) / np.shape(V)[1]
-                    
-                # Predictive source directions
-                W = B_hat_train @ V.T  # (N x k)
-                # Mean source firing rate across timepoints
-                mu_X = X_train.mean(axis=1)
-                for r in range(nranks): #for each rank compute weights
-                    # Align sign to mean source firing
-                    sign = np.sign(np.dot(X_train @ W[:, r], mu_X))
-                    # weights_in[:,ises,istim,r,imf,ikf] = sign * W[:, r]
-
-                    idx_N = np.arange(Nsub)
-                    weights_in[0,:,ises,istim,r,imf,ikf] = W[np.ix_(idx_N,[r])].flatten()*sign
-                    idx_N = np.arange(Nsub,2*Nsub)
-                    weights_in[1,:,ises,istim,r,imf,ikf] = W[np.ix_(idx_N,[r])].flatten()*sign
-                    idx_N = np.arange(Nsub*2,Nsub*3)
-                    weights_in[2,:,ises,istim,r,imf,ikf] = W[np.ix_(idx_N,[r])].flatten()*sign
-
-                    frac_pos_weight_in[0,ises,istim,r,imf,ikf] = np.sum(np.sign(W[:, r])==sign) / np.shape(W)[0]
-                    idx_N = np.arange(Nsub)
-                    frac_pos_weight_in[1,ises,istim,r,imf,ikf] = np.sum(np.sign(W[np.ix_(idx_N,[r])])==sign) / Nsub
-                    idx_N = np.arange(Nsub,2*Nsub)
-                    frac_pos_weight_in[2,ises,istim,r,imf,ikf] = np.sum(np.sign(W[np.ix_(idx_N,[r])])==sign) / Nsub
-                    idx_N = np.arange(Nsub*2,Nsub*3)
-                    frac_pos_weight_in[3,ises,istim,r,imf,ikf] = np.sum(np.sign(W[np.ix_(idx_N,[r])])==sign) / Nsub
 
 #%% Find best rank and cvR2 at this rank:
 fixed_rank = None

@@ -13,6 +13,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 from scipy.stats import zscore
 import pickle
+from numpy.linalg import eigh
 
 from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
@@ -80,11 +81,39 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=s
 
 #%% Get all data 
 # sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,filter_noiselevel=False)
+# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,filter_noiselevel=False)
 report_sessions(sessions)
 
 #%% Wrapper function to load the tensor data, 
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'])
+
+
+#%%
+def doc_rotation(Zx, Zy, center=True):
+    """
+    Zx: (n_samples, r) projections of X into predictive subspace
+    Zy: (n_samples, r) projections of Y into predictive subspace
+    """
+    if center:
+        Zx = Zx - Zx.mean(axis=0, keepdims=True)
+        Zy = Zy - Zy.mean(axis=0, keepdims=True)
+
+    # covariance matrices
+    Cx = np.cov(Zx, rowvar=False)
+    Cy = np.cov(Zy, rowvar=False)
+
+    # difference of covariances
+    S = Cy - Cx
+
+    # eigen decomposition
+    eigvals, eigvecs = eigh(S)
+
+    # sort descending (Y-dominant first)
+    idx = np.argsort(eigvals)[::-1]
+    eigvals = eigvals[idx]
+    eigvecs = eigvecs[:, idx]
+
+    return eigvecs, eigvals
 
 #%% 
 narealabelpairs     = len(sourcearealabelpairs)
@@ -99,16 +128,14 @@ params['nStim']     = 16
 
 idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
 ntimebins           = len(idx_resp)
+fixed_rank  = 5
 
-R2_cv               = np.full((narealabelpairs+1,nSessions,params['nStim']),np.nan) #dim1: 3 = allneurons, V1unl, V1lab separately
-optim_rank          = np.full((narealabelpairs+1,nSessions,params['nStim']),np.nan)
-R2_ranks            = np.full((narealabelpairs+1,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
-R2_ranks_neurons    = np.full((narealabelpairs+1,Nsub*narealabelpairs,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
-source_dim          = np.full((narealabelpairs+1,nSessions,params['nStim'],nmodelfits),np.nan)
-R2_sourcealigned    = np.full((narealabelpairs+1,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
-frac_pos_weight_out = np.full((nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
-frac_pos_weight_in  = np.full((narealabelpairs+1,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
-weights_in          = np.full((narealabelpairs+1,Nsub,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
+# R2_cv               = np.full((narealabelpairs+1,nSessions,params['nStim']),np.nan) #dim1: 3 = allneurons, V1unl, V1lab separately
+# optim_rank          = np.full((narealabelpairs+1,nSessions,params['nStim']),np.nan)
+R2_cv            = np.full((narealabelpairs+1,nSessions,params['nStim'],nmodelfits,params['kfold']),np.nan)
+R2_cv_rot        = np.full((narealabelpairs+1,nSessions,params['nStim'],fixed_rank,nmodelfits,params['kfold']),np.nan)
+# R2_ranks_neurons    = np.full((narealabelpairs+1,Nsub*narealabelpairs,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
+
 
 for ises,ses in enumerate(sessions):
     if params['filter_nearby']:
@@ -162,9 +189,6 @@ for ises,ses in enumerate(sessions):
 
             X                   = np.concatenate((X1,X2,X3),axis=1) #use this as source to predict the activity in Y with RRR
 
-            for i,data in enumerate([X,X1,X2,X3]):
-                source_dim[i,ises,istim,imf] = estimate_dimensionality(data,method=params['dim_method'])
-
             # OUTPUT: MAX PERF, OPTIM RANK, PERF FOR EACH RANK ACROSS FOLDS AND MODELFITS    
             R2_kfold    = np.zeros((params['kfold']))
             kf          = KFold(n_splits=params['kfold'],shuffle=True)
@@ -177,70 +201,112 @@ for ises,ses in enumerate(sessions):
                 Y_hat_train         = X_train @ B_hat_train
 
                 # decomposing and low rank approximation of Y_hat
-                U, s, V = svds(Y_hat_train,k=nranks,which='LM')
+                U, s, V = svds(Y_hat_train,k=fixed_rank,which='LM')
                 U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
 
-                for r in range(nranks):
-                    B_rrr           = B_hat_train @ V[:r,:].T @ V[:r,:] #project beta coeff into low rank subspace
-                    Y_hat_test_rr   = X_test @ B_rrr
+                B_rrr           = B_hat_train @ V.T @ V #project beta coeff into low rank subspace
+                
+                W               = B_rrr @ V.T   # Get predictive X-directions
+                
+                ## Get partially filled X
+                X_train_1 = copy.deepcopy(X_test)
+                X_train_2 = copy.deepcopy(X_test)
+                X_train_3 = copy.deepcopy(X_test)
 
-                    R2_ranks[0,ises,istim,r,imf,ikf] = EV(Y_test,Y_hat_test_rr)
-                    R2_ranks_neurons[0,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_test_rr, multioutput='raw_values')
-                    
-                    X_test_1 = copy.deepcopy(X_test)
-                    X_test_1[:,Nsub:] = 0
-                    Y_hat_test_rr   = X_test_1 @ B_rrr
+                X_train_1[:,Nsub:] = 0
 
-                    R2_ranks[1,ises,istim,r,imf,ikf] = EV(Y_test,Y_hat_test_rr)
-                    R2_ranks_neurons[1,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_test_rr, multioutput='raw_values')
+                X_train_2[:,:Nsub] = 0
+                X_train_2[:,2*Nsub:] = 0
+                
+                X_train_3[:,:2*Nsub] = 0
 
-                    X_test_2 = copy.deepcopy(X_test)
-                    X_test_2[:,:Nsub] = 0
-                    X_test_2[:,2*Nsub:] = 0
-                    Y_hat_test_rr   = X_test_2 @ B_rrr
+                X_test_1 = copy.deepcopy(X_test)
+                X_test_2 = copy.deepcopy(X_test)
+                X_test_3 = copy.deepcopy(X_test)
 
-                    R2_ranks[2,ises,istim,r,imf,ikf] = EV(Y_test,Y_hat_test_rr)
-                    R2_ranks_neurons[2,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_test_rr, multioutput='raw_values')
+                X_test_1[:,Nsub:] = 0
 
-                    X_test_3 = copy.deepcopy(X_test)
-                    X_test_3[:,:2*Nsub] = 0
-                    Y_hat_test_rr   = X_test_3 @ B_rrr
+                X_test_2[:,:Nsub] = 0
+                X_test_2[:,2*Nsub:] = 0
+                
+                X_test_3[:,:2*Nsub] = 0
 
-                    R2_ranks[3,ises,istim,r,imf,ikf] = EV(Y_test,Y_hat_test_rr)
-                    R2_ranks_neurons[3,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_test_rr, multioutput='raw_values')
+                X_pred1 = X_train_1 @ W
+                X_pred2 = X_train_2 @ W
+                X_pred3 = X_train_3 @ W
 
-                for i,data in enumerate([X_test,X_test_1,X_test_2,X_test_3]):
-                    # How much of the variance in the source area is aligned with the predictive subspace:
-                    R2_sourcealigned[i,ises,istim,:,imf,ikf] = compute_rrr_sourcevariance(data, B_hat_train,nranks=20)
+                doc_eigvecs, doc_eigvals = doc_rotation(X_pred1,X_pred3)
 
-                #Fraction of weights that is projecting positively onto firing rate:
-                for r in range(nranks): #for each rank
-                    #find correct sign of weight by sign of inner product mean firing rate and left singular vector
-                    frac_pos_weight_out[ises,istim,r,imf,ikf] = np.sum(np.sign(V[r,:])==np.sign(U[:,r].T @ np.nanmean(Y_train, axis=1))) / np.shape(V)[1]
-                    
-                # Predictive source directions
-                W = B_hat_train @ V.T  # (N x k)
-                # Mean source firing rate across timepoints
-                mu_X = X_train.mean(axis=1)
-                for r in range(nranks): #for each rank compute weights
-                    # Align sign to mean source firing
-                    sign = np.sign(np.dot(X_train @ W[:, r], mu_X))
-                    # weights_in[:,ises,istim,r,imf,ikf] = sign * W[:, r]
+                # Rotate into DOC space
+                X_doc1 = X_pred1 @ doc_eigvecs
+                X_doc2 = X_pred2 @ doc_eigvecs
+                X_doc3 = X_pred3 @ doc_eigvecs
 
-                    idx_N = np.arange(Nsub)
-                    weights_in[0,:,ises,istim,r,imf,ikf] = W[np.ix_(idx_N,[r])].flatten()*sign
-                    idx_N = np.arange(Nsub,2*Nsub)
-                    weights_in[1,:,ises,istim,r,imf,ikf] = W[np.ix_(idx_N,[r])].flatten()*sign
-                    idx_N = np.arange(Nsub*2,Nsub*3)
-                    weights_in[2,:,ises,istim,r,imf,ikf] = W[np.ix_(idx_N,[r])].flatten()*sign
+                R2_cv[0,ises,istim,imf,ikf] = EV(Y_test,Y_hat_test_rr)
+                
+                
 
-                    frac_pos_weight_in[0,ises,istim,r,imf,ikf] = np.sum(np.sign(W[:, r])==sign) / np.shape(W)[0]
-                    idx_N = np.arange(Nsub)
-                    frac_pos_weight_in[1,ises,istim,r,imf,ikf] = np.sum(np.sign(W[np.ix_(idx_N,[r])])==sign) / Nsub
-                    idx_N = np.arange(Nsub,2*Nsub)
-                    frac_pos_weight_in[2,ises,istim,r,imf,ikf] = np.sum(np.sign(W[np.ix_(idx_N,[r])])==sign) / Nsub
-                    idx_N = np.arange(Nsub*2,Nsub*3)
-                    frac_pos_weight_in[3,ises,istim,r,imf,ikf] = np.sum(np.sign(W[np.ix_(idx_N,[r])])==sign) / Nsub
+
+                X_test_1 = copy.deepcopy(X_test)
+                X_test_1[:,Nsub:] = 0
+                Y_hat_test_rr   = X_test_1 @ B_rrr
+                Xpred_test_1    = X_test_1 @ W   # Project X onto predictive dimensions
+                
+                for r in range(fixed_rank):
+                    R2_cv_rot[1,ises,istim,r,imf,ikf] = EV(Y_test,Y_hat_test_rr)
+                R2_cv[1,ises,istim,imf,ikf] = EV(Y_test,Y_hat_test_rr)
+
+                X_test_2 = copy.deepcopy(X_test)
+                X_test_2[:,:Nsub] = 0
+                X_test_2[:,2*Nsub:] = 0
+                Y_hat_test_rr   = X_test_2 @ B_rrr
+
+                R2_cv[2,ises,istim,imf,ikf] = EV(Y_test,Y_hat_test_rr)
+
+                X_test_3 = copy.deepcopy(X_test)
+                X_test_3[:,:2*Nsub] = 0
+                Y_hat_test_rr   = X_test_3 @ B_rrr
+
+                R2_cv[3,ises,istim,imf,ikf] = EV(Y_test,Y_hat_test_rr)
+
+#    Y_hat_rr = np.full((Y.shape[0],Y.shape[1],narealabelpairs),np.nan)
+
+#             # SVD of predicted activity
+#             U, S, Vt = np.linalg.svd(Y_hat, full_matrices=False)
+#             V = Vt.T
+#             # choose rank-k approximation
+#             V_k = V[:, :fixed_rank]
+
+#             W = B_hat @ V_k   # Predictive X-directions
+
+#             # Q, R = np.linalg.qr(W)   # Orthonormalize predictive X subspace
+
+#             Xpred = X @ W   # Project X onto predictive dimensions
+
+#             R2[0,ises,istim,imf] = EV(Y,X @ B_rrr)
+#             # print(EV(Y,Y_hat_rr))
+#             # R2_ranks_neurons[0,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_rr, multioutput='raw_values')
+            
+#             X_sub_0 = copy.deepcopy(X)
+#             X_sub_0[:,Nsub:] = 0
+#             Y_hat_rr[:,:,0]   = X_sub_0 @ B_rrr
+
+#             R2[1,ises,istim,imf] = EV(Y,Y_hat_rr[:,:,0])
+#             # R2_ranks_neurons[1,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_rr, multioutput='raw_values')
+
+#             X_sub_1 = copy.deepcopy(X)
+#             X_sub_1[:,:Nsub] = 0
+#             X_sub_1[:,2*Nsub:] = 0
+#             Y_hat_rr[:,:,1]   = X_sub_1 @ B_rrr
+
+#             R2[2,ises,istim,imf] = EV(Y,Y_hat_rr[:,:,1])
+#             # R2_ranks_neurons[2,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_rr, multioutput='raw_values')
+
+#             X_sub_2 = copy.deepcopy(X)
+#             X_sub_2[:,:2*Nsub] = 0
+#             Y_hat_rr[:,:,2]   = X_sub_2 @ B_rrr
+
+#             R2[3,ises,istim,imf] = EV(Y,Y_hat_rr[:,:,2])
 
 #%% Find best rank and cvR2 at this rank:
 fixed_rank = None

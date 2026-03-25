@@ -35,13 +35,15 @@ cm      = 1/2.54  # centimeters in inches
 
 #%% Load the data:
 version = 'FF_original'
-filename = 'RRR_Joint_labeled_FF_original_2026-02-19_18-05-04'
+# filename = 'RRR_Joint_labeled_FF_original_2026-02-19_18-05-04'
+filename = 'RRR_Joint_labeled_FF_original_2026-03-19_22-05-08'
 
-# version = 'FF_behavout'
-# filename = 'RRR_Joint_labeled_FF_behavout_2026-02-20_02-00-03'
+version = 'FF_behavout'
+filename = 'RRR_Joint_labeled_FF_behavout_2026-02-20_02-00-03'
+# filename = 'RRR_Joint_labeled_FF_behavout_2026-03-20_00-39-57'
 
-version = 'FB_original'
-filename = 'RRR_Joint_labeled_FB_original_2026-02-19_21-42-16'
+# version = 'FB_original'
+# filename = 'RRR_Joint_labeled_FB_original_2026-02-19_21-42-16'
 
 # version = 'FB_behavout'
 # filename = 'RRR_Joint_labeled_FB_behavout_2026-02-20_06-11-04'
@@ -142,7 +144,7 @@ ax.set_xlim([0,nrankstoplot])
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
-my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_%dsessions' % (version,params['nSessions']))
+# my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_%dsessions' % (version,params['nSessions']))
 
 
 #%% Show figure for each of the arealabelpairs and each of the dataversions
@@ -158,7 +160,7 @@ if np.any(~np.isnan(R2_data)):
         # clrs        = ['grey',get_clr_area_labeled([sourcearealabelpairs[idx[1]].split('-')[0]])]
         clrs        = ['grey','red']
         fig         = plot_RRR_R2_arealabels_paired(R2_data[idx],optim_rank_data[idx],R2_ranks_data[idx],np.array(sourcearealabelpairs)[idx-1],clrs)
-        my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (sourcearealabelpairs[idx[1]-1],version,params['nSessions']))
+        # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (sourcearealabelpairs[idx[1]-1],version,params['nSessions']))
 
 #%% Identify which dimensions are particularly enhanced in labeled cells:
 data = np.nanmean(R2_ranks,axis=(5)) #average across kfolds
@@ -847,7 +849,7 @@ cm      = 1/2.54  # centimeters in inches
 #%% Load the data:
 version = 'FF_original'
 filename = 'RRR_Joint_labeled_FF_original_2026-02-19_18-05-04'
-
+filename = 'RRR_Joint_labeled_FF_original_2026-03-19_22-05-08'
 data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
 
 for key in data.keys():
@@ -857,7 +859,7 @@ for key in data.keys():
 
 version = 'FF_behavout'
 filename = 'RRR_Joint_labeled_FF_behavout_2026-02-20_02-00-03'
-
+filename = 'RRR_Joint_labeled_FF_behavout_2026-03-20_00-39-57'
 data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
 
 for key in data.keys():
@@ -871,6 +873,9 @@ with open(os.path.join(resultdir,filename + '_params' + '.txt'), "rb") as myFile
 
 #%% Reshape data to stretch stim x sessions
 nversions = 2
+narealabelpairs = 3
+clrs_arealabelpairs = ['grey','grey','red']
+
 R2_cv = np.concatenate((R2_cv_orig[:,np.newaxis,:,:],R2_cv_behavout[:,np.newaxis,:,:]),axis=1)
 R2_cv_2         = np.reshape(R2_cv,(narealabelpairs+1,nversions,params['nSessions']*params['nStim']))
 optim_rank = np.concatenate((optim_rank_orig[:,np.newaxis],optim_rank_behavout[:,np.newaxis]),axis=1)
@@ -901,7 +906,7 @@ add_stat_annotation(ax, 0,1, 0.11, p, h=0.01,color='grey',fontsize=10)
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=True)
-my_savefig(fig,figdir,'RRR_cvR2_FF_diffversions_%dsessions' % (params['nSessions']))
+# my_savefig(fig,figdir,'RRR_cvR2_FF_diffversions_%dsessions' % (params['nSessions']))
 
 #%% Plot the R2 for each of the arealabelpairs and each of the dataversions
 # #Residual variance explained goes down with behavior or brainwide activity regressed out: 

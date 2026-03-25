@@ -804,7 +804,8 @@ cm      = 1/2.54  # centimeters in inches
 
 #%% Load the data:
 version = 'FB_original'
-filename = 'RRR_Joint_labeled_FB_original_2026-02-19_21-42-16'
+# filename = 'RRR_Joint_labeled_FB_original_2026-02-19_21-42-16'
+filename = 'RRR_Joint_labeled_FB_original_2026-03-20_04-01-45'
 
 data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
 
@@ -814,7 +815,8 @@ for key in data.keys():
         exec(key+'_orig'+'=data[key]')
 
 version = 'FB_behavout'
-filename = 'RRR_Joint_labeled_FB_behavout_2026-02-20_06-11-04'
+# filename = 'RRR_Joint_labeled_FB_behavout_2026-02-20_06-11-04'
+filename = 'RRR_Joint_labeled_FB_behavout_2026-03-20_09-06-00'
 
 data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
 
@@ -859,7 +861,7 @@ add_stat_annotation(ax, 0,1, 0.11, p, h=0.01,color='grey',fontsize=10)
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=True)
-my_savefig(fig,figdir,'RRR_cvR2_FB_diffversions_%dsessions' % (params['nSessions']))
+# my_savefig(fig,figdir,'RRR_cvR2_FB_diffversions_%dsessions' % (params['nSessions']))
 
 #%% Plot the R2 for each of the arealabelpairs and each of the dataversions
 # #Residual variance explained goes down with behavior or brainwide activity regressed out: 
@@ -919,11 +921,16 @@ ax.set_xticklabels(dataversions)
 ax.set_xlim([-0.25,1.25])
 plt.tight_layout()
 sns.despine(fig=fig,trim=True)
-my_savefig(fig,figdir,'RRR_cvR2_ratio_FB_diffversions_%dsessions' % (params['nSessions']))
+# my_savefig(fig,figdir,'RRR_cvR2_ratio_FB_diffversions_%dsessions' % (params['nSessions']))
 
 #%% Define the ratio of R2 between V1PM and V1ND
 ratiodata_FB_unlunl       = (optim_rank_2[2] / optim_rank_2[1])*100-100 #Unl1 / Unl2
 ratiodata_FB_labunl       = (optim_rank_2[3] / optim_rank_2[1])*100-100 #Lab / Unl1
+
+# #%% Define the ratio of R2 between V1PM and V1ND
+# ratiodata_FB_unlunl       = (optim_rank_2[2] - optim_rank_2[1])#Unl1 / Unl2
+# ratiodata_FB_labunl       = (optim_rank_2[3] - optim_rank_2[1]) #Lab / Unl1
+
 
 #%% Make the figure of the ratio:
 fig,axes = plt.subplots(1,1,sharex=True,sharey=True,figsize=(4*cm,5*cm))
@@ -951,8 +958,9 @@ for it,(ix,iy) in enumerate(np.array([[0,1]])):
 ax.set_xticks(range(nversions))
 ax.set_xticklabels(dataversions)
 ax.set_ylim([-5,20])
+# ax.set_ylim([-1,1])
 ax.set_xlim([-0.25,1.25])
 plt.tight_layout()
 sns.despine(fig=fig,trim=True)
-my_savefig(fig,figdir,'RRR_Rank_ratio_FB_diffversions_%dsessions' % (params['nSessions']))
+# my_savefig(fig,figdir,'RRR_Rank_ratio_FB_diffversions_%dsessions' % (params['nSessions']))
 

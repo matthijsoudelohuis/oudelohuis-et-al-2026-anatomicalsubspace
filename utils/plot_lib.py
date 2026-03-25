@@ -16,6 +16,7 @@ import warnings
 from scipy.stats import pearsonr,ttest_rel,wilcoxon
 import copy
 from statannotations.Annotator import Annotator
+from itertools import product
 
 def set_plot_basic_config():
     plt.rcParams.update({'font.size': 7, 'xtick.labelsize': 6, 'ytick.labelsize': 6, 'axes.titlesize': 8,
@@ -1013,3 +1014,43 @@ def get_clr_animal_id(animal_ids):
     #    'LPE12385'], dtype=object)
     
     return clrs
+
+def nd_array_to_dataframe(data, dim_names=None):
+    """
+    Convert an N-dimensional numpy array to a pandas DataFrame.
+    
+    Parameters:
+    -----------
+    data : numpy.ndarray
+        The N-dimensional array to convert
+    dim_names : list, optional
+        Names for each dimension. If None, will use ['dim0', 'dim1', ...]
+    
+    Returns:
+    --------
+    pandas.DataFrame
+        DataFrame with columns for the value and each dimension index
+    """
+    # Get the shape of the array
+    shape = data.shape
+    ndim = len(shape)
+    
+    # Create default dimension names if not provided
+    if dim_names is None:
+        dim_names = [f'dim{i}' for i in range(ndim)]
+    elif len(dim_names) != ndim:
+        raise ValueError(f"Length of dim_names ({len(dim_names)}) must match number of dimensions ({ndim})")
+    
+    # Create all possible index combinations
+    indices = list(product(*[range(s) for s in shape]))
+    
+    # Create a dictionary to store the data
+    df_dict = {name: [idx[i] for idx in indices] for i, name in enumerate(dim_names)}
+    
+    # Add the values
+    df_dict['value'] = [data[idx] for idx in indices]
+    
+    # Create the DataFrame
+    df = pd.DataFrame(df_dict)
+    
+    return df
