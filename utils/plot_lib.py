@@ -56,7 +56,9 @@ def shaded_error(x,y,yerror=None,ax=None,center='mean',error='std',color='black'
             # N = np.shape(y)[0]
             N = np.sum(~np.isnan(y),axis=0)
             yerror = np.nanstd(y,axis=0) / np.sqrt(N)
-
+        elif error == 'ci95':
+            N = np.sum(~np.isnan(y),axis=0)
+            yerror = 1.96 * np.nanstd(y,axis=0) / np.sqrt(N)
         else:
             print('Unknown error type')
     else:

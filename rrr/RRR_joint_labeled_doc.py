@@ -28,7 +28,7 @@ params = load_params()
 # params['regress_behavout'] = True
 params['regress_behavout'] = False
 params['direction'] = 'FF'
-# params['direction'] = 'FB'
+params['direction'] = 'FB'
 # params['direction'] = 'FF_AL'
 # params['direction'] = 'FB_AL'
 
@@ -65,15 +65,15 @@ session_list        = np.array([
                                 # ['LPE10919_2023_11_06'],  #V1lab actually lower
                                 # ['LPE12223_2024_06_08'], #V1lab actually lower
                                 # ['LPE11998_2024_05_02'], # V1lab lower?
-                                # ['LPE11622_2024_03_25'], #same
+                                ['LPE11622_2024_03_25'], #same
                                 ['LPE09665_2023_03_14'], #V1lab higher
                                 # ['LPE10885_2023_10_23'], #V1lab much higher
-                                # ['LPE11086_2024_01_05'], #Really much higher, best session, first dimensions are more predictive.
+                                ['LPE11086_2024_01_05'], #Really much higher, best session, first dimensions are more predictive.
                                 # ['LPE11086_2024_01_10'], #Few v1 labeled cells, very noisy
                                 # ['LPE11998_2024_05_10'], #
                                 # ['LPE12013_2024_05_07'], #
                                 # ['LPE11495_2024_02_28'], #
-                                # ['LPE11086_2023_12_15'], #Same
+                                ['LPE11086_2023_12_15'], #Same
                                 ]) 
 
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list,
@@ -84,58 +84,43 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=s
 # sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,filter_noiselevel=False)
 report_sessions(sessions)
 
-#%% Wrapper function to load the tensor data, 
+#%% Wrapper function to load the tensor data
+params['calciumversion'] = 'deconv'
+# params['calciumversion'] = 'dF'
+
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'])
-
-
-#%%
-def doc_rotation(Zx, Zy, center=True):
-    """
-    Zx: (n_samples, r) projections of X into predictive subspace
-    Zy: (n_samples, r) projections of Y into predictive subspace
-    """
-    if center:
-        Zx = Zx - Zx.mean(axis=0, keepdims=True)
-        Zy = Zy - Zy.mean(axis=0, keepdims=True)
-
-    # covariance matrices
-    Cx = np.cov(Zx, rowvar=False)
-    Cy = np.cov(Zy, rowvar=False)
-
-    # difference of covariances
-    S = Cy - Cx
-
-    # eigen decomposition
-    eigvals, eigvecs = eigh(S)
-
-    # sort descending (Y-dominant first)
-    idx = np.argsort(eigvals)[::-1]
-    eigvals = eigvals[idx]
-    eigvecs = eigvecs[:, idx]
-
-    return eigvecs, eigvals
 
 #%% 
 narealabelpairs     = len(sourcearealabelpairs)
 
-Nsub                = 20
-nranks              = 20 #number of ranks of RRR to be evaluated
-nmodelfits          = 100
+# Nsub                = 20
+nmodelfits          = 6
 
-params['dim_method'] = 'pca_shuffle'
 params['nStim']     = 16
-# params['radius']     = 30
 
-idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
-ntimebins           = len(idx_resp)
-fixed_rank  = 5
+fixed_rank          = 5
 
-# R2_cv               = np.full((narealabelpairs+1,nSessions,params['nStim']),np.nan) #dim1: 3 = allneurons, V1unl, V1lab separately
-# optim_rank          = np.full((narealabelpairs+1,nSessions,params['nStim']),np.nan)
-R2_cv            = np.full((narealabelpairs+1,nSessions,params['nStim'],nmodelfits,params['kfold']),np.nan)
-R2_cv_rot        = np.full((narealabelpairs+1,nSessions,params['nStim'],fixed_rank,nmodelfits,params['kfold']),np.nan)
-# R2_ranks_neurons    = np.full((narealabelpairs+1,Nsub*narealabelpairs,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
+idx_resp            = np.where((t_axis>=-99) & (t_axis<=99))[0]
+idx_resp            = np.where((t_axis>=0) & (t_axis<=1.95))[0]
+idx_resp            = np.where((t_axis>=-99) & (t_axis<=1.95))[0]
+nT                  = len(idx_resp)
 
+contrasts            = np.array([[1,2],[1,3]]) #which contrasts to use for the DOC rotation, e.g. V1unl vs V1lab, or V1unl vs V1unl
+contrasts            = np.array([[0,1],[0,2]]) #which contrasts to use for the DOC rotation, e.g. V1unl vs V1lab, or V1unl vs V1unl
+ncontrasts            = len(contrasts)
+
+R2_ranks_orig       = np.full((narealabelpairs+1,ncontrasts,nSessions,params['nStim'],fixed_rank,nmodelfits),np.nan)
+R2_ranks_doc        = np.full((narealabelpairs+1,ncontrasts,nSessions,params['nStim'],fixed_rank,nmodelfits),np.nan)
+
+R2_ranks_orig_t     = np.full((narealabelpairs+1,ncontrasts,nSessions,params['nStim'],nT,fixed_rank,nmodelfits),np.nan)
+R2_ranks_doc_t      = np.full((narealabelpairs+1,ncontrasts,nSessions,params['nStim'],nT,fixed_rank,nmodelfits),np.nan)
+
+# latents_ranks_orig  = np.full((narealabelpairs+1,2,nSessions,params['nStim'],nT,fixed_rank,nmodelfits),np.nan)
+latents_ranks_doc   = np.full((narealabelpairs+1,ncontrasts,nSessions,params['nStim'],nT,fixed_rank,nmodelfits),np.nan)
+
+kf          = KFold(n_splits=params['kfold'],shuffle=True)
+
+params['minnneurons'] = 20
 
 for ises,ses in enumerate(sessions):
     if params['filter_nearby']:
@@ -153,11 +138,12 @@ for ises,ses in enumerate(sessions):
                                 ses.celldata['noise_level']<params['maxnoiselevel'],
                                 idx_nearby),axis=0))[0]
     idx_areay       = np.where(np.all((ses.celldata['arealabel']==targetarealabelpair,
-                                            ses.celldata['noise_level']<params['maxnoiselevel'],
-                                            idx_nearby
-                                            ),axis=0))[0]
+                                ses.celldata['noise_level']<params['maxnoiselevel'],
+                                idx_nearby
+                                ),axis=0))[0]
     
-    if len(idx_areax1)<Nsub*2 or len(idx_areax2)<Nsub*2 or len(idx_areax3)<Nsub or len(idx_areay)<narealabelpairs*Nsub: #skip exec if not enough neurons in one of the populations
+    Nsub = min(len(idx_areax1)//2, len(idx_areax3), len(idx_areay)//narealabelpairs) #number of neurons to subselect from each population, based on the smallest population across all sessions
+    if Nsub < params['minnneurons']: #skip exec if not enough neurons in one of the populations
         print('%d in %s, %d in %s' % (len(idx_areax3),sourcearealabelpairs[2],
                                                 len(idx_areay),targetarealabelpair))
         continue
@@ -169,162 +155,261 @@ for ises,ses in enumerate(sessions):
         idx_areay_sub        = np.random.choice(idx_areay,Nsub*narealabelpairs,replace=False)
 
         for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
+        # for istim,stim in enumerate([ses.trialdata['stimCond'][0]]): # loop over orientations 
+
             idx_T               = ses.trialdata['stimCond']==stim
-       
+            nK                  = np.sum(idx_T) #number of trials for this stimulus condition
+
             X1                  = sessions[ises].tensor[np.ix_(idx_areax1_sub,idx_T,idx_resp)]
             X2                  = sessions[ises].tensor[np.ix_(idx_areax2_sub,idx_T,idx_resp)]
             X3                  = sessions[ises].tensor[np.ix_(idx_areax3_sub,idx_T,idx_resp)]
             Y                   = sessions[ises].tensor[np.ix_(idx_areay_sub,idx_T,idx_resp)]
 
-            # reshape to neurons x time points
-            X1                  = X1.reshape(len(idx_areax1_sub),-1).T
-            X2                  = X2.reshape(len(idx_areax2_sub),-1).T
-            X3                  = X3.reshape(len(idx_areax3_sub),-1).T
-            Y                   = Y.reshape(len(idx_areay_sub),-1).T
+            #Zscore: 
+            X1 -= np.nanmean(X1, axis=(1,2), keepdims=True)
+            X2 -= np.nanmean(X2, axis=(1,2), keepdims=True)
+            X3 -= np.nanmean(X3, axis=(1,2), keepdims=True)
+            Y -= np.nanmean(Y, axis=(1,2), keepdims=True)
 
-            X1                  = zscore(X1,axis=0) #zscore the activity per neuron
-            X2                  = zscore(X2,axis=0)
-            X3                  = zscore(X3,axis=0)
-            Y                   = zscore(Y,axis=0)
-
-            X                   = np.concatenate((X1,X2,X3),axis=1) #use this as source to predict the activity in Y with RRR
-
-            # OUTPUT: MAX PERF, OPTIM RANK, PERF FOR EACH RANK ACROSS FOLDS AND MODELFITS    
-            R2_kfold    = np.zeros((params['kfold']))
-            kf          = KFold(n_splits=params['kfold'],shuffle=True)
-            for ikf, (idx_train, idx_test) in enumerate(kf.split(X)):
-                X_train, X_test     = X[idx_train], X[idx_test]
-                Y_train, Y_test     = Y[idx_train], Y[idx_test]
-
-                #RRR X to Y
-                B_hat_train         = LM(Y_train,X_train, lam=params['lam'])
-                Y_hat_train         = X_train @ B_hat_train
-
-                # decomposing and low rank approximation of Y_hat
-                U, s, V = svds(Y_hat_train,k=fixed_rank,which='LM')
-                U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
-
-                B_rrr           = B_hat_train @ V.T @ V #project beta coeff into low rank subspace
-                
-                W               = B_rrr @ V.T   # Get predictive X-directions
-                
-                ## Get partially filled X
-                X_train_1 = copy.deepcopy(X_test)
-                X_train_2 = copy.deepcopy(X_test)
-                X_train_3 = copy.deepcopy(X_test)
-
-                X_train_1[:,Nsub:] = 0
-
-                X_train_2[:,:Nsub] = 0
-                X_train_2[:,2*Nsub:] = 0
-                
-                X_train_3[:,:2*Nsub] = 0
-
-                X_test_1 = copy.deepcopy(X_test)
-                X_test_2 = copy.deepcopy(X_test)
-                X_test_3 = copy.deepcopy(X_test)
-
-                X_test_1[:,Nsub:] = 0
-
-                X_test_2[:,:Nsub] = 0
-                X_test_2[:,2*Nsub:] = 0
-                
-                X_test_3[:,:2*Nsub] = 0
-
-                X_pred1 = X_train_1 @ W
-                X_pred2 = X_train_2 @ W
-                X_pred3 = X_train_3 @ W
-
-                doc_eigvecs, doc_eigvals = doc_rotation(X_pred1,X_pred3)
-
-                # Rotate into DOC space
-                X_doc1 = X_pred1 @ doc_eigvecs
-                X_doc2 = X_pred2 @ doc_eigvecs
-                X_doc3 = X_pred3 @ doc_eigvecs
-
-                R2_cv[0,ises,istim,imf,ikf] = EV(Y_test,Y_hat_test_rr)
-                
-                
-
-
-                X_test_1 = copy.deepcopy(X_test)
-                X_test_1[:,Nsub:] = 0
-                Y_hat_test_rr   = X_test_1 @ B_rrr
-                Xpred_test_1    = X_test_1 @ W   # Project X onto predictive dimensions
-                
-                for r in range(fixed_rank):
-                    R2_cv_rot[1,ises,istim,r,imf,ikf] = EV(Y_test,Y_hat_test_rr)
-                R2_cv[1,ises,istim,imf,ikf] = EV(Y_test,Y_hat_test_rr)
-
-                X_test_2 = copy.deepcopy(X_test)
-                X_test_2[:,:Nsub] = 0
-                X_test_2[:,2*Nsub:] = 0
-                Y_hat_test_rr   = X_test_2 @ B_rrr
-
-                R2_cv[2,ises,istim,imf,ikf] = EV(Y_test,Y_hat_test_rr)
-
-                X_test_3 = copy.deepcopy(X_test)
-                X_test_3[:,:2*Nsub] = 0
-                Y_hat_test_rr   = X_test_3 @ B_rrr
-
-                R2_cv[3,ises,istim,imf,ikf] = EV(Y_test,Y_hat_test_rr)
-
-#    Y_hat_rr = np.full((Y.shape[0],Y.shape[1],narealabelpairs),np.nan)
-
-#             # SVD of predicted activity
-#             U, S, Vt = np.linalg.svd(Y_hat, full_matrices=False)
-#             V = Vt.T
-#             # choose rank-k approximation
-#             V_k = V[:, :fixed_rank]
-
-#             W = B_hat @ V_k   # Predictive X-directions
-
-#             # Q, R = np.linalg.qr(W)   # Orthonormalize predictive X subspace
-
-#             Xpred = X @ W   # Project X onto predictive dimensions
-
-#             R2[0,ises,istim,imf] = EV(Y,X @ B_rrr)
-#             # print(EV(Y,Y_hat_rr))
-#             # R2_ranks_neurons[0,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_rr, multioutput='raw_values')
+            X1 /= np.nanstd(X1, axis=(1,2), keepdims=True)
+            X2 /= np.nanstd(X2, axis=(1,2), keepdims=True)
+            X3 /= np.nanstd(X3, axis=(1,2), keepdims=True)
+            Y /= np.nanstd(Y, axis=(1,2), keepdims=True)
             
-#             X_sub_0 = copy.deepcopy(X)
-#             X_sub_0[:,Nsub:] = 0
-#             Y_hat_rr[:,:,0]   = X_sub_0 @ B_rrr
+            X                       = np.concatenate((X1,X2,X3),axis=0) #use this as source to predict the activity in Y with RRR
 
-#             R2[1,ises,istim,imf] = EV(Y,Y_hat_rr[:,:,0])
-#             # R2_ranks_neurons[1,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_rr, multioutput='raw_values')
+            # reshape to neurons x time points
+            X_r               = X.reshape(np.shape(X)[0],-1).T
+            Y_r               = Y.reshape(np.shape(Y)[0],-1).T
+                        
+            #RRR X to Y
+            B_hat         = LM(Y_r,X_r, lam=params['lam'])
+            Y_hat         = X_r @ B_hat
 
-#             X_sub_1 = copy.deepcopy(X)
-#             X_sub_1[:,:Nsub] = 0
-#             X_sub_1[:,2*Nsub:] = 0
-#             Y_hat_rr[:,:,1]   = X_sub_1 @ B_rrr
+            # decomposing and low rank approximation of A
+            U, s, V = svds(Y_hat,k=fixed_rank,which='LM')
+            U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
 
-#             R2[2,ises,istim,imf] = EV(Y,Y_hat_rr[:,:,1])
-#             # R2_ranks_neurons[2,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_rr, multioutput='raw_values')
+            B_rrr           = B_hat @ V[:fixed_rank,:].T @ V[:fixed_rank,:] #project beta coeff into low rank subspace
+            Y_hat_rr        = X_r @ B_rrr
 
-#             X_sub_2 = copy.deepcopy(X)
-#             X_sub_2[:,:2*Nsub] = 0
-#             Y_hat_rr[:,:,2]   = X_sub_2 @ B_rrr
+            # How much of the variance in the source area is aligned with the predictive subspace:
+            Ub, sb, Vb = svds(B_rrr,k=fixed_rank,which='LM')
+            Ub, sb, Vb = Ub[:, ::-1], sb[::-1], Vb[::-1, :]
 
-#             R2[3,ises,istim,imf] = EV(Y,Y_hat_rr[:,:,2])
+            #### NOTE: 
+            # My latent space is not exactly the same as the one used in RRR reconstruction
 
-#%% Find best rank and cvR2 at this rank:
-fixed_rank = None
-for ises in range(nSessions):
-    if np.any(~np.isnan(R2_ranks[0][ises])):
-        for istim in range(params['nStim']):
-            if fixed_rank is not None:
-                rank = fixed_rank
-                R2_cv[0,ises,istim] = np.nanmean(R2_ranks[0,ises,istim,rank,:,:])
-                R2_cv[1,ises,istim] = np.nanmean(R2_ranks[1,ises,istim,rank,:,:])
-                R2_cv[2,ises,istim] = np.nanmean(R2_ranks[2,ises,istim,rank,:,:])
-                R2_cv[3,ises,istim] = np.nanmean(R2_ranks[3,ises,istim,rank,:,:])
-            else:
-                if not np.isnan(R2_ranks[0][ises][istim]).all():
-                    R2_cv[0,ises,istim],optim_rank[0,ises,istim] = rank_from_R2(R2_ranks[0,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-                    R2_cv[1,ises,istim],optim_rank[1,ises,istim] = rank_from_R2(R2_ranks[1,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-                    R2_cv[2,ises,istim],optim_rank[2,ises,istim] = rank_from_R2(R2_ranks[2,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-                    R2_cv[3,ises,istim],optim_rank[3,ises,istim] = rank_from_R2(R2_ranks[3,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
+            # X_split = np.full((*X_r.shape,narealabelpairs),np.nan)
+            X_split = np.repeat(X_r[:,:,np.newaxis],narealabelpairs,axis=2)
+            
+            X_split[:,Nsub:,0] = 0
+            X_split[:,:Nsub,1] = 0
+            X_split[:,2*Nsub:,1] = 0
+            X_split[:,:2*Nsub,2] = 0
+
+            Z_orig = np.full((X_r.shape[0],fixed_rank,narealabelpairs),np.nan)
+            for ial in range(narealabelpairs):
+                Z_orig[:,:,ial] = X_split[:,:,ial] @ Ub @ np.diag(sb)
+
+            for icontrast, contrast in enumerate(contrasts):
+             
+                #Apply DOC: 
+                doc_eigvecs, doc_eigvals = doc_rotation(Z_orig[:,:,contrast[0]],Z_orig[:,:,contrast[1]])
+
+                # latent -> Y mapping before rotation
+                # A = np.diag(sb) @ Vb   # shape: (rank, n_Y)
+                A = Vb   # shape: (rank, n_Y)
+
+                # rotate into DOC space
+                A_doc = doc_eigvecs.T @ A               # shape: (rank, n_Y)
+
+                Z_full      = X_r @ Ub
+                Y_hat_rr    = Z_full @ A
+                Z_full_doc  = X_r @ Ub @ doc_eigvecs
+                Y_hat_doc   = Z_full_doc @ A_doc
+
+                Z_full_doc_r = np.reshape(Z_full_doc,(nK,nT,fixed_rank),order='F')
+                # latents_ranks_doc[0,icontrast,ises,istim,:,:,imf] = np.nanmean(Z_full_doc_r,axis=0) #save the latents of the second contrast in the pair, which are the ones that should be more predictive of Y
+                latents_ranks_doc[0,icontrast,ises,istim,:,:,imf] = np.nanvar(Z_full_doc_r,axis=0) #save the latents of the second contrast in the pair, which are the ones that should be more predictive of Y
+
+                Y_hat_rr_svd = X_r @ Ub @ A
+                assert(np.all(np.max(np.abs(Y_hat_rr - Y_hat_rr_svd)) < 1e-10)), 'RRR reconstruction should be the same as the one from the latent space'
+
+                assert(np.allclose(EV(Y_r,Y_hat_doc),EV(Y_r,Y_hat_rr),atol=1e-10)), 'DOC rotation should not change the overall R2'
+
+                # Rotate activity of each area into DOC space
+                Z_doc = np.full_like(Z_orig,np.nan)
+                for ial in range(narealabelpairs):
+                    Z_doc[:,:,ial] = Z_orig[:,:,ial] @ doc_eigvecs
+                    Z_doc_r = np.reshape(Z_doc[:,:,ial],(nK,nT,fixed_rank),order='F')
+
+                    # latents_ranks_doc[ial+1,icontrast,ises,istim,:,:,imf] = np.nanmean(Z_doc_r,axis=0) #save the latents of the second contrast in the pair, which are the ones that should be more predictive of Y
+                    latents_ranks_doc[ial+1,icontrast,ises,istim,:,:,imf] = np.nanvar(Z_doc_r,axis=0) #save the latents of the second contrast in the pair, which are the ones that should be more predictive of Y
+
+                for r in range(fixed_rank):
+                    # Y_hat
+                    
+                    Y_hat_doc_r = Z_full_doc[:,r][:, np.newaxis] @ A_doc[r,:][np.newaxis, :]
+                    R2_ranks_doc[0,icontrast,ises,istim,r,imf] = EV(Y_r,Y_hat_doc_r)
+                    # print('RRR R2 DOC Latent %d: %f' % (r+1, EV(Y_r,Y_hat_doc_r)))
+                    
+                    Y_hat_doc_perrank   = np.reshape(Y_hat_doc_r.T,(3*Nsub,nK,nT),order='C')
+                    
+                    for t in range(nT):
+                        R2_ranks_doc_t[0,icontrast,ises,istim,t,r,imf] = EV(Y[:,:,t],Y_hat_doc_perrank[:,:,t])
+
+                    for ial in range(narealabelpairs):
+                        Z_area_doc = Z_doc[:,r,ial]
+                        Y_hat_area_doc_r = Z_area_doc[:, np.newaxis] @ A_doc[r,:][np.newaxis, :]
+                        R2_ranks_doc[ial+1,icontrast,ises,istim,r,imf] = EV(Y_r,Y_hat_area_doc_r)
+
+                        Y_hat_area_doc = np.reshape(Y_hat_area_doc_r.T,(3*Nsub,nK,nT),order='C')
+                        for t in range(nT):
+                            R2_ranks_doc_t[ial+1,icontrast,ises,istim,t,r,imf] = EV(Y[:,:,t],Y_hat_area_doc[:,:,t])
+
+#%% Plotting:
+cm = 1/2.54
+figdir = os.path.join(params['figdir'],'RRR','DOC')
+
+t_ticks = np.array([-1,0,1,2])
+# fig,axes = plt.subplots(3,4,figsize=(13,10),sharex=True,sharey=False)
+fig,axes = plt.subplots(ncontrasts,fixed_rank,figsize=(12*cm,6*cm),sharex=True,sharey=True)
+ax = axes
+handles = []
+# plotcontrast = [1,2,3]
+clrs = ['grey','black','red']
+for icontrast in range(ncontrasts):
+    for r in range(fixed_rank):
+        ax = axes[icontrast,r]
+        handles = []
+        for ial in range(narealabelpairs):
+            datatoplot = np.nanmean(latents_ranks_doc[:,icontrast],axis=(1,2,5))
+            # datatoplot = np.nanmean(latents_ranks_doc[:,icontrast,0],axis=(1,4))
+            handles.append(ax.plot(t_axis[idx_resp],datatoplot[ial+1,:,r],color=clrs[ial])[0])
+            thickness = ax.get_ylim()[1]/12
+            ax.fill_between([0,0.75], 0 - thickness/2, 0 + thickness/2, color='k', alpha=1)
+        if icontrast == 0 and r == fixed_rank-1: 
+            ax.legend(handles=handles,labels=list(arealabeled_to_figlabels(sourcearealabelpairs)),loc='best',bbox_to_anchor=(0.65, 0.5), bbox_transform=ax.transAxes)
+            my_legend_strip(ax)
+        if r == 0:
+            ax.set_ylabel('Variance')
+# ax.legend(handles=handles,labels=sourcearealabelpairs,loc='best')
+# my_legend_strip(ax)
+ax_nticks(ax,3)
+ax.set_xticks(t_ticks)
+ax.set_xticklabels(t_ticks)
+ax.set_xlabel('Time (sec)')
+sns.despine(fig=fig, top=True, right=True, offset = 3)
+# my_savefig(fig,figdir,'DOC_latents_variance_acrosss_time')
+# my_savefig(fig,figdir,'DOC_latents_variance_acrosss_time_10dim')
+my_savefig(fig,figdir,'DOC_latents_variance_acrosss_time_%s' % params['direction'])
+
+#%% Plotting the R2 of the latents across time:
+# fig,axes = plt.subplots(3,4,figsize=(13,10),sharex=True,sharey=False)
+fig,axes = plt.subplots(ncontrasts,fixed_rank,figsize=(12*cm,6*cm),sharex=True,sharey=True)
+ax = axes
+# plotcontrast = [1,2,3]
+clrs = ['grey','black','red']
+for icontrast in range(ncontrasts):
+    for r in range(fixed_rank):
+        ax = axes[icontrast,r]
+        handles = []
+        for ial in range(narealabelpairs):
+            datatoplot = np.nanmean(R2_ranks_doc_t[:,icontrast],axis=(1,2,5))
+            # datatoplot = np.nanmean(R2_ranks_doc_t[:,icontrast,0],axis=(1,4))
+            handles.append(ax.plot(t_axis[idx_resp],datatoplot[ial+1,:,r],color=clrs[ial])[0])
+        thickness = ax.get_ylim()[1]/20
+        ax.fill_between([0,0.75], 0 - thickness/2, 0 + thickness/2, color='k', alpha=1)
+            # ax.lege
+        if icontrast == 0 and r == fixed_rank-1: 
+            ax.legend(handles=handles,labels=list(arealabeled_to_figlabels(sourcearealabelpairs)),loc='best',bbox_to_anchor=(0.65, 0.5), bbox_transform=ax.transAxes)
+            my_legend_strip(ax)
+        if r == 0:
+            ax.set_ylabel('R$^{2}$')
+ax_nticks(ax,3)
+ax.set_xticks(t_ticks)
+ax.set_xticklabels(t_ticks)
+ax.set_xlabel('Time (sec)')
+
+# plt.tight_layout()
+sns.despine(fig=fig, top=True, right=True, offset = 3)
+my_savefig(fig,figdir,'DOC_latents_r2_across_time_%s' % params['direction'])
+# my_savefig(fig,figdir,'DOC_latents_r2_across_time_10dim')
+
+
+#%% Plotting the R2 ratio of the latents across time:
+fig,axes = plt.subplots(ncontrasts,fixed_rank,figsize=(12*cm,6*cm),sharex=True,sharey=True)
+ax = axes
+noise_constant = 1e-3
+figlabels = ['V1$_{ND1}$/V1$_{ND2}$','V1$_{PM}$/V1$_{ND1}$']
+figlabels = ['PM$_{ND1}$/PM$_{ND2}$','PM$_{V1}$/PM$_{ND1}$']
+
+plotcontrasts = np.array([[1,2],[1,3]])
+clrs = ['grey','red']
+for icontrast in range(ncontrasts):
+    for r in range(fixed_rank):
+        ax = axes[icontrast,r]
+        handles = []
+        for iplotcontrast,plotcontrast in enumerate(plotcontrasts):
+
+            data1 = np.nanmean(R2_ranks_doc_t[plotcontrast[0],icontrast],axis=(0,1,4))
+            data2 = np.nanmean(R2_ranks_doc_t[plotcontrast[1],icontrast],axis=(0,1,4))
+            datatoplot = (data2+noise_constant) / (data1+noise_constant)
+            handles.append(ax.plot(t_axis[idx_resp],datatoplot[:,r],color=clrs[iplotcontrast])[0])
+
+            # data1 = np.nanmean(R2_ranks_doc_t[plotcontrast[0],icontrast,:,:,:,r,:],axis=(3))
+            # data2 = np.nanmean(R2_ranks_doc_t[plotcontrast[1],icontrast,:,:,:,r,:],axis=(3))
+            # datatoplot = (data2+noise_constant) / (data1+noise_constant)
+            # datatoplot = np.nanmean(datatoplot,axis=(0,1))
+            # handles.append(ax.plot(t_axis[idx_resp],datatoplot,color=clrs[iplotcontrast])[0])
+        thickness = ax.get_ylim()[1]/20
+        ax.fill_between([0,0.75], 0 - thickness/2, 0 + thickness/2, color='k', alpha=1)
+        ax.axhline(y=1,color='grey',linestyle='--')
+        if icontrast == 0 and r == fixed_rank-1: 
+            ax.legend(handles=handles,labels=figlabels,loc='best',bbox_to_anchor=(0.65, 0.5), bbox_transform=ax.transAxes)
+            my_legend_strip(ax)
+        if r == 0:
+            ax.set_ylabel('R$^{2}$ ratio')
+ax_nticks(ax,3)
+ax.set_xticks(t_ticks)
+ax.set_xticklabels(t_ticks)
+ax.set_xlabel('Time (sec)')
+sns.despine(fig=fig, top=True, right=True, offset = 3)
+my_savefig(fig,figdir,'DOC_latents_r2_ratio_across_time_%s' % params['direction'])
+# my_savefig(fig,figdir,'DOC_latents_r2_across_time_10dim')
+
+# #%% Plotting the R2 of the latents across time:
+# # fig,axes = plt.subplots(3,4,figsize=(13,10),sharex=True,sharey=False)
+# fig,axes = plt.subplots(ncontrasts,fixed_rank,figsize=(12*cm,6*cm),sharex=True,sharey=True)
+# ax = axes
+# # plotcontrast = [1,2,3]
+# clrs = ['grey','black','red']
+# for icontrast in range(ncontrasts):
+#     for r in range(fixed_rank):
+#         ax = axes[icontrast,r]
+#         handles = []
+#         for ial in range(narealabelpairs):
+#             datatoplot = np.nanmean(R2_ranks_doc_t[:,icontrast],axis=(1,2,5))
+#             datatoplot = np.nanmean(R2_ranks_doc_t[:,icontrast,0],axis=(1,4))
+#             handles.append(ax.plot(t_axis[idx_resp],datatoplot[ial+1,:,r],color=clrs[ial])[0])
+#         thickness = ax.get_ylim()[1]/20
+#         ax.fill_between([0,0.75], 0 - thickness/2, 0 + thickness/2, color='k', alpha=1)
+#             # ax.lege
+#         if icontrast == 0 and r == fixed_rank-1: 
+#             ax.legend(handles=handles,labels=list(arealabeled_to_figlabels(sourcearealabelpairs)),loc='best',bbox_to_anchor=(0.65, 0.5), bbox_transform=ax.transAxes)
+#             my_legend_strip(ax)
+#         if r == 0:
+#             ax.set_ylabel('R$^{2}$')
+# ax_nticks(ax,3)
+# ax.set_xticks(t_ticks)
+# ax.set_xticklabels(t_ticks)
+# ax.set_xlabel('Time (sec)')
+
+# # plt.tight_layout()
+# sns.despine(fig=fig, top=True, right=True, offset = 3)
+# figdir = os.path.join(params['figdir'],'RRR','DOC')
+# my_savefig(fig,figdir,'DOC_latents_r2_acrosss_time')
 
 #%%
 params['Nsub']     = Nsub
@@ -334,13 +419,8 @@ params['nSessions'] = nSessions
 
 #%% Save the data:
 np.savez(savefilename + '.npz',R2_cv=R2_cv,R2_ranks=R2_ranks,optim_rank=optim_rank,
-         R2_ranks_neurons=R2_ranks_neurons,source_dim=source_dim,
-         R2_sourcealigned=R2_sourcealigned,
-         frac_pos_weight_out=frac_pos_weight_out,
-         weights_in=weights_in,frac_pos_weight_in=frac_pos_weight_in,
          sourcearealabelpairs=sourcearealabelpairs,
          targetarealabelpair=targetarealabelpair,
-        #  params=params,allow_pickle=True)
          allow_pickle=True)
 
 with open(savefilename +'_params' + '.txt', "wb") as myFile:

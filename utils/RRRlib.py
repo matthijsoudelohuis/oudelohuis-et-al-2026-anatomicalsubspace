@@ -4,6 +4,7 @@ Champalimaud 2023
 
 """
 
+from numpy.linalg import eigh
 import scipy as sp
 import numpy as np
 from scipy import linalg
@@ -910,3 +911,31 @@ def estimate_dimensionality(X,method='participation_ratio'):
 
 # PR = (np.sum(lambdas)**2) / np.sum(lambdas**2)
 # print(PR)
+
+
+#%%
+def doc_rotation(Zx, Zy, center=True):
+    """
+    Zx: (n_samples, r) projections of X into predictive subspace
+    Zy: (n_samples, r) projections of Y into predictive subspace
+    """
+    if center:
+        Zx = Zx - Zx.mean(axis=0, keepdims=True)
+        Zy = Zy - Zy.mean(axis=0, keepdims=True)
+
+    # covariance matrices
+    Cx = np.cov(Zx, rowvar=False)
+    Cy = np.cov(Zy, rowvar=False)
+
+    # difference of covariances
+    S = Cy - Cx
+
+    # eigen decomposition
+    eigvals, eigvecs = eigh(S)
+
+    # sort descending (Y-dominant first)
+    idx = np.argsort(eigvals)[::-1]
+    eigvals = eigvals[idx]
+    eigvecs = eigvecs[:, idx]
+
+    return eigvecs, eigvals

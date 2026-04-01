@@ -7,6 +7,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
+
 os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 from loaddata.get_data_folder import get_local_drive
 
@@ -25,10 +26,15 @@ from utils.corr_lib import *
 from utils.tuning import compute_tuning_wrapper
 from utils.regress_lib import *
 from params import load_params
+from utils.RRRlib import *
 
 params = load_params()
-figdir = os.path.join(params['figdir'],'RRR','Routing')
+figdir = os.path.join(params['figdir'],'RRR','SubspaceOverlap')
 
+
+#%% Plotting parameters:
+set_plot_basic_config()
+cm      = 1/2.54  # centimeters in inches
 
 #%% 
 areas = ['V1','PM','AL']
@@ -45,17 +51,154 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=ar
 # sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],filter_areas=areas)
 
 
-
-#%%  Load data properly:        
-# calciumversion = 'deconv'
-# calciumversion = 'dF'
-# for ises in range(nSessions):
-#     sessions[ises].load_respmat(load_behaviordata=True, load_calciumdata=True,load_videodata=True,
-#                                 calciumversion=calciumversion,keepraw=False)
-
 #%% Wrapper function to load the tensor data, 
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=False)
 # sessions = load_resid_tensor(sessions,behavout=True)
+
+#%% 
+######  #######  #####  ######  #######  #####   #####     ####### #     # #######       #    #       
+#     # #       #     # #     # #       #     # #     #    #     # #     #    #         # #   #       
+#     # #       #       #     # #       #       #          #     # #     #    #        #   #  #       
+######  #####   #  #### ######  #####    #####   #####     #     # #     #    #       #     # #       
+#   #   #       #     # #   #   #             #       #    #     # #     #    #       ####### #       
+#    #  #       #     # #    #  #       #     # #     #    #     # #     #    #       #     # #       
+#     # #######  #####  #     # #######  #####   #####     #######  #####     #       #     # ####### 
+
+#%% 
+# arealabelpairs  = ['V1unl-PMunl',
+#                     'V1unl-PMlab',
+#                     'V1lab-PMunl',
+#                     'V1lab-PMlab',
+#                     'PMunl-V1unl',
+#                     'PMunl-V1lab',
+#                     'PMlab-V1unl',
+#                     'PMlab-V1lab']
+
+arealabelpairs  = ['V1unl-PMunl-ALunl',
+                    # 'PMlab-V1lab'
+                    'V1lab-PMlab-ALunl',
+                    ]
+params['direction'] = 'FF'
+
+pairpops            = np.array([20])
+outpops             = np.array([5,20])
+pairpops            = np.array([10,20,50,100,200,500])
+outpops             = np.array([0,10,20,50,100,200])
+npairpops           = len(pairpops)
+noutpops            = len(outpops)
+
+narealabelpairs     = len(arealabelpairs)
+
+# Nsub                = 20
+nranks              = 10 #number of ranks of RRR to be evaluated
+nmodelfits          = 10
+
+params['nStim']     = 16
+params['nSessions'] = nSessions
+
+idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
+
+R2_cv               = np.full((narealabelpairs,npairpops,noutpops,nSessions,params['nStim'],nmodelfits),np.nan) #dim1: 3 = allneurons, V1unl, V1lab separately
+optim_rank          = np.full((narealabelpairs,npairpops,noutpops,nSessions,params['nStim'],nmodelfits),np.nan)
+
+kf                  = KFold(n_splits=params['kfold'],shuffle=True)
+rank_neuralout      = 5
+rank_neuralpair     = 5
+params['filter_nearby'] = False
+
+for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for different population sizes'):
+    if params['filter_nearby']:
+        idx_nearby  = filter_nearlabeled(ses,radius=params['radius'])
+    else:
+        idx_nearby = np.ones(len(ses.celldata),dtype=bool)
+
+    for iapl, arealabelpair in enumerate(arealabelpairs):
+        
+        alx,aly,alz = arealabelpair.split('-')
+        idx_areax      = np.where(np.all((ses.celldata['arealabel']==alx,
+                                    ses.celldata['noise_level']<params['maxnoiselevel'],
+                                    idx_nearby),axis=0))[0]
+        idx_areay       = np.where(np.all((ses.celldata['arealabel']==aly,
+                                    ses.celldata['noise_level']<params['maxnoiselevel'],
+                                    idx_nearby
+                                    ),axis=0))[0]
+        idx_areaz       = np.where(np.all((ses.celldata['arealabel']==alz,
+                                    ses.celldata['noise_level']<params['maxnoiselevel'],
+                                    ),axis=0))[0]
+
+        # for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
+        for istim,stim in enumerate([0,4]): # loop over orientations 
+            idx_T               = ses.trialdata['stimCond']==stim
+       
+            X                  = sessions[ises].tensor[np.ix_(idx_areax,idx_T,idx_resp)]
+            Y                  = sessions[ises].tensor[np.ix_(idx_areay,idx_T,idx_resp)]
+            Z                  = sessions[ises].tensor[np.ix_(idx_areaz,idx_T,idx_resp)]
+        
+            # reshape to neurons x time points
+            X                  = X.reshape(len(idx_areax),-1).T
+            Y                  = Y.reshape(len(idx_areay),-1).T
+            Z                  = Z.reshape(len(idx_areaz),-1).T
+
+            X                  = zscore(X,axis=0) #zscore the activity per neuron
+            Y                  = zscore(Y,axis=0)
+            Z                  = zscore(Z,axis=0)
+
+            nX, nY, nZ = X.shape[1], Y.shape[1], Z.shape[1]
+
+            for ipairpop,pairpop in enumerate(pairpops):
+                for ioutpop,outpop in enumerate(outpops):
+
+                    rank_neuralout      = 5
+                    rank_neuralpair     = 5
+
+                    rank_neuralout      = np.cbrt(outpop).astype(int)
+                    rank_neuralpair     = np.cbrt(pairpop).astype(int)
+    
+                    if nX< pairpop or nY< pairpop or nZ<outpop:
+                        continue
+                    
+                    for imf in range(nmodelfits): 
+                        Z_pred = Z[:,np.random.choice(nZ,outpop,replace=False)]
+
+                        if outpop>0:
+                            X_orig,X_hat_rr,X_out  = regress_out_cv(X=Z_pred,Y=X,rank=rank_neuralout)
+                            Y_orig,Y_hat_rr,Y_out  = regress_out_cv(X=Z_pred,Y=Y,rank=rank_neuralout)
+                        else: 
+                            X_out,Y_out = X,Y
+
+                        R2_cv[iapl,ipairpop,ioutpop,ises,istim,imf],optim_rank[iapl,ipairpop,ioutpop,ises,istim,imf],_  = RRR_wrapper(Y_out, X_out, nN=pairpop,nK=None,
+                                                                                                                            lam=params['lam'],nranks=nranks,kfold=params['kfold'],
+                                                                                                                          nmodelfits=1,fixed_rank=rank_neuralpair)
+
+#%% Plotting the mean across time across sessions: 
+# R2_toplot = np.reshape(R2_cv,(narealabelpairs+1,params['nSessions']*params['nStim'],params['nT']))
+
+fig,axes = plt.subplots(1,1,figsize=(4.5*cm,4*cm))
+ax = axes
+handles = []
+clrs_pops = sns.color_palette('flare',n_colors=npairpops)
+for iapl,apl in enumerate(arealabelpairs):
+    for ipairpop,pairpop in enumerate(pairpops):
+        datatoplot = np.nanmean(R2_cv[iapl,ipairpop],axis=(1,2,3))
+        handles.append(ax.plot(outpops,datatoplot,color=clrs_pops[ipairpop],marker='o',markersize=5,linestyle='-')[0])
+ax.legend(handles=handles,labels=list(pairpops),title='V1-PM pop. size',loc='best',frameon=False,reverse=True,bbox_to_anchor=(1,1))
+ax.set_xticks(outpops)
+ax.set_xticklabels(outpops)
+ax.set_yscale('log')
+ax.set_xlim([0,200])
+# ax.set_yticks(np.logspace(0.0001,1))
+# ax.set_yticklabels(np.round(np.logspace(0.0001,1),3))
+ax.grid(True,axis='both',alpha=0.7,which='both')
+ax.set_xlabel('AL population size')
+ax.set_ylabel('R$^{2}$')
+ax.set_ylim([0,ax.get_ylim()[1]])
+# plt.tight_layout()
+sns.despine(fig=fig, top=True, right=True, offset = 3)
+my_savefig(fig,figdir,'RRR_AL_out_popsizes_%s' % (params['direction']))
+
+
+#%% 
+
 
 
 #%% 
@@ -68,201 +211,177 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=ar
 #       #     # ### #     #  #####  ### #       ####### #######    #     # #     #  #####  ####### ####### 
 #
 
-#%% 
-
-
-#%% Parameters for RRR for size-matched populations of V1 and PM labeled and unlabeled neurons
-lam                 = 0
-nranks              = 20 #number of ranks of RRR to be evaluated
-nmodelfits          = 10 #number of times new neurons are resampled - many for final run
-kfold               = 5
-maxnoiselevel       = 20
-nStim               = 16
-
-# idx_resp            = np.where((t_axis>=0) & (t_axis<=1))[0]
-idx_resp            = np.where((t_axis>=0) & (t_axis<=1.5))[0]
-# idx_resp            = np.where((t_axis>=0.5) & (t_axis<=1.5))[0]
-ntimebins           = len(idx_resp)
-minsampleneurons    = 10
-filter_nearby       = True
-
-fixed_rank          = None
-
 
 #%% 
-## 
 
+
+# #%% Parameters for RRR for size-matched populations of V1 and PM labeled and unlabeled neurons
+# lam                 = 0
+# nranks              = 20 #number of ranks of RRR to be evaluated
+# nmodelfits          = 10 #number of times new neurons are resampled - many for final run
+# kfold               = 5
+# maxnoiselevel       = 20
+# nStim               = 16
+
+# # idx_resp            = np.where((t_axis>=0) & (t_axis<=1))[0]
+# idx_resp            = np.where((t_axis>=0) & (t_axis<=1.5))[0]
+# # idx_resp            = np.where((t_axis>=0.5) & (t_axis<=1.5))[0]
+# ntimebins           = len(idx_resp)
+# minsampleneurons    = 10
+# filter_nearby       = True
+
+# fixed_rank          = None
+
+
+#%% 
 arealabelpairs  = [
-                    'V1unl-PMunl', #Feedforward pairs
-                    'PMunl-V1unl', #Feedback pairs
+                    'V1unl-PMunl-ALunl', #Feedforward pairs
+                    'PMunl-V1unl-ALunl', #Feedback pairs
                     ]
 
-clrs_arealabelpairs = get_clr_area_labelpairs(arealabelpairs)
+# clrs_arealabelpairs = get_clr_area_labelpairs(arealabelpairs)
 narealabelpairs     = len(arealabelpairs)
 
-nsampleneurons      = 25
-nmodelfits          = 5 #number of times new neurons are resampled - many for final run
-fixed_rank          = 3
+nsampleneurons      = 50
+params['nmodelfits']          = 5 #number of times new neurons are resampled - many for final run
+fixed_rank          = 5
+params['filter_nearby'] = False
 
-R2_cv               = np.full((narealabelpairs,3,nSessions,nStim,nStim),np.nan)
-optim_rank          = np.full((narealabelpairs,3,nSessions,nStim,nStim),np.nan)
-R2_ranks            = np.full((narealabelpairs,3,nSessions,nStim,nStim,nranks,nmodelfits,kfold),np.nan)
-subspace_weights    = np.full((narealabelpairs,3,nSessions,nStim,nsampleneurons,nsampleneurons,nmodelfits,kfold),np.nan)
-subspace_angle      = np.full((narealabelpairs,3,nSessions,nStim,nStim,fixed_rank,nmodelfits,kfold),np.nan)
+# R2_cv               = np.full((narealabelpairs,3,nSessions,params['nStim']),np.nan)
+# optim_rank          = np.full((narealabelpairs,3,nSessions,params['nStim'])np.nan)
+# R2_ranks            = np.full((narealabelpairs,3,nSessions,params['nStim'],nranks,nmodelfits,kfold),np.nan)
+subspace_weights    = np.full((narealabelpairs,3,2,nsampleneurons,fixed_rank,nSessions,params['nStim'],params['nmodelfits'],params['kfold']),np.nan)
+subspace_angle      = np.full((narealabelpairs,3,fixed_rank,nSessions,params['nStim'],params['nmodelfits'],params['kfold']),np.nan)
 
-stim = np.unique(sessions[0].trialdata['stimCond'])
-stimlabels = np.unique(sessions[0].trialdata['Orientation'])
-
-# for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for different populations'):
-for ises,ses in tqdm(enumerate([sessions[0]]),total=nSessions,desc='Fitting RRR model for different populations'):
-    if filter_nearby:
-        idx_nearby  = filter_nearlabeled(ses,radius=30)
+for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for different populations'):
+# for ises,ses in tqdm(enumerate([sessions[1]]),total=nSessions,desc='Fitting RRR model for different populations'):
+    if params['filter_nearby']:
+        idx_nearby  = filter_nearlabeled(ses,radius=params['radius'])
     else:
         idx_nearby = np.ones(len(ses.celldata),dtype=bool)
 
-    if not hasattr(ses,'tensor_behavout') and 'behavout' in dataversions: 
-        sessions[ises].tensor_behavout = copy.copy(sessions[ises].tensor)
-        #Get behavioral matrix:
-        B                   = np.concatenate((sessions[ises].tensor_vid,
-                                sessions[ises].tensor_run),axis=0)
-        
-        for area in ['V1','PM']:
-            idx_N    = np.where(np.all((ses.celldata['roi_name']==area,
-                                        idx_nearby,
-                                        ses.celldata['noise_level']<maxnoiselevel),axis=0))[0]
-
-            for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations
-                idx_T               = sessions[ises].trialdata['stimCond']==stim
-
-                Bstim                   = B[:,idx_T,:].reshape(np.shape(B)[0],-1).T
-                Bstim                   = zscore(Bstim,axis=0,nan_policy='omit')
-                Bstim                   = Bstim[:,~np.all(np.isnan(Bstim),axis=0)]
-
-                tempdata            = sessions[ises].tensor[np.ix_(idx_N,idx_T,np.arange(len(t_axis)))]
-                N,K,T = np.shape(tempdata)
-                Y_r = np.reshape(tempdata,(N,K*T),order='C').T
-                Y_orig,Y_hat,Y_out  = regress_out_cv(X=Bstim,Y=Y_r,rank=np.min([rank_behavout,len(idx_N)-1]),
-                                                    lam=0,kfold=5)
-                # print(area,EV(Y_orig,Y_hat))
-                sessions[ises].tensor_behavout[np.ix_(idx_N,idx_T,np.arange(len(t_axis)))] = np.reshape(Y_out.T,(N,K,T),order='C')
-
-    if nsampleneurons<minsampleneurons: #skip session if less than minsampleneurons in either population
-        continue
-
     for iapl, arealabelpair in enumerate(arealabelpairs):
         
-        alx,aly = arealabelpair.split('-')
+        alx,aly,alz = arealabelpair.split('-')
+        idx_areax      = np.where(np.all((ses.celldata['arealabel']==alx,
+                                    ses.celldata['noise_level']<params['maxnoiselevel'],
+                                    idx_nearby),axis=0))[0]
+        idx_areay       = np.where(np.all((ses.celldata['arealabel']==aly,
+                                    ses.celldata['noise_level']<params['maxnoiselevel'],
+                                    idx_nearby
+                                    ),axis=0))[0]
+        idx_areaz       = np.where(np.all((ses.celldata['arealabel']==alz,
+                                    ses.celldata['noise_level']<params['maxnoiselevel'],
+                                    ),axis=0))[0]
 
-        idx_areax           = np.where(np.all((ses.celldata['arealabel']==alx,
-                                ses.celldata['noise_level']<maxnoiselevel,	
-                                idx_nearby),axis=0))[0]
-        idx_areay           = np.where(np.all((ses.celldata['arealabel']==aly,
-                                ses.celldata['noise_level']<maxnoiselevel,	
-                                idx_nearby),axis=0))[0]
-
-        if np.any(np.intersect1d(idx_areax,idx_areay)): #if interactions within one population:
-            if not np.array_equal(idx_areax, idx_areay): 
-                print('Arealabelpair %s has partly overlapping neurons'%arealabelpair)
-            idx_areax, idx_areay = np.array_split(np.random.permutation(idx_areax), 2)
-
-        if len(idx_areax)<nsampleneurons or len(idx_areay)<nsampleneurons: #skip exec if not enough neurons in one of the populations
+        if len(idx_areax)<nsampleneurons or len(idx_areay)<nsampleneurons or len(idx_areaz)<nsampleneurons:
             continue
-        
-        for istim,stimI in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
-            for jstim,stimJ in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
-        # for istim,stimI in enumerate(np.unique(ses.trialdata['stimCond'][0])): # loop over orientations 
-            # for jstim,stimJ in enumerate(np.unique(ses.trialdata['stimCond'][0])): # loop over orientations 
-                idx_T_i               = ses.trialdata['stimCond']==stimI
-                idx_T_j               = ses.trialdata['stimCond']==stimJ
+
+        # for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
+        for istim,stim in enumerate([0,4]): # loop over orientations 
+            idx_T               = ses.trialdata['stimCond']==stim
+
+            for imf in range(params['nmodelfits']):
+
+                idx_areax_sub =  np.random.choice(idx_areax,nsampleneurons,replace=False)
+                idx_areay_sub =  np.random.choice(idx_areay,nsampleneurons,replace=False)
+                idx_areaz_sub =  np.random.choice(idx_areaz,nsampleneurons,replace=False)
+       
+                X                  = sessions[ises].tensor[np.ix_(idx_areax_sub,idx_T,idx_resp)]
+                Y                  = sessions[ises].tensor[np.ix_(idx_areay_sub,idx_T,idx_resp)]
+                Z                  = sessions[ises].tensor[np.ix_(idx_areaz_sub,idx_T,idx_resp)]
+            
+                # reshape to neurons x time points
+                X                  = X.reshape(len(idx_areax_sub),-1).T
+                Y                  = Y.reshape(len(idx_areay_sub),-1).T
+                Z                  = Z.reshape(len(idx_areaz_sub),-1).T
+
+                X                  = zscore(X,axis=0) #zscore the activity per neuron
+                Y                  = zscore(Y,axis=0)
+                Z                  = zscore(Z,axis=0)
+
+                B_hat                 = LM(Y,X, lam=params['lam'])
+                # B_hat_train         = LM(Y_train,X_train, lam=lam)
+
+                Y_hat         = X @ B_hat
+
+                # decomposing and low rank approximation of A
+                U, s, V = svds(Y_hat,k=fixed_rank,which='LM')
+                U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
+
+                subspace_weights[iapl,0,0,:,:,ises,istim,imf,0] = B_hat @ V.T #@ V
+
+                B_hat                 = LM(Z,X, lam=params['lam'])
+                # B_hat_train         = LM(Y_train,X_train, lam=lam)
+
+                Z_hat         = X @ B_hat
+
+                # decomposing and low rank approximation of A
+                U, s, V = svds(Z_hat,k=fixed_rank,which='LM')
+                U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
+
+                subspace_weights[iapl,0,1,:,:,ises,istim,imf,0] = B_hat @ V.T #@ V
+
+                # S = linalg.diagsvd(s,U.shape[0],s.shape[0])
                 
-                if 'original' in dataversions:
-                    #Get neural data from training trial type:
-                    X_i                   = sessions[ises].tensor[np.ix_(idx_areax,idx_T_i,idx_resp)]
-                    Y_i                   = sessions[ises].tensor[np.ix_(idx_areay,idx_T_i,idx_resp)]
-                    
-                    # reshape to neurons x time points
-                    X_i                   = X_i.reshape(len(idx_areax),-1).T
-                    Y_i                   = Y_i.reshape(len(idx_areay),-1).T
+                # for r in range(nranks):
+                #     B_rrr               = B_hat_train @ V[:r,:].T @ V[:r,:] #project beta coeff into low rank subspace
 
-                    #Get neural data from test trial type:
-                    X_j                   = sessions[ises].tensor[np.ix_(idx_areax,idx_T_j,idx_resp)]
-                    Y_j                   = sessions[ises].tensor[np.ix_(idx_areay,idx_T_j,idx_resp)]
-                    
-                    # reshape to neurons x time points
-                    X_j                   = X_j.reshape(len(idx_areax),-1).T
-                    Y_j                   = Y_j.reshape(len(idx_areay),-1).T
+                #     Y_hat_rr_test       = X_test @ B_rrr #project test data onto low rank predictive subspace
 
-                    R2_cv_folds = np.full((nranks,nmodelfits,kfold),np.nan)
+                #     R2_cv_folds[r,imf,ikf] = EV(Y_test,Y_hat_rr_test)
 
-                    kf      = KFold(n_splits=kfold,shuffle=True)
+            # Y_hat                 = X_i_sub @ B_hat
 
-                    # Data format: 
-                    K,N     = np.shape(X_i)
-                    M       = np.shape(Y_i)[1]
+            #     # decomposing and low rank approximation of A
+            #     U, s, V = svds(Y_hat,k=fixed_rank,which='LM')
+            #     U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
+                
+            #     subspace_weights[iapl,0,ises,istim,:,:,imf] = B_hat @ V[:fixed_rank,:].T @ V[:fixed_rank,:] 
 
-                    nN  = nsampleneurons or min(M,N)
-                    nM  = nsampleneurons or nsampleneurons or min(M,N)
-                    nK  = K
-                    for imf in range(nmodelfits): #loop over model fits, randomly subsample neurons
-                        idx_areax_sub           = np.random.choice(N,nN,replace=False)
-                        idx_areay_sub           = np.random.choice(M,nM,replace=False)
+#%%
+from scipy.linalg import subspace_angles as subangle
+# subspace_weights    = np.full((narealabelpairs,3,2,nsampleneurons,fixed_rank,nSessions,params['nStim'],nmodelfits,params['kfold']),np.nan)
+# subspace_angle      = np.full((narealabelpairs,3,2,fixed_rank,nSessions,params['nStim'],nmodelfits,params['kfold']),np.nan)
 
-                        X_i_sub                   = X_i[:,idx_areax_sub]
-                        Y_i_sub                   = Y_i[:,idx_areay_sub]
-                        
-                        X_i_sub                   = zscore(X_i_sub,axis=0)  #Z score activity for each neuron across trials/timepoints
-                        Y_i_sub                   = zscore(Y_i_sub,axis=0)
-                    
-                        X_j_sub                   = X_j[:,idx_areax_sub]
-                        Y_j_sub                   = Y_j[:,idx_areay_sub]
-                        
-                        X_j_sub                   = zscore(X_j_sub,axis=0)  #Z score activity for each neuron across trials/timepoints
-                        Y_j_sub                   = zscore(Y_j_sub,axis=0)
-                        # print('hello')
+for iapl in range(narealabelpairs):
+    for idataversion in range(3):
+        for ises in range(nSessions):
+            for istim in range(params['nStim']):
+                for imf in range(params['nmodelfits']):
+                    for ikf in range(params['kfold']):
+                        if np.any(np.isnan(subspace_weights[iapl,idataversion,0,:,:,ises,istim,imf,ikf])):
+                            continue
+                        subspace_angle[iapl,idataversion,:,ises,istim,imf,ikf] = subangle(subspace_weights[iapl,idataversion,0,:,:,ises,istim,imf,ikf],
+                                                                                              subspace_weights[iapl,idataversion,1,:,:,ises,istim,imf,ikf])
+subspace_angle = np.degrees(subspace_angle)
+subspace_angle = np.flip(subspace_angle,axis=2)
 
-                        for ikf, (idx_train, idx_test) in enumerate(kf.split(X_sub)):
-                            
-                            X_train, X_test     = X_i_sub[idx_train], X_j_sub[idx_test]
-                            Y_train, Y_test     = Y_i_sub[idx_train], Y_j_sub[idx_test]
-
-                            B_hat_train         = LM(Y_train,X_train, lam=lam)
-
-                            Y_hat_train         = X_train @ B_hat_train
-
-                            # decomposing and low rank approximation of A
-                            U, s, V = svds(Y_hat_train,k=np.min((nranks,nN,nM))-1,which='LM')
-                            U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
-
-                            S = linalg.diagsvd(s,U.shape[0],s.shape[0])
-                            
-                            for r in range(nranks):
-                                B_rrr               = B_hat_train @ V[:r,:].T @ V[:r,:] #project beta coeff into low rank subspace
-
-                                Y_hat_rr_test       = X_test @ B_rrr #project test data onto low rank predictive subspace
-
-                                R2_cv_folds[r,imf,ikf] = EV(Y_test,Y_hat_rr_test)
-                        
-                        subspace_weights[iapl,0,ises,istim,:,:,imf,ikf] = B_hat_train @ V[:fixed_rank,:].T @ V[:fixed_rank,:] 
-
-                    if fixed_rank is not None:
-                        rank = fixed_rank
-                        repmean = np.nanmean(R2_cv_folds[rank,:,:])
-                    else:
-                        repmean,rank = rank_from_R2(R2_cv_folds.reshape([nranks,nmodelfits*kfold]),nranks,nmodelfits*kfold)
-
-                    #OUTPUT: MAX PERF, OPTIM RANK, PERF FOR EACH RANK ACROSS FOLDS AND MODELFITS
-                    R2_cv[iapl,0,ises,istim,jstim] = repmean
-                    optim_rank[iapl,0,ises,istim,jstim] = rank
-                    R2_ranks[iapl,0,ises,istim,jstim,:,:,:] = R2_cv_folds
+#%%
 
 
+#%% Identify which dimensions are particularly enhanced at which timepoints in labeled cells:
+data = np.nanmean(subspace_angle,axis=()) #average across kfolds
+data = np.diff(data,axis=4) #take the difference between rank r and r+1 (uniquely explained variance by rank r)
+nrankstoplot = 4
+fig,axes = plt.subplots(1,narealabelpairs,figsize=(8*cm,4*cm),sharey=True,sharex=True)
 
+for iapl,arealabelpair in enumerate(arealabelpairs):
+    ax = axes[iapl]
+    for idataversion in range(3):
+        data = np.nanmean(subspace_angle[iapl,idataversion],axis=(1,2,3,4)) #average across kfolds
+        ax.plot(range(fixed_rank),data,color='k',marker='o',markersize=5,linestyle='-')
+        ax.set_ylim([0,90])
+        ax.set_xticks(np.arange(fixed_rank))
+        ax.set_yticks([0,30,60,90])
+        ax.set_xlabel('Dimension')
+        ax.set_ylabel('Subspace Angle')
+        ax.set_title(arealabelpair)
+plt.tight_layout()
+sns.despine(fig=fig,top=True,right=True,offset=3)
+my_savefig(fig,figdir,'SubspaceAngle_V1PMAL_%drank_%dneurons_%dsessions' % (fixed_rank,nsampleneurons,params['nSessions']))
 
-
-
-
-
-
+#%% 
 
 
 
