@@ -41,7 +41,7 @@ filename = 'RRR_time_Joint_labeled_FF_original_2026-03-31_16-17-42'
 # filename = 'RRR_Joint_labeled_FF_behavout_2026-02-20_02-00-03'
 
 # version = 'FB_original'
-# filename = 'RRR_Joint_labeled_FB_original_2026-02-19_21-42-16'
+# filename = 'RRR_time_Joint_labeled_FB_original_2026-04-02_22-50-15'
 
 # version = 'FB_behavout'
 # filename = 'RRR_Joint_labeled_FB_behavout_2026-02-20_06-11-04'
@@ -141,15 +141,17 @@ my_savefig(fig,figdir,'RRR_joint_time_%s' % (version))
 
 #%% Plot the ratio across time across sessions: 
 R2_toplot = np.reshape(R2_cv,(narealabelpairs+1,params['nSessions']*params['nStim'],params['nT']))
+R2_toplot = np.clip(R2_toplot,np.nanpercentile(R2_toplot,1),np.nanpercentile(R2_toplot,99)) #clip negative R2 values to zero for better visualization of ratios (since negative R2 values can be very close to zero and lead to extreme ratios)
 fig,axes = plt.subplots(1,1,figsize=(4*cm,4*cm))
 ax = axes
 handles = []
 plotcontrasts = np.array([[1,2],[1,3]])
-plotcontrasts = np.array([[2,1],[1,3]])
+# plotcontrasts = np.array([[2,1],[1,3]])
 figlabels = ['V1$_{ND1}$/V1$_{ND2}$','V1$_{PM}$/V1$_{ND1}$']
 clrs = ['grey','red']
-noise_constant = 1e-5
+noise_constant = 1e-4
 for iplotcontrast,plotcontrast in enumerate(plotcontrasts):
+    
     R2_ratio = (R2_toplot[plotcontrast[1],:,:]+noise_constant) / (R2_toplot[plotcontrast[0],:,:]+noise_constant) #add a small constant to avoid division by zero
     handles.append(shaded_error(params['t_axis'],R2_ratio,error='ci95',color=clrs[iplotcontrast],alpha=0.3,ax=ax))
 ax.axhline(y=1,color='grey',linestyle='--')
@@ -166,15 +168,15 @@ ax.set_xticklabels(t_ticks)
 ax.set_xlabel('Time (s)')
 ax.set_ylabel('R$^{2}$ ratio')
 sns.despine(fig=fig, top=True, right=True, offset = 3)
-my_savefig(fig,figdir,'RRR_joint_time_ratio_%s' % (version))
+# my_savefig(fig,figdir,'RRR_joint_time_ratio_%s' % (version))
 
 #%% Identify which dimensions are particularly enhanced at which timepoints in labeled cells:
 data = np.nanmean(R2_ranks,axis=(6)) #average across kfolds
 data = np.diff(data,axis=4) #take the difference between rank r and r+1 (uniquely explained variance by rank r)
+# data = np.clip(data,np.nanpercentile(data,1),np.nanpercentile(data,99)) #clip negative values to zero for better visualization of ratios (since negative values can be very close to zero and lead to extreme ratios)
 
 diffmetric = 'ratio' #'difference'
 noise_constant = 1e-4
-
 nrankstoplot = 4
 
 fig,axes = plt.subplots(1,nrankstoplot,figsize=(16*cm,4*cm),sharey=True,sharex=True)
@@ -189,7 +191,7 @@ for r in range(nrankstoplot):
     # elif diffmetric == 'difference':
     #     ymeantoplot = np.nanmean(data[2] - data[1],axis=(0,1,3))
         # yerrortoplot = np.nanstd(data[2] - data[1],axis=(0,1,3)) / np.sqrt(params['nSessions']*nmodelfits)
-    handles.append(shaded_error(t_axis,ymeantoplot,yerrortoplot,ax=ax,color='black',alpha=0.3))
+    handles.append(shaded_error(params['t_axis'],ymeantoplot,yerrortoplot,ax=ax,color='black',alpha=0.3))
     ax.axhline(y=1,color='grey',linestyle='--')
 
     # for r in range(nrankstoplot):
@@ -206,7 +208,7 @@ for r in range(nrankstoplot):
     # elif diffmetric == 'difference':
     #     ymeantoplot = np.nanmean(data[2] - data[1],axis=(0,1,3))
         # yerrortoplot = np.nanstd(data[2] - data[1],axis=(0,1,3)) / np.sqrt(params['nSessions']*nmodelfits)
-    handles.append(shaded_error(t_axis,ymeantoplot,yerrortoplot,ax=ax,color='red',alpha=0.3))
+    handles.append(shaded_error(params['t_axis'],ymeantoplot,yerrortoplot,ax=ax,color='red',alpha=0.3))
 
     # for r in range(nrankstoplot):
     #     ydata = (np.nanmean(data[3,:,:,r],axis=2)) /  (np.nanmean(data[1,:,:,r],axis=2))
@@ -235,6 +237,6 @@ elif diffmetric == 'difference':
     ax.axhline(y=0,color='grey',linestyle='--')
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
-my_savefig(fig,figdir,'RRR_R2_time_%s_rank_noiseconstant_%s_%dsessions' % (diffmetric,version,params['nSessions']))
+# my_savefig(fig,figdir,'RRR_R2_time_%s_rank_noiseconstant_%s_%dsessions' % (diffmetric,version,params['nSessions']))
 
 #%%  

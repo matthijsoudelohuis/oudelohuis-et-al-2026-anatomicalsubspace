@@ -12,7 +12,6 @@ import math, os
 os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
-from sklearn.decomposition import PCA
 from scipy.stats import zscore
 import pickle
 from sklearn.model_selection import KFold
@@ -30,9 +29,10 @@ params = load_params()
 # params['regress_behavout'] = True
 params['regress_behavout'] = False
 params['direction'] = 'FF'
-# params['direction'] = 'FB'
+params['direction'] = 'FB'
 # params['direction'] = 'FF_AL'
 # params['direction'] = 'FB_AL'
+params['calciumversion'] = 'deconv'
 
 version = 'Joint_labeled_%s_%s' % (params['direction'],'behavout' if params['regress_behavout'] else 'original')
 
@@ -82,8 +82,8 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=s
                                        min_lab_cells_V1=20,filter_noiselevel=False)
 
 #%% Get all data 
-# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,filter_noiselevel=False)
+sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
+# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,filter_noiselevel=False)
 report_sessions(sessions)
 # sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=True)
 
@@ -95,7 +95,7 @@ narealabelpairs     = len(sourcearealabelpairs)
 
 Nsub                = 20
 nranks              = 20 #number of ranks of RRR to be evaluated
-nmodelfits          = 15
+nmodelfits          = 100
 
 params['nStim']     = 16
 

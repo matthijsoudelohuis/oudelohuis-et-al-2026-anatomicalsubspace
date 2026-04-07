@@ -295,7 +295,7 @@ def load_resid_tensor(sessions,params,compute_respmat=True,subtract_mean_evoked=
                                             ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 
                 for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations
-                    idx_T               = sessions[ises].trialdata['stimCond']==stim
+                    idx_T                   = sessions[ises].trialdata['stimCond']==stim
 
                     Bstim                   = B[:,idx_T,:].reshape(np.shape(B)[0],-1).T
                     Bstim                   = zscore(Bstim,axis=0,nan_policy='omit')
