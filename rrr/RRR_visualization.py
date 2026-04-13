@@ -19,6 +19,7 @@ from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
 from scipy.stats import zscore
 from sklearn.cross_decomposition import CCA
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
 from loaddata.session_info import filter_sessions,load_sessions
 from utils.psth import compute_tensor,compute_respmat

@@ -167,7 +167,7 @@ def filter_sessions(protocols,load_behaviordata=False, load_calciumdata=False,
 
                 # FILTER DATA TO ONLY LOAD DATA BELOW NOISE LEVEL 20 (rupprecht et al. 2021)
                 if sesflag and filter_noiselevel and hasattr(ses, 'celldata'):
-                    cellfilter = np.array(ses.celldata['noise_level']<params['maxnoiselevel'])
+                    cellfilter = np.array(ses.celldata['noise_level']<20)
                     ses.cellfilter = np.logical_and(ses.cellfilter, cellfilter) if getattr(ses, 'cellfilter', None) is not None else cellfilter
                 
                 # Select based on whether session has subset of natural images with more than 2 repeats:
