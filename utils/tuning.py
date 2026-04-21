@@ -213,7 +213,7 @@ def compute_tuning(response_matrix,conditions_vector,tuning_metric='OSI'):
     [N,K]           = np.shape(response_matrix) #get dimensions of response matrix
 
     resp_mean       = np.empty((N,C))
-    resp_res        = response_matrix.copy()
+    resp_res        = copy.deepcopy(response_matrix)
 
     for iC,cond in enumerate(conditions):
         tempmean                            = np.nanmean(response_matrix[:,conditions_vector==cond],axis=1)

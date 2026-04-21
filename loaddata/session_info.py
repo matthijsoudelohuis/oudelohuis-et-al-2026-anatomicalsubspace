@@ -144,7 +144,7 @@ def filter_sessions(protocols,load_behaviordata=False, load_calciumdata=False,
                 if sesflag and min_lab_cells_V1 is not None:
                     sesflag = sesflag and hasattr(ses, 'celldata') and np.sum(np.logical_and(ses.celldata['roi_name']=='V1',ses.celldata['redcell']==1)) >= min_lab_cells_V1
                 if sesflag and min_lab_cells_PM is not None:
-                    sesflag = sesflag and hasattr(ses, 'celldata') and np.sum(np.logical_and(ses.celldata['roi_name']=='PM',ses.celldata['redcell']==1)) >= min_lab_cells_V1
+                    sesflag = sesflag and hasattr(ses, 'celldata') and np.sum(np.logical_and(ses.celldata['roi_name']=='PM',ses.celldata['redcell']==1)) >= min_lab_cells_PM
 
                 # SELECT BASED ON RF
                 if sesflag and session_rf is not None:

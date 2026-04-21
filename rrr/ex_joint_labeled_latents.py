@@ -7,7 +7,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
+os.chdir('c:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
@@ -97,8 +97,8 @@ Nsub  = np.sum(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpair
 
 #%% Show example shared latents: 
 idx_resp            = np.where((t_axis>=0) & (t_axis<=2))[0]
-scale_eigenvalues = True # scale eigenvalues
-rank                = 10 #rank of RRR ranks to plot
+# scale_eigenvalues = True # scale eigenvalues
+rank                = 5 #rank of RRR ranks to plot
 kernel_size         = 3 #size of smoothing kernel in frames
 
 idx_areax1          = np.where(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpairs[0],
@@ -112,7 +112,7 @@ idx_areay       = np.where(np.all((sessions[ises].celldata['arealabel']==targeta
                                         ),axis=0))[0]
 print(len(idx_areax2))
 
-np.random.seed(0)
+np.random.seed(99)
 
 idx_areax1_sub       = np.random.choice(idx_areax1,Nsub,replace=False)
 idx_areax2_sub       = np.random.choice(idx_areax2,Nsub,replace=False)
@@ -140,7 +140,7 @@ B_hat         = LM(Y,X, lam=params['lam'])
 Y_hat         = X @ B_hat
 
 # decomposing and low rank approximation of A
-U, s, V = svds(Y_hat,k=nranks,which='LM')
+U, s, V = svds(Y_hat,k=rank,which='LM')
 U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
 
 B_rrr           = B_hat @ V[:rank,:].T @ V[:rank,:] #project beta coeff into low rank subspace
@@ -158,9 +158,8 @@ X_2 = copy.deepcopy(X)
 X_2[:,:Nsub] = 0
 Z_2 = X_2 @ Ub
 
-if scale_eigenvalues:
-    Z_1 = Z_1 * sb
-    Z_2 = Z_2 * sb
+Z_1 = Z_1 @ np.diag(sb)
+Z_2 = Z_2 @ np.diag(sb)
 
 #Little bit of smoothing:
 Z_1_smooth = np.zeros_like(Z_1)
@@ -191,7 +190,7 @@ for r in range(rank):
         ax.add_artist(AnchoredSizeBar(ax.transData, 10*sessions[ises].sessiondata['fs'][0],
                         "10 Sec", loc=4, frameon=False))
 plt.tight_layout()
-my_savefig(fig,figdir,'Example_Latents_Joint_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
+# my_savefig(fig,figdir,'Example_Latents_Joint_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
 
 #Apply DOC: 
 doc_eigvecs, doc_eigvals = doc_rotation(Z_1,Z_2)
@@ -232,7 +231,7 @@ for r in range(rank):
 plt.suptitle('Maximally different latents')
 plt.tight_layout()
 
-my_savefig(fig,figdir,'Example_Latents_Joint_DOC_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
+# my_savefig(fig,figdir,'Example_Latents_Joint_DOC_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
 
 #%% Now compute the R2 of the latents in the target area, to see if they are more predictive than the original RRR latents:
 
@@ -242,38 +241,62 @@ R2_latents_doc = np.zeros((2,rank))
 print('full R2: %f' % EV(Y,Y_hat))
 Y_hat_rr = X @ B_rrr
 print('RRR R2: %f' % EV(Y,Y_hat_rr))
-Y_hat_doc = Z_1_doc @ np.linalg.pinv(Z_1_doc) @ Y
+# Y_hat_doc = Z_1_doc @ np.linalg.pinv(Z_1_doc) @ Y
 
 # latent -> Y mapping before rotation
-if scale_eigenvalues:
-    A = Vb[:rank, :]   # shape: (rank, n_Y)
-else:
-    A = np.diag(sb[:rank]) @ Vb[:rank, :]   # shape: (rank, n_Y)
+
+Y_hat_rr_svd = X @ Ub @ np.diag(sb) @ Vb
+print('RRR R2: %f' % EV(Y,Y_hat_rr_svd))
+
+# print('RRR R2: %f' % EV(Y,Y_hat_rr_svd))
+
+assert(np.all(np.max(np.abs(Y_hat_rr - Y_hat_rr_svd)) < 1e-10)), 'RRR reconstruction should be the same as the one from the latent space'
 
 # rotate into DOC space
-A_doc = doc_eigvecs.T @ A               # shape: (rank, n_Y)
+Vb_doc = doc_eigvecs.T @ Vb              # shape: (rank, n_Y)
 
-Z_doc = X @ Ub @ doc_eigvecs
+Z_doc = X @ Ub @ np.diag(sb) @ doc_eigvecs
 
-Y_hat_doc = Z_doc @ A_doc
+Y_hat_doc = Z_doc @ Vb_doc
 
 print('RRR R2 DOC: %f' % EV(Y,Y_hat_doc))
 
+assert(np.allclose(EV(Y,Y_hat_doc),EV(Y,Y_hat_rr),atol=1e-10)), 'DOC rotation should not change the overall R2'
+
 # R2 of original RRR latents:
 for r in range(rank):
-    Y_hat_latent_r = Z_1[:,r][:, np.newaxis] @ A[r,:][np.newaxis, :]
+    Y_hat_latent_r = Z_1[:,r][:, np.newaxis] @ Vb[r,:][np.newaxis, :]
     R2_latents_orig[0,r] = EV(Y,Y_hat_latent_r)
-    Y_hat_latent_r = Z_2[:,r][:, np.newaxis] @ A[r,:][np.newaxis, :]
+    Y_hat_latent_r = Z_2[:,r][:, np.newaxis] @ Vb[r,:][np.newaxis, :]
     R2_latents_orig[1,r] = EV(Y,Y_hat_latent_r)
 
 for r in range(rank):
-    Y_hat_latent_r = Z_1_doc[:,r][:, np.newaxis] @ A_doc[r,:][np.newaxis, :]
+    Y_hat_latent_r = Z_1_doc[:,r][:, np.newaxis] @ Vb_doc[r,:][np.newaxis, :]
     R2_latents_doc[0,r] = EV(Y,Y_hat_latent_r)
-    Y_hat_latent_r = Z_2_doc[:,r][:, np.newaxis] @ A_doc[r,:][np.newaxis, :]
+    Y_hat_latent_r = Z_2_doc[:,r][:, np.newaxis] @ Vb_doc[r,:][np.newaxis, :]
     R2_latents_doc[1,r] = EV(Y,Y_hat_latent_r)
 
+# # R2 of original RRR latents:
+# for r in range(rank):
+#     Y_hat_latent_r = Z_1[:,r][:, np.newaxis] @ A[r,:][np.newaxis, :]
+#     # Y_hat_latent_r = Z_1[:,:r+1] @ A[:r+1,:]
+#     R2_latents_orig[0,r] = EV(Y,Y_hat_latent_r)
+#     Y_hat_latent_r = Z_2[:,r][:, np.newaxis] @ A[r,:][np.newaxis, :]
+#     # Y_hat_latent_r = Z_2[:,:r+1] @ A[:r+1,:]
+#     R2_latents_orig[1,r] = EV(Y,Y_hat_latent_r)
+# R2_latents_orig = np.diff(np.concatenate((np.zeros((2,1)),R2_latents_orig),axis=1),axis=1)
+
+# for r in range(rank):
+#     Y_hat_latent_r = Z_1_doc[:,r][:, np.newaxis] @ Vb_doc[r,:][np.newaxis, :]
+#     # Y_hat_latent_r = Z_1_doc[:,:r+1] @ A[:r+1,:]
+#     R2_latents_doc[0,r] = EV(Y,Y_hat_latent_r)
+#     Y_hat_latent_r = Z_2_doc[:,r][:, np.newaxis] @ Vb_doc[r,:][np.newaxis, :]
+#     # Y_hat_latent_r = Z_2_doc[:,:r+1] @ A[:r+1,:]
+#     R2_latents_doc[1,r] = EV(Y,Y_hat_latent_r)
+# R2_latents_doc = np.diff(np.concatenate((np.zeros((2,1)),R2_latents_doc),axis=1),axis=1)
+
 #Plotting the R2 of the original and DOC latents:
-fig,axes = plt.subplots(1,2,figsize=(7*cm,3*cm),sharey=True,sharex=True)
+fig,axes = plt.subplots(1,2,figsize=(7*cm,4*cm),sharey=True,sharex=True)
 ax = axes[0]
 x = np.arange(1,rank+1)
 ax.plot(x,R2_latents_orig[0,:],color=clrs_arealabelpairs[0],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[0]]))
@@ -281,6 +304,7 @@ ax.plot(x,R2_latents_orig[1,:],color=clrs_arealabelpairs[1],alpha=1,label=areala
 ax.set_xlabel('Latent dimension')
 ax.set_ylabel('R$^{2}$')
 ax.set_xticks(x)
+
 ax.legend(frameon=False,loc='upper right',fontsize=8)
 my_legend_strip(ax)
 
@@ -288,9 +312,31 @@ ax = axes[1]
 ax.plot(x,R2_latents_doc[0,:],color=clrs_arealabelpairs[0],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[0]]))
 ax.plot(x,R2_latents_doc[1,:],color=clrs_arealabelpairs[1],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[1]]))
 ax.set_xlabel('Latent dimension')
-ax.set_ylabel('R$^{2}$')
+# ax.set_ylabel('R$^{2}$')
 # ax.legend(frameon=False,loc='upper right',fontsize=8)
 # my_legend_strip(ax)
 plt.tight_layout()
 sns.despine(fig=fig, top=True, right=True, offset = 3)
-my_savefig(fig,figdir,'R2_Latents_Joint_DOC_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
+# my_savefig(fig,figdir,'R2_Latents_Joint_DOC_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
+
+#Plotting the R2 of the original and DOC latents:
+fig,axes = plt.subplots(1,2,figsize=(7*cm,4*cm),sharey=True,sharex=True)
+ax = axes[0]
+x = np.arange(1,rank+1)
+ax.plot(x,R2_latents_orig[1,:] - R2_latents_orig[0,:],color='grey',alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[0]]))
+# ax.plot(x,R2_latents_orig[1,:],color=clrs_arealabelpairs[1],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[1]]))
+ax.set_xlabel('Latent dimension')
+ax.set_ylabel('$\Delta$R$^{2}$')
+ax_nticks(ax,4)
+ax.set_xticks(x)
+ax.axhline(y=0,color='grey',linestyle='--')
+# ax.legend(frameon=False,loc='upper right',fontsize=8)
+# my_legend_strip(ax)
+
+ax = axes[1]
+ax.plot(x,R2_latents_doc[1,:]- R2_latents_doc[0,:],color='grey',alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[0]]))
+# ax.plot(x,R2_latents_doc[1,:],color=clrs_arealabelpairs[1],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[1]]))
+ax.set_xlabel('Latent dimension')
+ax.set_ylabel('R$^{2}$')
+ax.axhline(y=0,color='grey',linestyle='--')
+sns.despine(fig=fig, top=True, right=True, offset = 3)

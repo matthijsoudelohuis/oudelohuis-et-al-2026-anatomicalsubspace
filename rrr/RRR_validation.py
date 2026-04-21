@@ -6,7 +6,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 """
 
 #%% ###################################################
-import math, os
+import os
 os.chdir('c:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 from loaddata.get_data_folder import get_local_drive
@@ -20,8 +20,9 @@ import seaborn as sns
 from sklearn.decomposition import PCA
 from scipy.stats import zscore,wilcoxon,ttest_rel
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+from skimage.measure import block_reduce
 
-from loaddata.session_info import filter_sessions,load_sessions, report_sessions
+from loaddata.session_info import *
 from utils.psth import compute_tensor,compute_respmat
 from utils.plot_lib import * #get all the fixed color schemes
 from utils.regress_lib import *
@@ -43,9 +44,9 @@ session_list        = np.array([['LPE12223_2024_06_10'], #GR
 
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list,filter_noiselevel=True)
 
-#%% Get all data 
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
-report_sessions(sessions)
+# #%% Get all data 
+# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
+# report_sessions(sessions)
 
 #%%  Load data properly:        
 for ises in range(nSessions):
@@ -55,15 +56,15 @@ t_axis = sessions[0].t_axis
 
 #%% 
 for ises in range(nSessions):
-    sessions[ises].respmat = np.nanmean(sessions[ises].tensor[:,:,t_axis>0],axis=2) #average across time axis to get mean response to each stimulus condition
+    sessions[ises].respmat = np.nanmean(sessions[ises].tensor[:,:,(t_axis>0) & (t_axis<1)],axis=2) #average across time axis to get mean response to each stimulus condition
 
 #%%
 sessions = compute_tuning_wrapper(sessions)
 
 #%% Example reconstruction of activity in the target area:
 #Perform RRR on raw calcium data: 
-ises = 0
-ses = sessions[ises]
+ises    = 0
+ses     = sessions[ises]
 
 nN                  = 500
 nM                  = 500
@@ -82,7 +83,7 @@ idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
 idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
                         ses.celldata['noise_level']<10),axis=0))[0]
 
-np.random.seed(0)
+np.random.seed(9)
 idx_areax_sub       = np.random.choice(idx_areax,nN,replace=False)
 idx_areay_sub       = np.random.choice(idx_areay,nM,replace=False)
 
@@ -150,8 +151,7 @@ ax = axes[0]
 source_example_neurons = np.argsort(-sourceweights)[:nshowneurons]
 for i,iN in enumerate(source_example_neurons):
     ax.plot(ts,X[:,iN]*scale+i,color='k',lw=lw)
-ax.set_title('Source Activity (V1)')
-ax.set_ylabel('Neurons')
+ax.set_title('source activity (V1)')
 ax.axis('off')
 ax.add_artist(AnchoredSizeBar(ax.transData, 1,
             "1 Sec", loc=4, frameon=False))
@@ -168,16 +168,16 @@ for i,iN in enumerate(target_example_neurons):
     ax.plot(ts,Y[:,iN]*scale+i,color='k',lw=lw)
 #     handles2.append(ax.plot(ts,Y[:,iN]*scale+i,color='k',lw=lw)[0])
 # ax.legend(handles2,['Target Neurons'],bbox_to_anchor=(1.05, 0.5),frameon=False,fontsize=6,ncol=1,loc='center left') 
-ax.set_title('Target Activity (PM)')
+ax.set_title('target activity (PM)')
 ax.set_xlim([example_tstart-10,example_tstart+20])
 ax.axis('off')
 
 # my_savefig(fig,figdir,'V1PM_LowRank_Excerpt_%s_Rank%d.png' % (ses.sessiondata['session_id'][0],0),formats=['png']) 
 for r in range(1,nrankstoplot):
     for i,iN in enumerate(target_example_neurons):
-        ax.plot(ts,Y_hat_rr[:,iN,r]*scale+i,color=clrs_ranks[r],lw=lw)
+        ax.plot(ts,Y_hat_rr[:,iN,r]*scale+i,color=clrs_ranks[r],lw=lw,linestyle='--')
     # my_savefig(fig,figdir,'V1PM_LowRank_Excerpt_%s_Rank%d.png' % (ses.sessiondata['session_id'][0],r+1),formats=['png']) 
-my_savefig(fig,figdir,'V1PM_LowRank_Excerpt_%s_Rank%d' % (ses.session_id,r+1)) 
+# my_savefig(fig,figdir,'V1PM_LowRank_Excerpt_%s_Rank%d' % (ses.session_id,r+1)) 
 
 
 
@@ -244,9 +244,6 @@ my_savefig(fig,figdir,'RRR_rank_ev_procedure_%d' % nsampleneurons)
 
 #%% Show the effect of averaging over time, of reducing the signal and only having noise, 
 # and of selecting responsive neurons
-
-
-from skimage.measure import block_reduce
 
 nranks              = 40
 nmodelfits          = 10 #number of times new neurons are resampled 
@@ -337,164 +334,21 @@ def split_half_reliability(Y):
     R2_ceiling = r_sb ** 2
     return R2_ceiling
 
-#%%
-from scipy.stats import pearsonr
 
-def noise_ceiling_split_half(Y, n_splits=100, random_state=None):
-    """
-    Estimate noise ceiling (split-half reliability) for neural data.
 
-    Parameters
-    ----------
-    Y : array, shape (n_neurons, n_trials, n_timepoints)
-        Neural activity data.
-    n_splits : int, optional
-        Number of random trial splits to average over.
-    random_state : int or None
-        Random seed for reproducibility.
 
-    Returns
-    -------
-    R2_ceiling_mean : float
-        Estimated mean noise ceiling (R²) across random splits.
-    R2_ceiling_all : np.ndarray
-        All R² ceiling estimates from each split.
-    """
 
-    rng = np.random.default_rng(random_state)
-    n_neurons, n_trials, n_timepoints = Y.shape
-    R2_ceiling_all = np.zeros(n_splits)
 
-    for i in range(n_splits):
-        # Randomly split trials into two halves
-        perm = rng.permutation(n_trials)
-        half = n_trials // 2
-        idx1, idx2 = perm[:half], perm[half:]
-        
-        # Average activity across trials within each half
-        Y1 = np.mean(Y[:, idx1, :], axis=1)  # shape (n_neurons, n_timepoints)
-        Y2 = np.mean(Y[:, idx2, :], axis=1)
+#%% Get all data 
+sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
+report_sessions(sessions)
 
-        # Flatten across neurons and timepoints for population-level correlation
-        r, _ = pearsonr(Y1.flatten(), Y2.flatten())
-
-        # Spearman–Brown correction
-        r_sb = (2 * r) / (1 + r) if r < 1 else 1.0
-        R2_ceiling_all[i] = r_sb ** 2
-
-    return R2_ceiling_all.mean(), R2_ceiling_all
-
-#%% 
-def noise_ceiling_residuals(Y_resid, conds=None, n_splits=200, random_state=None, return_all=False):
-    """
-    Estimate noise ceiling (R^2) for trial-to-trial residuals.
-
-    Parameters
-    ----------
-    Y_resid : array_like
-        Residual activity, shape (n_neurons, n_trials, n_timepoints).
-        These should be single-trial residuals (mean stimulus response removed).
-    conds : array_like or None, optional
-        Condition labels for each trial, shape (n_trials,). If provided,
-        random splits are performed *within each condition* to avoid mixing different stimuli.
-    n_splits : int
-        Number of random splits to average over.
-    random_state : int or None
-        RNG seed.
-    return_all : bool
-        If True, also return array of R^2 estimates for each split.
-
-    Returns
-    -------
-    R2_ceiling_mean : float
-        Mean estimated noise ceiling (R^2) across splits.
-    R2_ceiling_all : np.ndarray (optional)
-        All R^2 estimates (length n_splits).
-    """
-    rng = np.random.default_rng(random_state)
-    Y = np.asarray(Y_resid)
-    n_neurons, n_trials, n_timepoints = Y.shape
-
-    # helper to split indices within a group
-    def split_indices(indices):
-        perm = rng.permutation(indices)
-        half = len(indices) // 2
-        # if odd, leave one out (could also assign ceil/ floor)
-        return perm[:half], perm[half:half+half]
-
-    R2_vals = np.zeros(n_splits)
-
-    # If no condition labels, treat all trials as one condition
-    if conds is None:
-        conds = np.zeros(n_trials, dtype=int)
-
-    conds = np.asarray(conds)
-    unique_conds = np.unique(conds)
-
-    for s in range(n_splits):
-        # collect averaged halves over conditions
-        Y1_parts = []
-        Y2_parts = []
-
-        for c in unique_conds:
-            idx = np.where(conds == c)[0]
-            if len(idx) < 2:
-                # can't split this condition; skip it
-                continue
-            idx1, idx2 = split_indices(idx)
-            if len(idx1) == 0 or len(idx2) == 0:
-                # not enough trials in this condition to form halves; skip
-                continue
-            # average across trials in each half -> shape (n_neurons, n_timepoints)
-            Y1_c = np.mean(Y[:, idx1, :], axis=1)
-            Y2_c = np.mean(Y[:, idx2, :], axis=1)
-            Y1_parts.append(Y1_c)
-            Y2_parts.append(Y2_c)
-
-        if len(Y1_parts) == 0:
-            raise ValueError("Not enough trials to split in any condition. Need >=2 trials for at least one condition.")
-
-        # concatenate across conditions along time axis to keep neuron alignment:
-        # result shape (n_neurons, n_timepoints * n_conditions_used)
-        Y1_cat = np.concatenate(Y1_parts, axis=1)
-        Y2_cat = np.concatenate(Y2_parts, axis=1)
-
-        # Flatten over neurons and time to compute population-level correlation
-        vec1 = Y1_cat.ravel()
-        vec2 = Y2_cat.ravel()
-
-        # if constant vectors, pearsonr will fail; guard:
-        if np.std(vec1) == 0 or np.std(vec2) == 0:
-            r = 0.0
-        else:
-            r, _ = pearsonr(vec1, vec2)
-
-        # Spearman-Brown correction (avoid division-by-zero)
-        if r >= 1.0:
-            r_sb = 1.0
-        else:
-            r_sb = (2 * r) / (1 + r)
-
-        R2_vals[s] = r_sb ** 2
-
-    if return_all:
-        return R2_vals.mean(), R2_vals
-    else:
-        return R2_vals.mean()
-    
-#%%
-
-split_half_reliability(Y[:20,:,:])
-split_half_reliability(Y[:20,:,:])
-
-noise_ceiling_split_half(Y[:20,:,:],n_splits=2)
-
-Y = Y[:20,:,:]
-Y_resid = Y[:20,:,:]
+#%%  Load data properly:    
+# params['calciumversion'] = 'dF'
+[sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=False,compute_respmat=True)
 
 #%%
-
-noise_ceiling_residuals(Y_resid=Y[:20,:,:], conds=None, n_splits=2)
+# sessions = compute_tuning_wrapper(sessions)
 
 #%% 
    #     #####  ######  #######  #####   #####     ####### ### #     # ####### 
@@ -507,7 +361,7 @@ noise_ceiling_residuals(Y_resid=Y[:20,:,:], conds=None, n_splits=2)
 
 #%% RRR across time relative to stimulus onset:
 lam                 = 0
-nranks              = 20 #number of ranks of RRR to be evaluated
+nranks              = 10 #number of ranks of RRR to be evaluated
 nmodelfits          = 10 #number of times new neurons are resampled - many for final run
 kfold               = 5
 maxnoiselevel       = 20
@@ -534,35 +388,82 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
         idx_areay           = np.where(np.all((ses.celldata['roi_name']==aly,
                                 ses.celldata['noise_level']<maxnoiselevel,	
                                 ),axis=0))[0]
+        if len(idx_areax)<nsampleneurons or len(idx_areay)<nsampleneurons:
+            continue
 
-        for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
-            idx_T               = ses.trialdata['stimCond']==stim
+        # for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
+        for istim,stim in enumerate([1,2]): # loop over orientations 
+            idx_T   = ses.trialdata['stimCond']==stim
 
-            for ibin in range(ntimebins):
-                X       = ses.tensor[np.ix_(idx_areax,idx_T,[ibin])].squeeze().T
-                Y       = ses.tensor[np.ix_(idx_areay,idx_T,[ibin])].squeeze().T
+            X       = ses.tensor[np.ix_(idx_areax,idx_T,np.arange(ntimebins))]#.squeeze().T
+            Y       = ses.tensor[np.ix_(idx_areay,idx_T,np.arange(ntimebins))]#.squeeze().T
 
-                X       = X[~np.isnan(X).any(axis=1),:]
-                Y       = Y[~np.isnan(Y).any(axis=1),:]
-
-                R2_cv[iapl,ibin,ises,istim],optim_rank[iapl,ibin,ises,istim],R2_ranks[iapl,ibin,ises,istim,:,:,:]      = RRR_wrapper(
-                                                                        Y, X, nN=nsampleneurons,lam=lam,
+            R2_cv[iapl,:,ises,istim],optim_rank[iapl,:,ises,istim],R2_ranks[iapl,:,ises,istim,:,:,:]      = RRR_wrapper_tensor(
+                                                                        Y,X, nN=nsampleneurons,lam=lam,
                                                                        nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
+
+            # for ibin in range(ntimebins):
+                # X       = ses.tensor[np.ix_(idx_areax,idx_T,[ibin])].squeeze().T
+                # Y       = ses.tensor[np.ix_(idx_areay,idx_T,[ibin])].squeeze().T
+
+                # R2_cv[iapl,ibin,ises,istim],optim_rank[iapl,ibin,ises,istim],R2_ranks[iapl,ibin,ises,istim,:,:,:]      = RRR_wrapper(
+                #                                                         Y[:,:,ibin].T, X[:,:,ibin].T, nN=nsampleneurons,lam=lam,
+                #                                                        nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
+       
+            # for ibin in range(ntimebins):
+            #     idx_bins = np.arange(ibin-1,ibin+2)
+            #     idx_bins = idx_bins[(idx_bins>=0) & (idx_bins<ntimebins)]
+            #     # print(idx_bins)
+            #     X       = ses.tensor[np.ix_(idx_areax,idx_T,idx_bins)].reshape(len(idx_areax),-1).T
+            #     Y       = ses.tensor[np.ix_(idx_areay,idx_T,idx_bins)].reshape(len(idx_areay),-1).T
+
+            #     R2_cv[iapl,ibin,ises,istim],optim_rank[iapl,ibin,ises,istim],R2_ranks[iapl,ibin,ises,istim,:,:,:]      = RRR_wrapper(
+            #                                                             Y, X, nN=nsampleneurons,lam=lam,
+            #                                                            nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
 
 print(np.nanmean(R2_cv))
 
 
+
 #%% Average across FF and FB and across folds: 
-R2_toplot            = np.nanmean(R2_cv,axis=(0,3))
-rank_toplot          = np.nanmean(optim_rank,axis=(0,3))
+# R2_toplot            = np.nanmean(R2_cv,axis=(0,3))
+# rank_toplot          = np.nanmean(optim_rank,axis=(0,3))
 
 #%% Plotting, show performance across time:
 t_ticks = np.array([-1,0,1,2])
-fig,axes = plt.subplots(1,1,figsize=(3,3))
+fig,axes = plt.subplots(1,1,figsize=(3.5*cm,3.5*cm))
 ax = axes
 handles = []
+for iapl, arealabelpair in enumerate(arealabelpairs):
+    R2_toplot            = R2_cv[iapl].reshape(ntimebins,nSessions*nStim)
+    handles.append(shaded_error(t_axis,R2_toplot.T,error='sem',color=clrs_arealabelpairs[iapl],alpha=0.3,ax=ax))
+
+# handles.append(shaded_error(t_axis,R2_toplot[:,:].T,error='sem',color=clrs_arealabelpairs[iapl],alpha=0.3,ax=ax))
+ax.set_ylim([0,my_ceil(ax.get_ylim()[1],2)])
+thickness = ax.get_ylim()[1]/20
+ax.fill_between([0,0.75], 0 - thickness/2, 0 + thickness/2, color='k', alpha=1)
+ax.legend(handles=handles,labels=arealabelpairs,loc='best',fontsize=8)
+my_legend_strip(ax)
+ax_nticks(ax,3)
+ax.set_xticks(t_ticks)
+# ax.set_xlim([0,2])
+ax.set_xticklabels(t_ticks)
+ax.set_xlabel('Time (sec)')
+ax.set_ylabel('$R^2$')
+sns.despine(fig=fig,top=True,right=True,trim=False,offset=3)
+my_savefig(fig,figdir,'RRR_perf_across_time')
+
+#%% Plotting, showing rank across time:
+t_ticks = np.array([-1,0,1,2])
+fig,axes = plt.subplots(1,1,figsize=(3.5*cm,3.5*cm))
+ax = axes
+handles = []
+for iapl, arealabelpair in enumerate(arealabelpairs):
+    rank_toplot            = optim_rank[iapl].reshape(ntimebins,nSessions*nStim)
+    handles.append(shaded_error(t_axis,rank_toplot.T,error='sem',color=clrs_arealabelpairs[iapl],alpha=0.3,ax=ax))
+
 # for iapl, arealabelpair in enumerate(arealabelpairs):
-handles.append(shaded_error(t_axis,R2_toplot[:,:].T,error='sem',color=clrs_arealabelpairs[iapl],alpha=0.3,ax=ax))
+# handles.append(shaded_error(t_axis,rank_toplot[:,:].T,error='sem',color=clrs_arealabelpairs[iapl],alpha=0.3,ax=ax))
 ax.set_ylim([0,my_ceil(ax.get_ylim()[1],2)])
 thickness = ax.get_ylim()[1]/20
 ax.fill_between([0,0.75], 0 - thickness/2, 0 + thickness/2, color='k', alpha=1)
@@ -574,7 +475,8 @@ ax.set_xticklabels(t_ticks)
 ax.set_xlabel('Time (sec)')
 ax.set_ylabel('RRR R2')
 sns.despine(fig=fig,top=True,right=True,trim=True)
-my_savefig(fig,figdir,'RRR_perf_across_time',formats=['png'])
+# my_savefig(fig,figdir,'RRR_rank_across_time')
+
 
 
 #%% 
@@ -673,16 +575,18 @@ arealabelpairs  = ['V1-V1',
 clrs_arealabelpairs = get_clr_area_pairs(arealabelpairs)
 narealabelpairs     = len(arealabelpairs)
 
+nsampleneurons      = 50
 nsampleneurons      = 100
 nranks              = 25
-nmodelfits          = 50 #number of times new neurons are resampled 
+nmodelfits          = 15 #number of times new neurons are resampled 
 nStim               = 16
-idx_resp            = np.where((t_axis>=0) & (t_axis<=1.5))[0]
+idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
 
 R2_cv               = np.full((narealabelpairs,nSessions,nStim),np.nan)
 optim_rank          = np.full((narealabelpairs,nSessions,nStim),np.nan)
 
-for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for different population sizes'):
+for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for within vs across populations'):
+# for ises,ses in tqdm(enumerate(sessions[:2]),total=nSessions,desc='Fitting RRR model for within vs across populations'):
     idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
     if np.sum((ses.celldata['roi_name']=='V1') & (ses.celldata['noise_level']<params['maxnoiselevel']))<(nsampleneurons*2):
         continue
@@ -706,17 +610,17 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
                 print('Arealabelpair %s has partly overlapping neurons'%arealabelpair)
             idx_areax, idx_areay = np.array_split(np.random.permutation(idx_areax), 2)
 
-        for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
-        # for istim,stim in enumerate([0]): # loop over orientations 
+        # for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
+        for istim,stim in enumerate([0,4,7]): # loop over orientations 
             idx_T               = ses.trialdata['stimCond']==stim
 
             #on tensor during the response:
             X                   = sessions[ises].tensor[np.ix_(idx_areax,idx_T,idx_resp)]
             Y                   = sessions[ises].tensor[np.ix_(idx_areay,idx_T,idx_resp)]
             
-            #subtract mean response across trials:
-            X                   -= np.mean(X,axis=1,keepdims=True)
-            Y                   -= np.mean(Y,axis=1,keepdims=True)
+            # subtract mean response across trials:
+            # X                   -= np.mean(X,axis=1,keepdims=True)
+            # Y                   -= np.mean(Y,axis=1,keepdims=True)
 
             # reshape to time points x neurons
             X                   = X.reshape(len(idx_areax),-1).T
@@ -732,53 +636,75 @@ rank_toplot = np.reshape(optim_rank,(narealabelpairs,nSessions*nStim))
 # R2_toplot = np.nanmean(R2_cv,axis=2)
 # rank_toplot = np.nanmean(optim_rank,axis=2)
 
-fig,axes = plt.subplots(1,2,figsize=(5,2.5))
-
+fig,axes = plt.subplots(1,2,figsize=(6.5*cm,3.5*cm))
+markersize=30
 clrs = get_clr_areas(['V1','PM'])
 ax = axes[0]
 comps = [[0,3],[1,2]]
 for icomp,comp in enumerate(comps):
-    ax.scatter(R2_toplot[comp[0],:],R2_toplot[comp[1],:],s=120,edgecolor='w',marker='.',color=clrs[icomp])
+    ax.scatter(R2_toplot[comp[0],:],R2_toplot[comp[1],:],s=markersize,edgecolor='w',marker='.',color=clrs[icomp],
+               linewidth=0.5)
     # ax.scatter(R2_cv[comp[0],:],R2_cv[comp[1],:],s=80,alpha=0.8,marker='.',color=clrs[icomp])
     ax_nticks(ax,3)
-    ax.set_xlabel('Within')
-    ax.set_ylabel('Across')
-    ax.set_title('R2')
-
     _,pval = ttest_rel(R2_toplot[comp[0],:],R2_toplot[comp[1],:],nan_policy='omit')
-    ax.text(0.6,0.1*(1+icomp),'%sp=%1.2e' % (get_sig_asterisks(pval),pval),transform=ax.transAxes,fontsize=10,color=clrs[icomp])
-ax.legend(['V1 (V1->V1 vs PM->V1)','PM (V1->PM vs PM->PM)'],frameon=False,fontsize=7,loc='upper left')
-# ax.legend(['V1','PM'],frameon=False,fontsize=10)
+    ax.text(0.6,0.1*(1+icomp),'%sp=%1.2e' % (get_sig_asterisks(pval),pval),transform=ax.transAxes,fontsize=5,color=clrs[icomp])
+ax.set_xlabel('Within')
+ax.set_ylabel('Across')
+ax.set_title(r'$R^2$')
+    # ax.legend(['V1 (V1->V1 vs PM->V1)','PM (V1->PM vs PM->PM)'],frameon=False,loc='upper left')
+ax.legend(['V1','PM'],frameon=False,fontsize=7,loc='upper left')
 my_legend_strip(ax)
-ax.set_xlim([0,0.2])
-ax.set_ylim([0,0.2])
+ax.set_xlim([0,0.22])
+ax.set_ylim([0,0.22])
 ax.plot([0,0.2],[0,0.2],':',color='grey',linewidth=1)
 
 ax = axes[1]
 for icomp,comp in enumerate(comps):
-    ax.scatter(rank_toplot[comp[0],:],rank_toplot[comp[1],:],s=120,edgecolor='w',marker='.',color=clrs[icomp])
-    ax_nticks(ax,3)
-    ax.set_xlabel('Within')
-    ax.set_title('Rank')
+    ax.scatter(rank_toplot[comp[0],:],rank_toplot[comp[1],:],s=markersize,edgecolor='w',marker='.',
+               linewidth=0.5,color=clrs[icomp])
     _,pval = ttest_rel(rank_toplot[comp[0],:],rank_toplot[comp[1],:],nan_policy='omit')
-    ax.text(0.6,0.1*(1+icomp),'%sp=%1.2e' % (get_sig_asterisks(pval),pval),transform=ax.transAxes,fontsize=10,color=clrs[icomp])
-# ax.legend(['V1','PM'],frameon=False,fontsize=10)
-ax.legend(['V1 (V1->V1 vs PM->V1)','PM (V1->PM vs PM->PM)'],frameon=False,fontsize=7,loc='upper left')
-my_legend_strip(ax)
-ax.set_xlim([0,15])
-ax.set_ylim([0,15])
+    ax.text(0.6,0.1*(1+icomp),'%sp=%1.2e' % (get_sig_asterisks(pval),pval),transform=ax.transAxes,fontsize=5,color=clrs[icomp])
+# ax.legend(['V1','PM'],frameon=False,fontsize=10)ax.set_xlabel('Within')
+ax.set_ylabel('Across')
+ax.set_title('Rank')
+
+# ax.legend(['V1 (V1->V1 vs PM->V1)','PM (V1->PM vs PM->PM)'],frameon=False,loc='upper left')
+# my_legend_strip(ax)
+ax.set_xlim([0,20])
+ax.set_ylim([0,20])
+ax_nticks(ax,4)
 ax.plot([0,25],[0,25],':',color='grey',linewidth=1)
 # ax.legend(['V1 (V1->V1 vs PM->V1','PM (PM->PM vs V1->PM'],frameon=False,fontsize=8)
+plt.tight_layout()
 
 sns.despine(offset=3,top=True,right=True)
+my_savefig(fig,figdir,'RRR_R2Rank_WithinVSAcross_%dneurons' % nsampleneurons)
+
+
+#%% Get the ratio of within to across:
+R2_toplot = np.reshape(R2_cv,(narealabelpairs,nSessions*nStim))
+rank_toplot = np.reshape(optim_rank,(narealabelpairs,nSessions*nStim))
+
+R2_ratio_within_across = R2_toplot[[0,1],:] /R2_toplot[[3,2],:]
+rank_ratio_within_across = rank_toplot[[0,1],:] /rank_toplot[[3,2],:]
+
+fig,axes = plt.subplots(1,2,figsize=(6.5*cm,3.5*cm))
+ax = axes[0]
+sns.stripplot(R2_ratio_within_across.T,ax=ax,color='k')
+# sns.barplot(R2_ratio_within_across.T,ax=ax,color='k')
+ax.set_ylim([0.8,2.5])
+ax.axhline(y=1,color='k',linestyle='--')
+ax.set_ylabel('Ratio R2\n(Within/Across)')
+ax.set_xticks(range(2),['V1','PM' ],rotation=0,fontsize=6)
+ax = axes[1]
+sns.stripplot(rank_ratio_within_across.T,ax=ax,color='k')
+ax.set_ylim([0.8,2.5])
+ax.axhline(y=1,color='k',linestyle='--')
+ax.set_ylabel('Ratio rank\n(Within/Across)')
+ax.set_xticks(range(2),['V1','PM' ],rotation=0,fontsize=6)
 plt.tight_layout()
-# my_savefig(fig,figdir,'RRR_R2Rank_WithinVSAcross_%dneurons' % nsampleneurons,formats=['png'])
-
-
-#%%
-
-
-
+sns.despine(offset=3,top=True,right=True)
+my_savefig(fig,figdir,'RRR_R2Rank_ratio_WithinVSAcross_%dneurons' % nsampleneurons)
 
 
 
