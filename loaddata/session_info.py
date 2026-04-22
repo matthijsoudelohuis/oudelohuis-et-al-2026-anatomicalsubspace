@@ -211,7 +211,7 @@ def report_sessions(sessions):
                 f"Number of neurons in {area}: {len(celldata[celldata['roi_name'] == area])}")
         print(f"Total number of neurons: {len(celldata)}")
 
-def load_resid_tensor(sessions,params,compute_respmat=True,subtract_mean_evoked=True,regressbehavout=False):
+def load_resid_tensor(sessions,params,compute_respmat=True,subtract_mean_evoked=True,regressbehavout=False,load_behav=False):
     #  Load data properly:        
     ## Construct tensor: 3D 'matrix' of N neurons by K trials by T time bins
     ## Parameters for temporal binning
@@ -232,7 +232,7 @@ def load_resid_tensor(sessions,params,compute_respmat=True,subtract_mean_evoked=
         [sessions[ises].tensor,t_axis] = compute_tensor(sessions[ises].calciumdata, sessions[ises].ts_F, sessions[ises].trialdata['tOnset'], 
                                     method='nearby')
         delattr(sessions[ises],'calciumdata')
-        if regressbehavout:
+        if regressbehavout or load_behav:
             [sessions[ises].tensor_vid,t_axis] = compute_tensor(sessions[ises].videodata[vidfields], sessions[ises].videodata['ts'], sessions[ises].trialdata['tOnset'], 
                                         params['t_pre'], params['t_post'], method='binmean',binsize=params['binsize'])
             #Subsample behavioral data 10 times before binning:
@@ -249,7 +249,7 @@ def load_resid_tensor(sessions,params,compute_respmat=True,subtract_mean_evoked=
         for ises in range(nSessions):
             sessions[ises].respmat = np.nanmean(sessions[ises].tensor[:,:,t_axis>0],axis=(2))
             
-            if regressbehavout: 
+            if regressbehavout or load_behav: 
                 sessions[ises].respmat_videome = np.nanmean(sessions[ises].tensor_vid[np.ix_([0],range(sessions[ises].tensor_vid.shape[1]),t_axis>0)],axis=(2)).squeeze()
                 sessions[ises].respmat_runspeed = np.nanmean(sessions[ises].tensor_run[np.ix_([0],range(sessions[ises].tensor_run.shape[1]),t_axis>0)],axis=(2)).squeeze()
 
@@ -291,7 +291,6 @@ def load_resid_tensor(sessions,params,compute_respmat=True,subtract_mean_evoked=
             areas = np.unique(ses.celldata['roi_name'])
             for area in areas:
                 idx_N    = np.where(np.all((ses.celldata['roi_name']==area,
-                                            # idx_nearby,
                                             ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
 
                 for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations

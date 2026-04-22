@@ -235,18 +235,26 @@ sns.despine(fig=fig,top=True,right=True,offset=3)
 #%% Plot the ratio across time across sessions: 
 if params['direction'] == 'FF':
     rankstoaverage = np.array([1,2,3,4])
+    # rankstoaverage = np.array([0,1,2,3,4])
 elif params['direction'] == 'FB':
     rankstoaverage = np.array([0,1,2,3,4])
 
+clipval = 1e-4
 # data = R2_ranks #average across kfolds
 data = np.diff(R2_ranks,axis=4) #take the difference between rank r and r+1 (uniquely explained variance by rank r)
 data = np.nanmean(data[:,:,:,:,rankstoaverage],axis=(4,5,6)) #average across ranks selected
+# data = np.nanmedian(data[:,:,:,:,rankstoaverage],axis=(4,5,6)) #average across ranks selected
+
+data = copy.deepcopy(R2_ranks)
+data = np.clip(data,clipval,np.nanpercentile(R2_toplot,100)) #clip negative R2 values to zero for better visualization of ratios (since negative R2 values can be very close to zero and lead to extreme ratios)
+data = np.nanmedian(data[:,:,:,:,4],axis=(4,5)) #average across ranks selected
 
 R2_toplot = np.reshape(data,(narealabelpairs+1,params['nSessions']*params['nStim'],params['nT']))
 # R2_toplot = np.clip(R2_toplot,np.nanpercentile(R2_toplot,10),np.nanpercentile(R2_toplot,99.8)) #clip negative R2 values to zero for better visualization of ratios (since negative R2 values can be very close to zero and lead to extreme ratios)
 # R2_toplot = np.clip(R2_toplot,np.nanpercentile(R2_toplot,8),np.nanpercentile(R2_toplot,99)) #clip negative R2 values to zero for better visualization of ratios (since negative R2 values can be very close to zero and lead to extreme ratios)
-# R2_toplot = np.clip(R2_toplot,np.nanpercentile(R2_toplot,3),np.nanpercentile(R2_toplot,99)) #clip negative R2 values to zero for better visualization of ratios (since negative R2 values can be very close to zero and lead to extreme ratios)
-R2_toplot = np.clip(R2_toplot,1e-4,np.nanpercentile(R2_toplot,99)) #clip negative R2 values to zero for better visualization of ratios (since negative R2 values can be very close to zero and lead to extreme ratios)
+# R2_toplot = np.clip(R2_toplot,np.nanpercentile(R2_toplot,1),np.nanpercentile(R2_toplot,99)) #clip negative R2 values to zero for better visualization of ratios (since negative R2 values can be very close to zero and lead to extreme ratios)
+# R2_toplot = np.clip(R2_toplot,clipval,np.nanpercentile(R2_toplot,100)) #clip negative R2 values to zero for better visualization of ratios (since negative R2 values can be very close to zero and lead to extreme ratios)
+# R2_toplot = np.clip(R2_toplot,clipval,np.nanpercentile(R2_toplot,100)) #clip negative R2 values to zero for better visualization of ratios (since negative R2 values can be very close to zero and lead to extreme ratios)
 
 plotcontrasts = np.array([[1,2],[1,3]])
 ymin = 0.9
@@ -261,21 +269,22 @@ ax = axes
 handles = []
 for iplotcontrast,plotcontrast in enumerate(plotcontrasts):
     R2_ratio = (R2_toplot[plotcontrast[1],:,:]) / (R2_toplot[plotcontrast[0],:,:]) #add a small constant to avoid division by zero
-    handles.append(shaded_error(params['t_axis'],R2_ratio,error='ci95',color=clrs[iplotcontrast],alpha=0.3,ax=ax))
+    handles.append(shaded_error(params['t_axis'],R2_ratio,center='mean',error='ci95',color=clrs[iplotcontrast],alpha=0.3,ax=ax))
+    # handles.append(shaded_error(params['t_axis'],R2_ratio,center='median',error='mad',color=clrs[iplotcontrast],alpha=0.3,ax=ax))
 ax.axhline(y=1,color='grey',linestyle='--')
 ax.set_ylim([ymin,my_ceil(ax.get_ylim()[1],2)])
 thickness = ax.get_ylim()[1]/15
 ax.fill_between([0,0.75], ymin - thickness/2, ymin + thickness/2, color='k', alpha=1)
 ax.legend(handles=handles,labels=figlabels,loc='best')
 my_legend_strip(ax)
-ax.set_xlim([-1,2])
 ax_nticks(ax,3)
 ax.set_xticks(t_ticks)
 ax.set_xticklabels(t_ticks)
 ax.set_xlabel('Time (s)')
 ax.set_ylabel('R$^{2}$ ratio')
+ax.set_xlim([-1,1.8])
 sns.despine(fig=fig, top=True, right=True, offset = 3)
-my_savefig(fig,figdir,'RRR_joint_time_ratio_sigranks_%s' % (version))
+# my_savefig(fig,figdir,'RRR_joint_time_ratio_sigranks_%s' % (version))
 # my_savefig(fig,figdir,'RRR_R2_time_%s_rank_noiseconstant_%s_%dsessions' % (diffmetric,version,params['nSessions']))
 
 
