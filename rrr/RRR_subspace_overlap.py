@@ -6,7 +6,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 """
 
 #%% ###################################################
-import math, os
+import os
 
 os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 from loaddata.get_data_folder import get_local_drive
@@ -45,14 +45,14 @@ session_list        = np.array(['LPE12385_2024_06_13','LPE11998_2024_05_02']) #G
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list,only_all_areas=areas,filter_areas=areas)
 
 # %% 
-# sessions,nSessions   = filter_sessions(protocols = 'GR',only_all_areas=areas,min_lab_cells_V1=20,min_lab_cells_PM=20)
-# sessions,nSessions   = filter_sessions(protocols = 'GN',only_all_areas=areas,filter_areas=areas)
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=areas,filter_areas=areas)
+# sessions,nSessions   = filter_sessions(protocols =  ['GN','GR'],only_all_areas=areas,min_lab_cells_V1=20,min_lab_cells_PM=20)
+sessions,nSessions   = filter_sessions(protocols =  ['GN','GR'],only_all_areas=areas,filter_areas=areas)
+# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=areas,filter_areas=areas)
 # sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],filter_areas=areas)
 
 #%% Wrapper function to load the tensor data, 
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=False)
-[sessions2,t_axis] = load_resid_tensor(sessions,params,regressbehavout=True)
+# [sessions2,t_axis] = load_resid_tensor(sessions,params,regressbehavout=True)
 # sessions = load_resid_tensor(sessions,behavout=True)
 
 #%% 
@@ -64,34 +64,64 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=ar
 #    #  #       #     # #    #  #       #     # #     #    #     # #     #    #       #     # #       
 #     # #######  #####  #     # #######  #####   #####     #######  #####     #       #     # ####### 
 
-#%% 
-# arealabelpairs  = ['V1unl-PMunl',
-#                     'V1unl-PMlab',
-#                     'V1lab-PMunl',
-#                     'V1lab-PMlab',
-#                     'PMunl-V1unl',
-#                     'PMunl-V1lab',
-#                     'PMlab-V1unl',
-#                     'PMlab-V1lab']
-
-arealabelpairs  = ['V1unl-PMunl-ALunl',
-                    # 'PMlab-V1lab'
-                    'V1lab-PMlab-ALunl',
-                    ]
+#%% Run this code block to see if in the whole population of ND there are unique signals in V1 and PM:
+#First pair is the source-target pair, third area is the area that is used to regress out activity from the first pair
+arealabelpairs  = np.array(['V1unl-PMunl-ALunl', 
+                    ])
 params['direction'] = 'FF'
 
-pairpops            = np.array([20])
-outpops             = np.array([5,20])
 pairpops            = np.array([10,20,50,100,200,500])
 outpops             = np.array([0,10,20,50,100,200])
+
+#%% 
+#First pair is the source-target pair, third area is the area that is used to regress out activity from the first pair
+arealabelpairs  = np.array(['V1unl-PMunl-ALunl', 
+                   'V1lab-PMunl-ALunl',
+                    'V1lab-PMlab-ALunl',
+                    'PMunl-V1unl-ALunl',
+                    'PMlab-V1unl-ALunl',
+                    'PMlab-V1lab-ALunl',
+                    ])
+# params['direction'] = 'FF'
+
+pairpops            = np.array([20])
+# outpops             = np.array([0,5,20])
+# pairpops            = np.array([10,20,50,100,200,500])
+outpops             = np.array([0,10,20,50,100,200])
+# outpops             = np.array([0,10,20,50,100])
+
+#%%
+params['maxnoiselevel']  = 100
+
+for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for different population sizes'):
+    if params['filter_nearby']:
+        idx_nearby  = filter_nearlabeled(ses,radius=params['radius'])
+    else:
+        idx_nearby = np.ones(len(ses.celldata),dtype=bool)
+
+    idx_areax      = np.where(np.all((ses.celldata['arealabel']=='V1lab',
+                                ses.celldata['noise_level']<params['maxnoiselevel'],
+                                idx_nearby),axis=0))[0]
+    idx_areay       = np.where(np.all((ses.celldata['arealabel']=='PMlab',
+                                ses.celldata['noise_level']<params['maxnoiselevel'],
+                                idx_nearby
+                                ),axis=0))[0]
+    idx_areaz       = np.where(np.all((ses.celldata['arealabel']=='ALunl',
+                                ses.celldata['noise_level']<params['maxnoiselevel'],
+                                ),axis=0))[0]
+    
+    print(len(idx_areax),len(idx_areay),len(idx_areaz))
+    
+#%% 
+
 npairpops           = len(pairpops)
 noutpops            = len(outpops)
 
 narealabelpairs     = len(arealabelpairs)
 
-# Nsub                = 20
-nranks              = 10 #number of ranks of RRR to be evaluated
-nmodelfits          = 10
+nranks              = 15 #number of ranks of RRR to be evaluated
+nmodelfits          = 100
+# nmodelfits          = 5
 
 params['nStim']     = 16
 params['nSessions'] = nSessions
@@ -102,15 +132,26 @@ R2_cv               = np.full((narealabelpairs,npairpops,noutpops,nSessions,para
 optim_rank          = np.full((narealabelpairs,npairpops,noutpops,nSessions,params['nStim'],nmodelfits),np.nan)
 
 kf                  = KFold(n_splits=params['kfold'],shuffle=True)
-rank_neuralout      = 5
-rank_neuralpair     = 5
-params['filter_nearby'] = False
+# rank_neuralout      = 5
+# rank_neuralpair     = 5
+params['filter_nearby'] = True
+params['maxnoiselevel'] = 100
 
 for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for different population sizes'):
     if params['filter_nearby']:
         idx_nearby  = filter_nearlabeled(ses,radius=params['radius'])
     else:
         idx_nearby = np.ones(len(ses.celldata),dtype=bool)
+
+    idx_V1lab      = np.where(np.all((ses.celldata['arealabel']=='V1lab',
+                                ses.celldata['noise_level']<params['maxnoiselevel'],
+                                idx_nearby),axis=0))[0]
+    idx_PMlab       = np.where(np.all((ses.celldata['arealabel']=='PMlab',
+                                ses.celldata['noise_level']<params['maxnoiselevel'],
+                                idx_nearby
+                                ),axis=0))[0]
+
+    pairpop = [np.min([len(idx_V1lab),len(idx_PMlab)])]
 
     for iapl, arealabelpair in enumerate(arealabelpairs):
         
@@ -125,9 +166,9 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
         idx_areaz       = np.where(np.all((ses.celldata['arealabel']==alz,
                                     ses.celldata['noise_level']<params['maxnoiselevel'],
                                     ),axis=0))[0]
-
-        # for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
-        for istim,stim in enumerate([0,4]): # loop over orientations 
+        # print(len(idx_areax),len(idx_areay),len(idx_areaz))
+        for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
+        # for istim,stim in enumerate([0,4]): # loop over orientations 
             idx_T               = ses.trialdata['stimCond']==stim
        
             X                  = sessions[ises].tensor[np.ix_(idx_areax,idx_T,idx_resp)]
@@ -148,13 +189,17 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
             for ipairpop,pairpop in enumerate(pairpops):
                 for ioutpop,outpop in enumerate(outpops):
 
-                    rank_neuralout      = 5
-                    rank_neuralpair     = 5
-
                     rank_neuralout      = np.cbrt(outpop).astype(int)
                     rank_neuralpair     = np.cbrt(pairpop).astype(int)
+
+                    # rank_neuralout      = np.sqrt(outpop).astype(int)
+                    # rank_neuralpair     = np.sqrt(pairpop).astype(int)
+
+                    # rank_neuralout      = (outpop**(1/2)).astype(int)
+                    # rank_neuralpair     = (pairpop**(1/2)).astype(int)
     
                     if nX< pairpop or nY< pairpop or nZ<outpop:
+                        # print('Not enough neurons for this pairpop-outpop combination, skipping')
                         continue
                     
                     for imf in range(nmodelfits): 
@@ -169,10 +214,9 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
                         R2_cv[iapl,ipairpop,ioutpop,ises,istim,imf],optim_rank[iapl,ipairpop,ioutpop,ises,istim,imf],_  = RRR_wrapper(Y_out, X_out, nN=pairpop,nK=None,
                                                                                                                             lam=params['lam'],nranks=nranks,kfold=params['kfold'],
                                                                                                                           nmodelfits=1,fixed_rank=rank_neuralpair)
-
+                        
 #%% Plotting the mean across time across sessions: 
 # R2_toplot = np.reshape(R2_cv,(narealabelpairs+1,params['nSessions']*params['nStim'],params['nT']))
-
 fig,axes = plt.subplots(1,1,figsize=(4.5*cm,4*cm))
 ax = axes
 handles = []
@@ -194,7 +238,67 @@ ax.set_ylabel('R$^{2}$')
 ax.set_ylim([0,ax.get_ylim()[1]])
 # plt.tight_layout()
 sns.despine(fig=fig, top=True, right=True, offset = 3)
-my_savefig(fig,figdir,'RRR_AL_out_popsizes_%s' % (params['direction']))
+# my_savefig(fig,figdir,'RRR_AL_out_popsizes_%s' % (params['direction']))
+
+#%% Setting the sessions with only sufficient unlabeled cells to np.nan:
+
+tempslice = R2_cv[:2,0,0,:,0,0].squeeze()
+idx_FF_incomplete = np.where(np.any(np.isnan(tempslice),axis=0))[0]
+R2_cv[:2,:,:,idx_FF_incomplete,:,:] = np.nan
+
+tempslice = R2_cv[3:5,0,0,:,0,0].squeeze()
+idx_FB_incomplete = np.where(np.any(np.isnan(tempslice),axis=0))[0]
+R2_cv[3:5,:,:,idx_FB_incomplete,:,:] = np.nan
+
+#%% Plotting the mean across time across sessions: 
+# R2_toplot = np.reshape(R2_cv,(narealabelpairs+1,params['nSessions']*params['nStim'],params['nT']))
+logoffset = 3
+idx_ses = np.array([1,2,4,8])
+idx_ses = np.arange(nSessions)
+# idx_ses = np.array([0]) #plot only the two example sessions
+# idx_ses = np.array([5]) #plot only the two example sessions
+fig,axes = plt.subplots(1,2,figsize=(8.5*cm,4*cm),sharex=True,sharey=True)
+ax = axes[0]
+idx = [0,2]
+figlabels = arealabelpair_to_figlabel(arealabelpairs[idx])
+handles = []
+clrs_arealabeled = ['grey','red']
+for iapl,apl in enumerate(arealabelpairs[idx]):
+    # datatoplot = np.nanmean(R2_cv[idx[iapl],0],axis=(1,2,3))
+    datatoplot = np.nanmean(R2_cv[idx[iapl]][0][:,idx_ses],axis=(1,2,3))
+    handles.append(ax.plot(outpops+logoffset,datatoplot,color=clrs_arealabeled[iapl],marker='o',markersize=5,linestyle='-')[0])
+ax.legend(handles=handles,labels=figlabels,loc='best',frameon=True,reverse=True)
+ax.grid(True,axis='both',alpha=0.7,which='major')
+ax.set_xlabel('AL population size')
+ax.set_ylabel('R$^{2}$')
+ax.set_title('Feedforward')
+
+ax = axes[1]
+# idx = [4,5]
+idx = [3,4]
+# idx = [3,5]
+figlabels = arealabelpair_to_figlabel(arealabelpairs[idx])
+handles = []
+clrs_arealabeled = ['grey','red']
+for iapl,apl in enumerate(arealabelpairs[idx]):
+    # datatoplot = np.nanmean(R2_cv[idx[iapl],0,:,idx_ses,:,:],axis=(1,2,3))
+    datatoplot = np.nanmean(R2_cv[idx[iapl]][0][:,idx_ses],axis=(1,2,3))
+    handles.append(ax.plot(outpops+logoffset,datatoplot,color=clrs_arealabeled[iapl],marker='o',markersize=5,linestyle='-')[0])
+ax.legend(handles=handles,labels=figlabels,loc='best',frameon=True,reverse=True)
+
+ax.set_xscale('log')
+ax.set_xticks(outpops+logoffset)
+ax.set_xticklabels(outpops)
+ax.set_xlim([np.min(outpops),np.max(outpops+25)])
+ax.grid(True,axis='both',alpha=0.7,which='major')
+ax.set_ylim([0,ax.get_ylim()[1]])
+ax.set_xlabel('AL population size')
+ax.set_title('Feedback')
+
+plt.tight_layout()
+sns.despine(fig=fig, top=True, right=True, offset = 2,trim=True)
+# my_savefig(fig,figdir,'RRR_Lab_Unl_ALout_popsizes_%s' % (params['direction']))
+
 
 
 #%% 

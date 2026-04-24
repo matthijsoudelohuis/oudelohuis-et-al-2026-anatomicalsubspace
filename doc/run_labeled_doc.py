@@ -7,7 +7,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-os.chdir('c:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
+os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 from sklearn.decomposition import PCA
@@ -28,7 +28,7 @@ params = load_params()
 # params['regress_behavout'] = True
 params['regress_behavout'] = False
 params['direction'] = 'FF'
-params['direction'] = 'FB'
+# params['direction'] = 'FB'
 # params['direction'] = 'FF_AL'
 # params['direction'] = 'FB_AL'
 
@@ -80,13 +80,13 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=s
                                        min_lab_cells_V1=20,filter_noiselevel=False)
 
 #%% Get all data 
-# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
+sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
 # sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,filter_noiselevel=False)
 report_sessions(sessions)
 
 #%% Wrapper function to load the tensor data
-params['calciumversion'] = 'deconv'
-# params['calciumversion'] = 'dF'
+# params['calciumversion'] = 'deconv'
+params['calciumversion'] = 'dF'
 
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'],compute_respmat=True)
 
@@ -96,21 +96,17 @@ sessions = compute_tuning_wrapper(sessions)
 #%% 
 narealabelpairs     = len(sourcearealabelpairs)
 
-# Nsub                = 20
-nmodelfits          = 6
+Nsub                = 25
+nmodelfits          = 100
 np.random.seed(0)
 
 params['nStim']     = 16
 
 fixed_rank          = 5
 
-# idx_resp            = np.where((t_axis>=-99) & (t_axis<=99))[0]
-# idx_resp            = np.where((t_axis>=0) & (t_axis<=1.95))[0]
-# idx_resp            = np.where((t_axis>=-99) & (t_axis<=1.95))[0]
-# idx_resp            = np.where((t_axis>=-0.5) & (t_axis<=1.5))[0]
 # idx_resp            = np.where((t_axis>=0) & (t_axis<=1))[0]
 # idx_resp            = (t_axis>=0) & (t_axis<=0.5)
-idx_resp            = (t_axis>=0) & (t_axis<=1.5)
+idx_resp            = (t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end'])
 
 # nT                  = len(idx_resp)
 nT                  = len(t_axis)
@@ -123,9 +119,6 @@ R2_ranks_doc        = np.full((narealabelpairs+1,ncontrasts,nSessions,params['nS
 
 R2_ranks_orig_t     = np.full((narealabelpairs+1,ncontrasts,nSessions,params['nStim'],nT,fixed_rank,nmodelfits),np.nan)
 R2_ranks_doc_t      = np.full((narealabelpairs+1,ncontrasts,nSessions,params['nStim'],nT,fixed_rank,nmodelfits),np.nan)
-
-# latents_ranks_orig  = np.full((narealabelpairs+1,2,nSessions,params['nStim'],nT,fixed_rank,nmodelfits),np.nan)
-# latents_ranks_doc   = np.full((narealabelpairs+1,ncontrasts,nSessions,params['nStim'],nT,fixed_rank,nmodelfits),np.nan)
 
 kf                  = KFold(n_splits=params['kfold'],shuffle=True)
 
@@ -156,13 +149,17 @@ for ises,ses in enumerate(sessions):
                                 idx_nearby
                                 ),axis=0))[0]
     
-    Nsub = min(len(idx_areax1)//2, len(idx_areax3), len(idx_areay)//narealabelpairs) #number of neurons to subselect from each population, based on the smallest population across all sessions
+    # Nsub = min(len(idx_areax1)//2, len(idx_areax3), len(idx_areay)//narealabelpairs) #number of neurons to subselect from each population, based on the smallest population across all sessions
     # Nsub = 20 #number of neurons to subselect from each population, based on the smallest population across all sessions
-    if Nsub < params['minnneurons']: #skip exec if not enough neurons in one of the populations
+    # if Nsub < params['minnneurons']: #skip exec if not enough neurons in one of the populations
+    #     print('%d in %s, %d in %s' % (len(idx_areax3),sourcearealabelpairs[2],
+    #                                             len(idx_areay),targetarealabelpair))
+    #     continue
+    if len(idx_areax1)<Nsub*2 or len(idx_areax2)<Nsub*2 or len(idx_areax3)<Nsub or len(idx_areay)<narealabelpairs*Nsub: #skip exec if not enough neurons in one of the populations
         print('%d in %s, %d in %s' % (len(idx_areax3),sourcearealabelpairs[2],
                                                 len(idx_areay),targetarealabelpair))
         continue
-    Nsub = 20
+
     # print(Nsub)
     for imf in tqdm(range(nmodelfits),total=nmodelfits,desc='Fitting RRR model for session %d/%d' % (ises+1,nSessions)):
         idx_areax1_sub       = np.random.choice(idx_areax1,Nsub,replace=False)
@@ -314,13 +311,13 @@ elif params['direction'] =='FB':
 
 clrs = ['grey','red']
 
-# contrast = [1,2]
-# icontrast = 0
-# if params['direction'] =='FF':
-#     figlabels = ['V1$_{ND1}$','V1$_{ND2}$']
-# elif params['direction'] =='FB':
-#     figlabels = ['PM$_{ND1}$','PM$_{ND2}$']
-# clrs = ['grey','grey']
+contrast = [1,2]
+icontrast = 0
+if params['direction'] =='FF':
+    figlabels = ['V1$_{ND1}$','V1$_{ND2}$']
+elif params['direction'] =='FB':
+    figlabels = ['PM$_{ND1}$','PM$_{ND2}$']
+clrs = ['grey','grey']
 
 for idata,data in enumerate([R2_ranks_orig,R2_ranks_doc]):
     ax = axes[idata]
@@ -341,7 +338,7 @@ for idata,data in enumerate([R2_ranks_orig,R2_ranks_doc]):
     ax.set_xticks(x)
 plt.tight_layout()
 sns.despine(fig=fig, top=True, right=True, offset = 3)
-# my_savefig(fig,figdir,'DOC_latents_r2_%s_control' % params['direction'])
+my_savefig(fig,figdir,'DOC_latents_r2_%s_control' % params['direction'])
 # my_savefig(fig,figdir,'DOC_latents_r2_%s' % params['direction'])
 
 
@@ -517,7 +514,7 @@ ax.set_xticks(t_ticks)
 ax.set_xlim([-1,2])
 ax.set_xlabel('Time (sec)')
 sns.despine(fig=fig, top=True, right=True, offset = 3)
-my_savefig(fig,figdir,'DOC_latents_r2_ratio_across_time_summary_%s' % params['direction'])
+# my_savefig(fig,figdir,'DOC_latents_r2_ratio_across_time_summary_%s' % params['direction'])
 
 #%% Plotting the R2 of the latents across time:
 # # fig,axes = plt.subplots(3,4,figsize=(13,10),sharex=True,sharey=False)
@@ -549,7 +546,7 @@ my_savefig(fig,figdir,'DOC_latents_r2_ratio_across_time_summary_%s' % params['di
 # # plt.tight_layout()
 # sns.despine(fig=fig, top=True, right=True, offset = 3)
 # figdir = os.path.join(params['figdir'],'RRR','DOC')
-# my_savefig(fig,figdir,'DOC_latents_r2_acrosss_time')
+# my_savefig(fig,figdir,'DOC_latents_r2_across_time')
 
 #%%
 params['Nsub']     = Nsub

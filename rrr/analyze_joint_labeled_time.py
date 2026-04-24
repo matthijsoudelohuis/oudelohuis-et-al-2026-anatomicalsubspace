@@ -247,7 +247,7 @@ data = np.nanmean(data[:,:,:,:,rankstoaverage],axis=(4,5,6)) #average across ran
 
 data = copy.deepcopy(R2_ranks)
 data = np.clip(data,clipval,np.nanpercentile(R2_toplot,100)) #clip negative R2 values to zero for better visualization of ratios (since negative R2 values can be very close to zero and lead to extreme ratios)
-data = np.nanmedian(data[:,:,:,:,4],axis=(4,5)) #average across ranks selected
+data = np.nanmean(data[:,:,:,:,4],axis=(4,5)) #average across ranks selected
 
 R2_toplot = np.reshape(data,(narealabelpairs+1,params['nSessions']*params['nStim'],params['nT']))
 # R2_toplot = np.clip(R2_toplot,np.nanpercentile(R2_toplot,10),np.nanpercentile(R2_toplot,99.8)) #clip negative R2 values to zero for better visualization of ratios (since negative R2 values can be very close to zero and lead to extreme ratios)

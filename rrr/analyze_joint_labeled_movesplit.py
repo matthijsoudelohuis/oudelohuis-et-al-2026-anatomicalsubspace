@@ -34,29 +34,36 @@ cm      = 1/2.54  # centimeters in inches
 
 #%% Load the data:
 version = 'FF'
-filename = 'RRR_Joint_labeled_FF_movesplit_2026-04-21_23-07-50'
+filename_FF = 'RRR_Joint_labeled_FF_movesplit_2026-04-21_23-07-50'
 
-# version = 'FF_behavout'
-# filename = 'RRR_Joint_labeled_FF_behavout_2026-02-20_02-00-03'
+version = 'FB'
+filename_FB = 'RRR_Joint_labeled_FB_movesplit_2026-04-22_17-49-35'
 
-# version = 'FB_original'
-# filename = 'RRR_Joint_labeled_FB_original_2026-02-19_21-42-16'
-
-# version = 'FB_behavout'
-# filename = 'RRR_Joint_labeled_FB_behavout_2026-02-20_06-11-04'
-
-#%% Load the data:
-data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
+#%% Load the FF data:
+data = np.load(os.path.join(resultdir,filename_FF + '.npz'),allow_pickle=True)
 
 for key in data.keys():
     exec(key+'_FF=data[key]')
 
-with open(os.path.join(resultdir,filename + '_params' + '.txt'), "rb") as myFile:
+with open(os.path.join(resultdir,filename_FF + '_params' + '.txt'), "rb") as myFile:
     params = pickle.load(myFile)
 
 nmodelfits = params['nmodelfits']
 Nsub = params['Nsub']
 
+#%% Load the FF data:
+data = np.load(os.path.join(resultdir,filename_FB + '.npz'),allow_pickle=True)
+
+for key in data.keys():
+    exec(key+'_FB=data[key]')
+
+with open(os.path.join(resultdir,filename_FB + '_params' + '.txt'), "rb") as myFile:
+    params = pickle.load(myFile)
+
+nmodelfits = params['nmodelfits']
+Nsub = params['Nsub']
+
+#%% FEEDFORWARD:
 
 #%% Show an example session:
 clrs_arealabelpairs = ['grey','grey','red']
@@ -135,7 +142,7 @@ for istate in range(2):
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
-my_savefig(fig,figdir,'RRR_joint_R2_MoveSplit_labunl_%s_%dsessions' % (version,params['nSessions']))
+my_savefig(fig,figdir,'RRR_joint_R2_MoveSplit_labunl_FF_%dsessions' % (params['nSessions']))
 
 
 #%% Show figure for each of the arealabelpairs and each of the dataversions
@@ -150,6 +157,103 @@ if np.any(~np.isnan(R2_data)):
             clrs        = ['grey','red']
             fig         = plot_RRR_R2_arealabels_paired(R2_data[idx][:,istate],optim_rank_data[idx][:,istate],R2_ranks_data[idx][:,istate],np.array(sourcearealabelpairs_FF)[idx-1],clrs)
         # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (sourcearealabelpairs[idx[1]-1],version,params['nSessions']))
+
+#%% FEEDBACK: 
+
+#%% Show an example session:
+clrs_arealabelpairs = ['grey','grey','red']
+narealabelpairs = 3
+statelabels = np.array(['Still','Moving'])
+ises = 4
+fig, axes = plt.subplots(1,2,figsize=(9*cm,3.6*cm),sharex=True,sharey=True)
+for istate in range(2):
+    handles = []
+    ax = axes[istate]
+    for iapl,apl in enumerate(sourcearealabelpairs_FB):
+        ymeantoplot = np.nanmean(R2_ranks_FB[iapl+1][istate][ises],axis=(0,2,3))
+        yerrortoplot = np.nanstd(R2_ranks_FB[iapl+1][istate][ises],axis=(0,2,3)) / np.sqrt(nmodelfits)
+        handles.append(shaded_error(np.arange(params['nranks'])+1,ymeantoplot,yerrortoplot,ax=ax,color=clrs_arealabelpairs[iapl],alpha=0.3))
+
+    leg = ax.legend(handles,arealabeled_to_figlabels(sourcearealabelpairs_FB),frameon=False)
+    my_legend_strip(ax)
+    ax.set_xlabel('Rank')
+    if istate == 0: 
+        ax.set_ylabel(r'R$^{2}$')
+    ax.set_title(statelabels[istate])
+
+plt.tight_layout()
+sns.despine(fig=fig,trim=False,top=True,right=True)
+# my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_ExampleSesion' % (version))
+
+
+#%% Show the mean across sessions:
+clrs_arealabelpairs = ['grey','grey','red']
+
+nrankstoplot = 15
+xposrank = 14
+idxs = np.array([1,3])
+meanranks = np.nanmean(optim_rank_FB,axis=(-1,-2))
+meanR2 = np.nanmean(R2_cv_FB,axis=(-1,-2))
+
+fig, axes = plt.subplots(1,2,figsize=(8*cm,4*cm),sharex=True,sharey=True)
+for istate in range(2):
+    ax = axes[istate]
+
+    handles = []
+    ydata = np.nanmean(R2_ranks_FB[idxs[0]][istate],axis=(3,4))
+    ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
+    handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
+                                color=clrs_arealabelpairs[idxs[0]-1],alpha=0.3))
+    ydata = np.nanmean(R2_ranks_FB[idxs[1]][istate],axis=(3,4))
+    ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
+    handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
+                                color=clrs_arealabelpairs[idxs[1]-1],alpha=0.3))
+    for idx in idxs:
+        ax.plot(meanranks[idx][istate],meanR2[idx][istate]+0.005,color=clrs_arealabelpairs[idx-1],marker='v',markersize=5)
+    leg = ax.legend(handles,arealabeled_to_figlabels(sourcearealabelpairs_FB[idxs-1]),frameon=False)
+    my_legend_strip(ax)
+    ax.set_xlabel('Rank')
+    if istate == 0: 
+        ax.set_ylabel(r'R$^{2}$')
+    ax.set_title(statelabels[istate])
+    x = optim_rank_FB[idxs[0],istate].flatten()
+    y = optim_rank_FB[idxs[1],istate].flatten()
+    nas = np.logical_or(np.isnan(x), np.isnan(y))
+    t,p = ttest_rel(x[~nas], y[~nas])
+    print('Paired t-test (Rank): p=%.3f' % (p))
+    ax.plot([np.nanmean(x),np.nanmean(y)],np.repeat(np.nanmean(meanR2[idxs][istate]),2)+0.007,linestyle='-',color='k',linewidth=2)
+    ax.text(np.nanmean([x,y]),np.nanmean(meanR2[idxs][istate])+0.009,'%s' % get_sig_asterisks(p,return_ns=True),ha='center',va='center',color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
+
+    x = R2_cv_FB[idxs[0],istate].flatten()
+    y = R2_cv_FB[idxs[1],istate].flatten()
+    nas = np.logical_or(np.isnan(x), np.isnan(y))
+    t,p = ttest_rel(x[~nas], y[~nas])
+    print('Paired t-test (R2): p=%.3f' % (p))
+    ax.plot([xposrank,xposrank],[np.nanmean(x),np.nanmean(y)],linestyle='-',color='k',linewidth=2)
+    ax.text(xposrank+0.5,np.nanmean([x,y])+0.005,'%s' % get_sig_asterisks(p,return_ns=True),ha='center',va='center',color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
+
+    ax.set_xticks(np.arange(params['nranks'])[::3]+1)
+    ax.set_xlim([0,nrankstoplot])
+
+plt.tight_layout()
+sns.despine(fig=fig,trim=False,top=True,right=True)
+my_savefig(fig,figdir,'RRR_joint_R2_MoveSplit_labunl_FB_%dsessions' % (params['nSessions']))
+
+
+#%% Show figure for each of the arealabelpairs and each of the dataversions
+#Reshape stim x sessions:
+R2_data                 = np.reshape(R2_cv_FB,(narealabelpairs+1,2,params['nSessions']*params['nStim']))
+optim_rank_data         = np.reshape(optim_rank_FB,(narealabelpairs+1,2,params['nSessions']*params['nStim']))
+R2_ranks_data           = np.reshape(R2_ranks_FB,(narealabelpairs+1,2,params['nSessions']*params['nStim'],params['nranks'],nmodelfits,params['kfold']))
+if np.any(~np.isnan(R2_data)):
+    for istate in range(2):
+        for idx in np.array([[1,3]]):
+        # clrs        = ['grey',get_clr_area_labeled([sourcearealabelpairs[idx[1]].split('-')[0]])]
+            clrs        = ['grey','red']
+            fig         = plot_RRR_R2_arealabels_paired(R2_data[idx][:,istate],optim_rank_data[idx][:,istate],R2_ranks_data[idx][:,istate],np.array(sourcearealabelpairs_FF)[idx-1],clrs)
+        # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (sourcearealabelpairs[idx[1]-1],version,params['nSessions']))
+
+
 
 #%% Identify which dimensions are particularly enhanced in labeled cells:
 data = np.nanmean(R2_ranks,axis=(5)) #average across kfolds
