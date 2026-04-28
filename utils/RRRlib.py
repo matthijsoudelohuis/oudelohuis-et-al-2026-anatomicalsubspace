@@ -126,7 +126,7 @@ def RRR_wrapper(Y, X, nN=None,nM=None,nK=None,lam=0,nranks=25,kfold=5,nmodelfits
     #RRR: do SVD decomp of Y_hat, 
     # U is of shape K x r, S is of shape r x r, V is of shape r x M
     # Y_hat_rr,U,S,V     = RRR(Y, X, B_hat, r)
-
+    breakpoint()
     kf      = KFold(n_splits=kfold,shuffle=True)
 
     # Data format: 

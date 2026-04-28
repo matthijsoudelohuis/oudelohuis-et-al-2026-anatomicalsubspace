@@ -4,6 +4,7 @@ This script analyzes noise correlations in a multi-area calcium imaging
 dataset with labeled projection neurons. The visual stimuli are oriented gratings.
 Matthijs Oude Lohuis, 2023, Champalimaud Center
 """
+# %pdb on
 
 #%% ###################################################
 import os
@@ -17,6 +18,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.decomposition import PCA
 from scipy.stats import zscore, ttest_rel, ttest_ind
+from datetime import datetime
+import pickle
 
 from loaddata.session_info import *
 from utils.tuning import compute_tuning
@@ -35,6 +38,14 @@ figdir = os.path.join(params['figdir'],'RRR','SubspaceOverlap')
 #%% Plotting parameters:
 set_plot_basic_config()
 cm      = 1/2.54  # centimeters in inches
+
+#%% 
+# %pdb on
+# import pdb
+# %debug
+
+[x,y] = RRR_wrapper(pairpops, outpops, nN=None,nM=None,nK=None,lam=0,nranks=25,kfold=5,nmodelfits=5,fixed_rank=None)
+
 
 #%% 
 areas = ['V1','PM','AL']
@@ -111,7 +122,11 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
                                 ),axis=0))[0]
     
     print(len(idx_areax),len(idx_areay),len(idx_areaz))
-    
+    ses.sessiondata['nV1lab'] = len(idx_areax)
+    ses.sessiondata['nPMlab'] = len(idx_areay)
+    ses.sessiondata['nALunl'] = len(idx_areaz)
+sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=True)
+
 #%% 
 
 npairpops           = len(pairpops)
@@ -214,7 +229,31 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
                         R2_cv[iapl,ipairpop,ioutpop,ises,istim,imf],optim_rank[iapl,ipairpop,ioutpop,ises,istim,imf],_  = RRR_wrapper(Y_out, X_out, nN=pairpop,nK=None,
                                                                                                                             lam=params['lam'],nranks=nranks,kfold=params['kfold'],
                                                                                                                           nmodelfits=1,fixed_rank=rank_neuralpair)
-                        
+#%% Save the data: 
+
+version = 'V1PM_labunl_RegressOutAL'
+
+resultdir = os.path.join(params['resultdir'])
+if not os.path.exists(resultdir):
+    os.makedirs(resultdir)
+datetime_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+savefilename = os.path.join(resultdir,'RRR_%s_%s' % (version,datetime_str))
+
+#%%
+params['nranks']    = nranks
+params['nmodelfits'] = nmodelfits
+params['nSessions'] = nSessions
+
+#%% Save the data:
+np.savez(savefilename + '.npz',R2_cv=R2_cv,optim_rank=optim_rank,
+         arealabelpairs=arealabelpairs,outpops=outpops,pairpops=pairpops,
+         allow_pickle=True)
+
+with open(savefilename +'_params' + '.txt', "wb") as myFile:
+    pickle.dump(params, myFile)
+
+
+
 #%% Plotting the mean across time across sessions: 
 # R2_toplot = np.reshape(R2_cv,(narealabelpairs+1,params['nSessions']*params['nStim'],params['nT']))
 fig,axes = plt.subplots(1,1,figsize=(4.5*cm,4*cm))
@@ -240,53 +279,64 @@ ax.set_ylim([0,ax.get_ylim()[1]])
 sns.despine(fig=fig, top=True, right=True, offset = 3)
 # my_savefig(fig,figdir,'RRR_AL_out_popsizes_%s' % (params['direction']))
 
-#%% Setting the sessions with only sufficient unlabeled cells to np.nan:
+#%%
 
-tempslice = R2_cv[:2,0,0,:,0,0].squeeze()
+tempslice = R2_cv[:3,0,0,:,0,0].squeeze()
 idx_FF_incomplete = np.where(np.any(np.isnan(tempslice),axis=0))[0]
-R2_cv[:2,:,:,idx_FF_incomplete,:,:] = np.nan
+R2_cv[:3,:,:,idx_FF_incomplete,:,:] = np.nan
 
-tempslice = R2_cv[3:5,0,0,:,0,0].squeeze()
+tempslice = R2_cv[3:,0,0,:,0,0].squeeze()
 idx_FB_incomplete = np.where(np.any(np.isnan(tempslice),axis=0))[0]
-R2_cv[3:5,:,:,idx_FB_incomplete,:,:] = np.nan
+R2_cv[3:,:,:,idx_FB_incomplete,:,:] = np.nan
+
+#%% Setting the sessions with only sufficient unlabeled cells to np.nan:
+# tempslice = R2_cv[:2,0,0,:,0,0].squeeze()
+# idx_FF_incomplete = np.where(np.any(np.isnan(tempslice),axis=0))[0]
+# R2_cv[:2,:,:,idx_FF_incomplete,:,:] = np.nan
+
+# tempslice = R2_cv[3:5,0,0,:,0,0].squeeze()
+# idx_FB_incomplete = np.where(np.any(np.isnan(tempslice),axis=0))[0]
+# R2_cv[3:5,:,:,idx_FB_incomplete,:,:] = np.nan
 
 #%% Plotting the mean across time across sessions: 
 # R2_toplot = np.reshape(R2_cv,(narealabelpairs+1,params['nSessions']*params['nStim'],params['nT']))
 logoffset = 3
-idx_ses = np.array([1,2,4,8])
-idx_ses = np.arange(nSessions)
-# idx_ses = np.array([0]) #plot only the two example sessions
-# idx_ses = np.array([5]) #plot only the two example sessions
+idx_ses = np.array([0,1,2,4,6,8])
+# idx_ses = np.array([3,5,7])
+# idx_ses = sessiondata['nALunl'] > 100
+# idx_ses = np.array([2]) #plot only example sessions
+
 fig,axes = plt.subplots(1,2,figsize=(8.5*cm,4*cm),sharex=True,sharey=True)
 ax = axes[0]
 idx = [0,2]
+# idx = [0,1]
 figlabels = arealabelpair_to_figlabel(arealabelpairs[idx])
 handles = []
 clrs_arealabeled = ['grey','red']
+# clrs_arealabeled = ['red','grey']
 for iapl,apl in enumerate(arealabelpairs[idx]):
     # datatoplot = np.nanmean(R2_cv[idx[iapl],0],axis=(1,2,3))
     datatoplot = np.nanmean(R2_cv[idx[iapl]][0][:,idx_ses],axis=(1,2,3))
     handles.append(ax.plot(outpops+logoffset,datatoplot,color=clrs_arealabeled[iapl],marker='o',markersize=5,linestyle='-')[0])
-ax.legend(handles=handles,labels=figlabels,loc='best',frameon=True,reverse=True)
+ax.legend(handles=handles,labels=figlabels,loc='lower left',frameon=True,reverse=True,fontsize=5)
 ax.grid(True,axis='both',alpha=0.7,which='major')
 ax.set_xlabel('AL population size')
 ax.set_ylabel('R$^{2}$')
 ax.set_title('Feedforward')
 
 ax = axes[1]
-# idx = [4,5]
-idx = [3,4]
-# idx = [3,5]
+# idx = [3,4]
+idx = [3,5]
 figlabels = arealabelpair_to_figlabel(arealabelpairs[idx])
 handles = []
-clrs_arealabeled = ['grey','red']
 for iapl,apl in enumerate(arealabelpairs[idx]):
     # datatoplot = np.nanmean(R2_cv[idx[iapl],0,:,idx_ses,:,:],axis=(1,2,3))
     datatoplot = np.nanmean(R2_cv[idx[iapl]][0][:,idx_ses],axis=(1,2,3))
     handles.append(ax.plot(outpops+logoffset,datatoplot,color=clrs_arealabeled[iapl],marker='o',markersize=5,linestyle='-')[0])
-ax.legend(handles=handles,labels=figlabels,loc='best',frameon=True,reverse=True)
+ax.legend(handles=handles,labels=figlabels,loc='lower left',frameon=True,reverse=True,fontsize=5)
 
 ax.set_xscale('log')
+# ax.set_yscale('log')
 ax.set_xticks(outpops+logoffset)
 ax.set_xticklabels(outpops)
 ax.set_xlim([np.min(outpops),np.max(outpops+25)])
@@ -296,10 +346,22 @@ ax.set_xlabel('AL population size')
 ax.set_title('Feedback')
 
 plt.tight_layout()
-sns.despine(fig=fig, top=True, right=True, offset = 2,trim=True)
-# my_savefig(fig,figdir,'RRR_Lab_Unl_ALout_popsizes_%s' % (params['direction']))
+sns.despine(fig=fig, top=True, right=True, offset = 2,trim=False)
+my_savefig(fig,figdir,'RRR_Lab_Unl_ALout_popsizes_%dsessions' % (np.sum(idx_ses)))
 
+#%%
+sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=True)
+# idx_good_ses = np.array([1,2,4,6,8])
+# idx_good_ses = np.array([2,4,6,7,8])
+# idx_good_ses = np.array([1,2,3,5,4,6,8])
+idx_good_ses = np.array([0,1,2,4,6,8])
+# idx_good_ses = np.array([0,1,2,3,5,4,6,8])
 
+sessiondata['good_session'] = False
+sessiondata.loc[idx_good_ses,'good_session'] = True
+# sns.stripplot(data=sessiondata,x='good_session',y='nV1lab')
+# sns.stripplot(data=sessiondata,x='good_session',y='nPMlab')
+# sns.stripplot(data=sessiondata,x='good_session',y='nALunl')
 
 #%% 
 

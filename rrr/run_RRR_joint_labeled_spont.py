@@ -13,13 +13,13 @@ import numpy as np
 from sklearn.decomposition import PCA
 from scipy.stats import zscore
 import pickle
+from datetime import datetime
 
 from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
 from utils.RRRlib import *
 from utils.regress_lib import *
 from params import load_params
-from datetime import datetime
 
 #%% Load parameters and settings:
 params = load_params()
