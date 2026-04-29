@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -21,7 +20,7 @@ from utils.plot_lib import * #get all the fixed color schemes
 # from utils.corr_lib import *
 # from utils.RRRlib import *
 from utils.regress_lib import *
-from params import load_params
+from utils.params import load_params
 
 params = load_params()
 figdir = os.path.join(params['figdir'],'RRR','Labeling','Looped')

@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -16,6 +15,7 @@ from scipy.stats import zscore
 from scipy import stats
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from sklearn.linear_model import RidgeCV
+import joblib
 
 from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
@@ -25,7 +25,7 @@ from utils.RRRlib import *
 from utils.regress_lib import *
 from utils.pair_lib import value_matching
 from utils.psth import compute_tensor
-from params import load_params
+from utils.params import load_params
 from utils.corr_lib import filter_sharednan
 
 params = load_params()
@@ -68,6 +68,17 @@ sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=False)
 # [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=True)
 # sessions = load_resid_tensor(sessions,behavout=True)
+
+
+cache_path = os.path.join(params['resultdir'], 'sessions_cache_%d.pkl' % nSessions)
+
+if os.path.exists(cache_path):
+    sessions, t_axis = joblib.load(cache_path)
+    print('Loaded from cache')
+else:
+    sessions, t_axis = load_resid_tensor(sessions, params, regressbehavout=False)
+    joblib.dump((sessions, t_axis), cache_path)
+    print('Saved to cache')
 
 #%% Do RRR of V1 and PM labeled and unlabeled neurons
 version = 'FF'

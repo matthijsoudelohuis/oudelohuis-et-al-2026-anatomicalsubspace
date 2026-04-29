@@ -21,7 +21,7 @@ from loaddata.get_data_folder import *
 from utils.plot_lib import *
 from utils.imagelib import *
 # from labeling.tdTom_labeling_cellpose import *
-from params import load_params
+from utils.params import load_params
 from labeling.tdTom_labeling_cellpose import *
 
 params = load_params()

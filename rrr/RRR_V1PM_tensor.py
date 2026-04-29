@@ -24,7 +24,7 @@ from utils.RRRlib import *
 from utils.regress_lib import *
 from utils.pair_lib import value_matching
 from utils.psth import compute_tensor
-from params import load_params
+from utils.params import load_params
 
 params = load_params()
 figdir = os.path.join(params['figdir'],'RRR','Labeling')

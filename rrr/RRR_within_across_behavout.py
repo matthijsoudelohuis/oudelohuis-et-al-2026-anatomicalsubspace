@@ -25,7 +25,7 @@ from utils.psth import compute_tensor,compute_respmat
 from utils.plot_lib import * #get all the fixed color schemes
 from utils.regress_lib import *
 from utils.tuning import compute_tuning_wrapper
-from params import load_params
+from utils.params import load_params
 from utils.RRRlib import *
 
 params = load_params()

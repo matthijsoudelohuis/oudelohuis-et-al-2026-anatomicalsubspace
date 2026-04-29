@@ -21,7 +21,7 @@ from utils.plot_lib import * #get all the fixed color schemes
 from utils.RRRlib import *
 from utils.regress_lib import *
 from utils.psth import compute_tensor
-from params import load_params
+from utils.params import load_params
 
 params = load_params()
 

@@ -19,7 +19,7 @@ from utils.RRRlib import *
 from utils.regress_lib import *
 from utils.tuning import compute_tuning_wrapper
 from utils.pair_lib import value_matching
-from params import load_params
+from utils.params import load_params
 from datetime import datetime
 
 #%% Load parameters and settings:

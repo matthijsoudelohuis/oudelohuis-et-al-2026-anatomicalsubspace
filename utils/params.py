@@ -28,7 +28,7 @@ def load_params():
                 # stilltrialsonly = True, #only use still trials for analysis
                 maxvideome = 0.2, #maximum video motion in normalized energy
                 maxrunspeed = 0.5, #maximum run speed in cm/s
-                
+
                 multcomp_method = 'holm', #method for multiple comparisons correction in statistical tests, e.g. 'holm', 'fdr_bh', 'bonferroni'
 
                 # Parameters for RRR for size-matched populations of V1 and PM labeled and unlabeled neurons

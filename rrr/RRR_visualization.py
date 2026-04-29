@@ -27,7 +27,7 @@ from utils.plot_lib import * #get all the fixed color schemes
 from utils.CCAlib import *
 from utils.corr_lib import *
 from utils.regress_lib import *
-from params import load_params
+from utils.params import load_params
 
 params = load_params()
 figdir = os.path.join(params['figdir'],'RRR','LabeledSubspace')

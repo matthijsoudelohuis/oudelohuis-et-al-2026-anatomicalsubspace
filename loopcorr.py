@@ -25,7 +25,7 @@ from utils.corr_lib import *
 from utils.rf_lib import smooth_rf,exclude_outlier_rf,filter_nearlabeled,replace_smooth_with_Fsig
 from utils.tuning import compute_tuning_wrapper
 from utils.shuffle_lib import my_shuffle, corr_shuffle
-from params import load_params
+from utils.params import load_params
 
 params = load_params()
 figdir = os.path.join(params['figdir'],'NC','Labeling')

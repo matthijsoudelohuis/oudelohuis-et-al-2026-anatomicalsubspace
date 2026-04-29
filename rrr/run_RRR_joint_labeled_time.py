@@ -20,7 +20,7 @@ from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
 from utils.RRRlib import *
 from utils.regress_lib import *
-from params import load_params
+from utils.params import load_params
 from utils.tuning import compute_tuning_wrapper
 
 #%% Load parameters and settings:

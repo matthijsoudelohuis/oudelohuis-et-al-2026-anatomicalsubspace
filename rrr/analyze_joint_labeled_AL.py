@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -25,7 +24,7 @@ from utils.RRRlib import *
 from utils.regress_lib import *
 from utils.pair_lib import value_matching
 from utils.psth import compute_tensor
-from params import load_params
+from utils.params import load_params
 from utils.corr_lib import filter_sharednan
 
 params = load_params()

@@ -21,7 +21,7 @@ from loaddata.session_info import *
 from utils.plot_lib import * #get all the fixed color schemes
 from utils.RRRlib import *
 from utils.regress_lib import *
-from params import load_params
+from utils.params import load_params
 from utils.corr_lib import filter_sharednan
 
 params = load_params()

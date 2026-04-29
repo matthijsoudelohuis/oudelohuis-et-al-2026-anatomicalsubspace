@@ -27,7 +27,7 @@ from utils.CCAlib import *
 from utils.corr_lib import *
 from utils.tuning import compute_tuning_wrapper
 from utils.regress_lib import *
-from params import load_params
+from utils.params import load_params
 from utils.RRRlib import *
 
 params = load_params()
