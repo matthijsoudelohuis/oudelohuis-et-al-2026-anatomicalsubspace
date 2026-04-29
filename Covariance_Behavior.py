@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 from loaddata.get_data_folder import get_local_drive
 
 import numpy as np
@@ -34,7 +33,6 @@ figdir = os.path.join(params['figdir'],'Behavior')
 set_plot_basic_config()
 cm      = 1/2.54  # centimeters in inches
 
-
 #%% 
 session_list        = np.array(['LPE12223_2024_06_10']) #GR
 sessions,nSessions   = filter_sessions(protocols = 'GR',only_session_id=session_list)
@@ -56,7 +54,6 @@ linewidth = 0.6
 t_smooth = 1
 scalefactor = 0.6
 clrs = sns.color_palette('dark',n_colors=10)
-
 
 idx_areax           = np.where(sessions[ises].celldata['roi_name']=='V1')[0]
 idx_areay           = np.where(sessions[ises].celldata['roi_name']=='PM')[0]
@@ -113,12 +110,7 @@ ax.add_artist(AnchoredSizeBar(ax.transData, 10,
 
 # my_savefig(fig,figdir,'Example_Behavior_V1PM_%s' % sessions[ises].session_id)
 
-
 #%% 
-
-
-
-
 
 ####### #     #    #    #     # ######  #       #######     #####  ####### #     # 
 #        #   #    # #   ##   ## #     # #       #          #     # #     # #     # 
@@ -128,12 +120,10 @@ ax.add_artist(AnchoredSizeBar(ax.transData, 10,
 #        #   #  #     # #     # #       #       #          #     # #     #   # #   
 ####### #     # #     # #     # #       ####### #######     #####  #######    #    
 
-
 #%% 
 areas = ['V1','PM','AL']
 session_list        = np.array(['LPE12223_2024_06_10']) #GR
 sessions,nSessions   = filter_sessions(protocols = 'GR',only_session_id=session_list,filter_areas=areas)
-
 
 #%% 
 # areas = ['V1','PM','AL','RSP']
@@ -268,7 +258,6 @@ ax.yaxis.set_label_position("right")
 plt.tight_layout()
 my_savefig(fig,figdir,'CovarianceMatrix_V1PM_Behavior_%s' % sessions[ises].session_id)
 
-
 #%% Make as separate figures: 
 # fig,ax = plt.subplots(1,2,figsize=(6,3))
 # ax[0].imshow(Y_cov_sort,vmin=vmin,vmax=vmax,cmap='magma')
@@ -309,11 +298,6 @@ my_savefig(fig,figdir,'CovarianceMatrix_V1PM_Behavior_%s' % sessions[ises].sessi
 # plt.tight_layout()
 # my_savefig(fig,figdir,'CovarianceMatrix_V1PM_%s' % sessions[ises].session_id,formats=['png'])
 
-
-
-
-
-
 #%% 
 
    #    #       #           #####  #######  #####   #####  ### ####### #     #  #####  
@@ -323,7 +307,6 @@ my_savefig(fig,figdir,'CovarianceMatrix_V1PM_Behavior_%s' % sessions[ises].sessi
 ####### #       #                # #             #       #  #  #     # #   # #       # 
 #     # #       #          #     # #       #     # #     #  #  #     # #    ## #     # 
 #     # ####### #######     #####  #######  #####   #####  ### ####### #     #  #####  
-
 
 #%% 
 areas = ['V1','PM','AL']

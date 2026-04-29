@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
@@ -70,7 +69,6 @@ for ivaluematching,valuematchfield in enumerate(valuematch_fields):
             fig         = plot_RRR_R2_arealabels_paired(R2_data[idx],optim_rank_data[idx],R2_ranks_data[idx],np.array(sourcearealabelpairs)[idx-1],clrs)
             # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (sourcearealabelpairs[idx[1]-1],version,params['nSessions']))
 
-
 #%% Define the ratio of R2 between V1PM and V1ND
 
 R2_ratio = R2_cv[:,2,:,:] / R2_cv[:,1,:,:]
@@ -84,7 +82,6 @@ R2_ratio = np.nansum(R2_ratio[:,:,:,:,np.arange(1,5)],axis=-1)
 # R2_ratio = np.nansum(R2_ratio[:,:,:,:,np.arange(1,3)],axis=-1)
 
 R2_ratio = R2_ratio[:,2,:,:] / R2_ratio[:,1,:,:]
-
 
 #%% Make the figure of the ratio:
 fig,axes = plt.subplots(1,1,sharex=True,sharey=True,figsize=(3*cm,3.6*cm))

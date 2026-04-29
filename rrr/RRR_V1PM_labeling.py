@@ -7,9 +7,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\molanalysis')
 from loaddata.get_data_folder import get_local_drive
-# os.chdir(os.path.join(get_local_drive(),'Python','molanalysis'))
 
 import numpy as np
 import pandas as pd
@@ -58,8 +56,6 @@ celldata = pd.concat([ses.celldata for ses in sessions]).reset_index(drop=True)
 
 # sessions,nSessions   = filter_sessions(protocols = 'GR',only_session_id=session_list)
 
-
-
 #%% 
 
 areas = ['V1','PM','AL','RSP']
@@ -80,11 +76,6 @@ for ises in range(nSessions):
                                 calciumversion=calciumversion,keepraw=False)
 
 #%% 
-
-
-
-
-
 
 #%% Test wrapper function:
 nsampleneurons  = 20
@@ -171,10 +162,6 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 
     weights_source[idx_ses[idx_areax],:] = U
     weights_target[idx_ses[idx_areay],:] = V
-
-
-
-
 
 #%% Plot:
 fig,axes = plt.subplots(2,2,figsize=(6,6),sharex=True,sharey=True)
@@ -425,7 +412,6 @@ fig         = plot_RRR_R2_arealabels(R2_cv[4:],optim_rank[4:],R2_ranks[4:],areal
                                      clrs_arealabelpairs[4:],normalize=True)
 my_savefig(fig,figdir,'RRR_cvR2_PMV1_LabUnl_norm_%dsessions' % nSessions)
 
-
 #%% Is the enhancement specific to the target area the neurons project to?
 versionname = 'FeedforwardSpecificity'
 arealabelpairs  = ['V1unl-PMunl',
@@ -501,8 +487,6 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 # my_savefig(fig,figdir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
 fig         = plot_RRR_R2_arealabels(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_arealabelpairs)
 my_savefig(fig,figdir,'RRR_cvR2_V1PM_LabUnl_ALRSP_%s_%dsessions' % (versionname,nSessions),formats=['png'])
-
-
 
 #%% 
 
@@ -709,7 +693,6 @@ arealabelpairs  = ['V1unl-V1unl',
                     'PMlab-V1unl',
                     'PMlab-V1lab']
 
-
 arealabelpairs  = ['V1unl-PMunl',
                     'V1unl-PMlab',
                     'V1lab-PMunl',
@@ -784,7 +767,6 @@ rankdata    = optim_rank[:,:,idx_ses]
 fig         = plot_RRR_R2_regressout(R2_data,rankdata,arealabelpairs,clrs_arealabelpairs)
 
 my_savefig(fig,figdir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
-
 
 #%% Print how many labeled neurons there are in V1 and Pm in the loaded sessions:
 print('Number of labeled neurons in V1 and PM:')
@@ -861,9 +843,6 @@ ax.set_xlabel('Rank')
 ax.set_xticks(range(nranks+1))
 sns.despine(top=True,right=True,offset=3)
 my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
-
-
-
 
 #%% Parameters for RRR between size-matched populations of V1 and PM labeled and unlabeled neurons
 arealabelpairs  = ['V1unl-PMunl',
@@ -992,15 +971,6 @@ ax.set_xticklabels(arealabelpairs2,fontsize=7)
 
 # my_savefig(fig,figdir,'RRR_V1PM_regressoutneural_Frac_var_shared_ALRSP_%dsessions' % (nSessions))
 
-
-
-
-
-
-
-
-
-
 #%% Parameters for RRR between size-matched populations of V1 and PM labeled and unlabeled neurons
 arealabelpairs  = ['V1unl-PMunl',
                     'V1unl-PMlab',
@@ -1111,11 +1081,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 fig = plot_RRR_R2_regressout(R2_cv,optim_rank,arealabelpairs,clrs_arealabelpairs)
 my_savefig(fig,figdir,'RRR_V1PM_regressout_unlabeled_%dsessions' % (nSessions))
 
-
-
 #%% Deprecated, earlier code below:
-
-
 
 # #%% get optimal lambda
 # nsampleneurons  = 100
@@ -1162,7 +1128,6 @@ my_savefig(fig,figdir,'RRR_V1PM_regressout_unlabeled_%dsessions' % (nSessions))
 #                 R2_cv[ikf] = EV(Y_test,Y_hat_test_rr)
 #             R2_cv_lams[ises,ilam] = np.average(R2_cv)
 
-
 # #%% 
 # plt.plot(lambdas,np.nanmean(R2_cv_lams,axis=0))
 # plt.xscale('log')
@@ -1176,7 +1141,6 @@ my_savefig(fig,figdir,'RRR_V1PM_regressout_unlabeled_%dsessions' % (nSessions))
 # plt.text(lam,0,'lam=%.3f' % lam,ha='right',va='center',fontsize=9)
 # plt.savefig(os.path.join(figdir,'RRR_Lam_%dneurons' % nsampleneurons), format = 'png')
 # # plt.savefig(os.path.join(figdir,'RRR_Lam_prePCA_%dneurons' % nsampleneurons), format = 'png')
-
 
 #%% Are CCA and RRR capturing the same signal?
 corr_weights_CCA_RRR  = np.full((nOris,2,nSessions),np.nan)
@@ -1327,8 +1291,6 @@ ax.set_ylim([0,0.2])
 sns.despine(fig=fig, top=True, right=True,offset=5)
 plt.savefig(os.path.join(figdir,'RRR_R2_kfold'), format = 'png', bbox_inches='tight')
 
-
-
 #%% Using trial averaged or using timepoint fluctuations:
 
 #%% 
@@ -1336,7 +1298,6 @@ session_list        = np.array([['LPE12223','2024_06_10'], #GR
                                 ['LPE10919','2023_11_06']]) #GR
 sessions,nSessions   = filter_sessions(protocols = 'GR',only_session_id=session_list)
 sessions,nSessions   = filter_sessions(protocols = 'GR')
-
 
 #%%  Load data properly:        
 calciumversion = 'dF'
@@ -1357,7 +1318,6 @@ for ises in range(nSessions):
                                  t_pre, t_post, binsize,method='nearby')
 
 #%% 
-
 
 #%% 
 R2_cv_ori           = np.full((nOris,nSessions,nmodelfits),np.nan)
@@ -1524,6 +1484,4 @@ ax.set_ylim([0,0.2])
 ax.set_title('Which data to use?')
 sns.despine(fig=fig, top=True, right=True,offset=5)
 plt.savefig(os.path.join(figdir,'RRR_R2_difftypes'), format = 'png', bbox_inches='tight')
-
-
 

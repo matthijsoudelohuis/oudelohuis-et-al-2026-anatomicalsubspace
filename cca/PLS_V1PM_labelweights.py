@@ -7,9 +7,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\molanalysis')
 from loaddata.get_data_folder import get_local_drive
-# os.chdir(os.path.join(get_local_drive(),'Python','molanalysis'))
 
 import numpy as np
 import pandas as pd
@@ -68,7 +66,6 @@ t_axis = sessions[0].t_axis
 #       #       #######     #   #     #   #       #     #    #  #  # #        #  #     # #     #    #          # 
 #     # #     # #     #      # #      #   #       #     #    #  #  # #        #  #     # #     #    #    #     # 
  #####   #####  #     #       #     ##### #       #     #     ## ##  ####### ###  #####  #     #    #     #####  
-
 
 #%% Are the weights higher for V1lab or PMlab than unlabeled neurons?
 n_components        = 20
@@ -203,7 +200,6 @@ ax.axhline(0.1,linestyle='--',color='k')
 sns.despine(top=True,right=True,offset=2,trim=False)
 # my_savefig(fig,figdir,'CCA_V1PM_labeled_testcorr_%dsessions_%s' % (nSessions,varversion),formats=['png'])
 
-
 #%% 
 fig,axes = plt.subplots(1,2,figsize=(6,2.5),sharex=True,sharey=True)
 
@@ -258,7 +254,6 @@ ax.legend(frameon=False,loc='lower center')
 sns.despine(top=True,right=True,offset=2,trim=False)
 # my_savefig(fig,figdir,'CCA_V1PM_labeled_loadings_%dsessions_%s' % (nSessions,varversion),formats=['png'])
 # my_savefig(fig,figdir,'CCA_V1PM_labeled_weights_v2_%dsessions' % nSessions,formats=['png'])
-
 
 #%% 
 varversion = 'stim'

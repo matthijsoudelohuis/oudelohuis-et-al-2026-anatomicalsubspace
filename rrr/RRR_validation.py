@@ -7,10 +7,8 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-os.chdir('c:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 from loaddata.get_data_folder import get_local_drive
-# os.chdir(os.path.join(get_local_drive(),'Python','molanalysis'))
 
 import numpy as np
 import pandas as pd
@@ -36,7 +34,6 @@ figdir = os.path.join(params['figdir'],'RRR','Validation')
 #%% Plotting parameters:
 set_plot_basic_config()
 cm      = 1/2.54  # centimeters in inches
-
 
 #%% 
 session_list        = np.array([['LPE12223_2024_06_10'], #GR
@@ -179,9 +176,6 @@ for r in range(1,nrankstoplot):
     # my_savefig(fig,figdir,'V1PM_LowRank_Excerpt_%s_Rank%d.png' % (ses.sessiondata['session_id'][0],r+1),formats=['png']) 
 # my_savefig(fig,figdir,'V1PM_LowRank_Excerpt_%s_Rank%d' % (ses.session_id,r+1)) 
 
-
-
-
 #%% 
 ####### #     #    #    #     # ######  #       #######    ######     #    #     # #    # 
 #        #   #    # #   ##   ## #     # #       #          #     #   # #   ##    # #   #  
@@ -240,7 +234,6 @@ ax.set_xlabel('Rank')
 ax.set_ylabel('Performance ($R^2$)')
 sns.despine(fig=fig,top=True,right=True,trim=True)
 my_savefig(fig,figdir,'RRR_rank_ev_procedure_%d' % nsampleneurons)
-
 
 #%% Show the effect of averaging over time, of reducing the signal and only having noise, 
 # and of selecting responsive neurons
@@ -334,11 +327,6 @@ def split_half_reliability(Y):
     R2_ceiling = r_sb ** 2
     return R2_ceiling
 
-
-
-
-
-
 #%% Get all data 
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
 report_sessions(sessions)
@@ -423,8 +411,6 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 
 print(np.nanmean(R2_cv))
 
-
-
 #%% Average across FF and FB and across folds: 
 # R2_toplot            = np.nanmean(R2_cv,axis=(0,3))
 # rank_toplot          = np.nanmean(optim_rank,axis=(0,3))
@@ -476,8 +462,6 @@ ax.set_xlabel('Time (sec)')
 ax.set_ylabel('RRR R2')
 sns.despine(fig=fig,top=True,right=True,trim=True)
 # my_savefig(fig,figdir,'RRR_rank_across_time')
-
-
 
 #%% 
 ######  ####### ######      #####  ### ####### ####### 
@@ -553,8 +537,6 @@ ax.set_title('Rank')
 sns.despine(top=True,right=True,offset=3)
 plt.tight_layout()
 my_savefig(fig,figdir,'R2_RRR_Tensor_Rank_PopSize_V1PM_%dsessions' % nSessions,formats=['png'])
-
-
 
 #%% 
 #     # ### ####### #     # ### #     #    #     #  #####        #     #####  ######  #######  #####   #####  
@@ -680,7 +662,6 @@ plt.tight_layout()
 sns.despine(offset=3,top=True,right=True)
 my_savefig(fig,figdir,'RRR_R2Rank_WithinVSAcross_%dneurons' % nsampleneurons)
 
-
 #%% Get the ratio of within to across:
 R2_toplot = np.reshape(R2_cv,(narealabelpairs,nSessions*nStim))
 rank_toplot = np.reshape(optim_rank,(narealabelpairs,nSessions*nStim))
@@ -706,8 +687,6 @@ plt.tight_layout()
 sns.despine(offset=3,top=True,right=True)
 my_savefig(fig,figdir,'RRR_R2Rank_ratio_WithinVSAcross_%dneurons' % nsampleneurons)
 
-
-
 #%% 
 ######  ####### ######  ######  #######  #####     #    ####### ####### ######  
 #     # #       #     # #     # #       #     #   # #      #    #       #     # 
@@ -716,8 +695,6 @@ my_savefig(fig,figdir,'RRR_R2Rank_ratio_WithinVSAcross_%dneurons' % nsampleneuro
 #     # #       #       #   #   #       #       #######    #    #       #     # 
 #     # #       #       #    #  #       #     # #     #    #    #       #     # 
 ######  ####### #       #     # #######  #####  #     #    #    ####### ######  
-
-
 
 #%% Does performance increase with increasing number of neurons? Predicting PM from V1 with different number of V1 and PM neurons
 popsizes            = np.array([5,10,20,50,100,200,500])
@@ -743,7 +720,6 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
         for iypop,ypop in enumerate(popsizes):
             if len(idx_areax)>=xpop and len(idx_areay)>=ypop:
                 R2_cv[ises,ixpop,iypop],optim_rank[ises,ixpop,iypop] = RRR_wrapper(Y, X, nN=xpop,nM=ypop,nK=None,lam=0,nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
-
 
 #%% Plot R2 for different number of V1 and PM neurons
 from  matplotlib.colors import LinearSegmentedColormap
@@ -774,7 +750,6 @@ sns.despine(top=True,right=True,offset=3)
 plt.tight_layout()
 my_savefig(fig,figdir,'R2_RRR_Rank_PopSize_Both_V1PM_%dsessions.png' % nSessions,formats=['png'])
 
-
 #%% Does performance increase with increasing number of neurons? Predicting PM from V1 with different number of V1 and PM neurons
 popsizes            = np.array([5,10,20,50,100,200,500])
 # popsizes            = np.array([5,10,20,50,100])
@@ -798,7 +773,6 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
     for ipop,pop in enumerate(popsizes):
         if len(idx_areax)>=pop and len(idx_areay)>=pop:
             R2_cv[ises,ipop],optim_rank[ises,ipop]             = RRR_wrapper(Y, X, nN=pop,nK=None,lam=0,nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
-
 
 #%% Plot R2 for different number of V1 and PM neurons
 clrs_popsizes = sns.color_palette("rocket",len(popsizes))
@@ -837,8 +811,6 @@ sns.despine(top=True,right=True,offset=3)
 
 plt.tight_layout()
 my_savefig(fig,figdir,'R2_RRR_Rank_PopSize_V1PM_%dsessions.png' % nSessions,formats=['png'])
-
-
 
 #%% Show RRR performance as a function of the number of trials:
 nsampleneurons  = 500
@@ -890,7 +862,6 @@ for ises,ses in enumerate(sessions):
 
                     R2_cv[ises,intrials,r,ikf] = EV(Y_test,Y_hat_rr_test)
 
-
 #%% 
 R2data = np.full((nSessions,ntrialsubsets),np.nan)
 rankdata = np.full((nSessions,ntrialsubsets),np.nan)
@@ -934,11 +905,9 @@ ax.set_ylim([0,np.max(R2data)+.05])
 plt.tight_layout()
 plt.savefig(os.path.join(figdir,'RRR_nTrials_lam%d_Rank_%dneurons.png' % (lam,nsampleneurons)), format = 'png')
 
-
 #%%  Within to across area dimensionality comparison: 
 
 figdir = os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Interarea\\RRR\\WithinAcross\\')
-
 
 #%% 
 min_cells = 1500
@@ -1053,18 +1022,9 @@ plt.tight_layout()
 
 my_savefig(fig,figdir,'RRR_R2Rank_WithinVSAcross_%dneurons' % nsampleneurons,formats=['png'])
 
-
-
-
-
-
 #%% 
 
 # DEPRECATED:
-
-
-
-
 
 #%% get optimal lambda
 nsampleneurons  = 500
@@ -1128,7 +1088,6 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 
                     R2_cv[ises,ilam,r,ikf] = EV(Y_test,Y_hat_rr_test)
 
-
 #%% plot the results for lam = 0
 lambdacolors = sns.color_palette('magma',nlambdas)
 
@@ -1187,8 +1146,6 @@ plt.tight_layout()
 # plt.savefig(os.path.join(figdir,'RRR_Lam_Rank_%dneurons.png' % nsampleneurons), format = 'png')
 my_savefig(fig,figdir,'RRR_Lam_Rank_%dneurons.png' % nsampleneurons,formats=['png'])
 # my_savefig(fig,figdir,'RRR_perOri_Lam_Rank_%dneurons.png' % nsampleneurons,formats=['png'])
-
-
 
 #%% get optimal pre pCA
 nsampleneurons  = 500
@@ -1259,7 +1216,6 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
 
                     R2_cv[ises,ipc,r,ikf] = EV(Y_test,Y_hat_rr_test) * Ymodel.explained_variance_ratio_.sum()
 
-
 #%% 
 R2data = np.full((nSessions,nPCAdims),np.nan)
 rankdata = np.full((nSessions,nPCAdims),np.nan)
@@ -1303,11 +1259,7 @@ plt.tight_layout()
 # plt.savefig(os.path.join(figdir,'RRR_PrePCA_lam0_Rank_%dneurons.png' % nsampleneurons), format = 'png')
 plt.savefig(os.path.join(figdir,'RRR_PrePCA_lam0_perOri_Rank_%dneurons.png' % nsampleneurons), format = 'png')
 
-
-
-
 #%%%
-
 
 #%%
 

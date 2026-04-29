@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
@@ -50,7 +49,6 @@ session_list        = np.array([
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],filter_noiselevel=False,filter_areas=areas,
                                        only_session_id=session_list,
                                        )
-
 
 #%% Get all data 
 sessions,nSessions   = filter_sessions(protocols = ['GR'],filter_noiselevel=True)

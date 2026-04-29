@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 from sklearn.decomposition import PCA
@@ -293,7 +292,6 @@ figdir = os.path.join(params['figdir'],'RRR','DOC')
 
 t_ticks = np.array([-1,0,1,2])
 
-
 #%% Show the R2 for original and rotated:
 
 x = np.arange(1,fixed_rank+1)
@@ -341,7 +339,6 @@ sns.despine(fig=fig, top=True, right=True, offset = 3)
 my_savefig(fig,figdir,'DOC_latents_r2_%s_control' % params['direction'])
 # my_savefig(fig,figdir,'DOC_latents_r2_%s' % params['direction'])
 
-
 #%% Plotting the R2 of the latents across time:
 # fig,axes = plt.subplots(3,4,figsize=(13,10),sharex=True,sharey=False)
 fig,axes = plt.subplots(ncontrasts,fixed_rank,figsize=(12*cm,6*cm),sharex=True,sharey=True)
@@ -374,7 +371,6 @@ ax.set_xlabel('Time (sec)')
 sns.despine(fig=fig, top=True, right=True, offset = 3)
 # my_savefig(fig,figdir,'DOC_latents_r2_across_time_%s' % params['direction'])
 # my_savefig(fig,figdir,'DOC_latents_r2_across_time_10dim')
-
 
 #%% Plotting the R2 ratio of the latents across time:
 fig,axes = plt.subplots(ncontrasts,fixed_rank,figsize=(12*cm,6*cm),sharex=True,sharey=True)
@@ -426,7 +422,6 @@ sns.despine(fig=fig, top=True, right=True, offset = 3)
 # my_savefig(fig,figdir,'DOC_latents_r2_across_time_10dim')
 
 #%%
-
 
 #%% Plotting the R2 ratio of the latents across time:
 # fig,axes = plt.subplots(ncontrasts,fixed_rank,figsize=(12*cm,6*cm),sharex=True,sharey=True)

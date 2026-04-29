@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
@@ -69,7 +68,6 @@ sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=False)
 # [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=True)
 # sessions = load_resid_tensor(sessions,behavout=True)
-
 
 #%% Do RRR of V1 and PM labeled and unlabeled neurons
 version = 'FF'
@@ -278,21 +276,7 @@ plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=0)
 my_savefig(fig,figdir,'Latent_Crossprediction_%s_%dsessions_perrank%s' % (version,nSessions,'_norm' if normalize else ''))
 
-
 #%% 
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #%% Do RRR of V1 and PM labeled and unlabeled neurons
 sourcearealabelpairs = ['V1unl-V1lab','V1lab-V1unl']

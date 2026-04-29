@@ -7,9 +7,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\molanalysis')
 from loaddata.get_data_folder import get_local_drive
-# os.chdir(os.path.join(get_local_drive(),'Python','molanalysis'))
 
 import numpy as np
 import pandas as pd
@@ -58,18 +56,12 @@ celldata = pd.concat([ses.celldata for ses in sessions]).reset_index(drop=True)
 
 # sessions,nSessions   = filter_sessions(protocols = 'GR',only_session_id=session_list)
 
-
-
-
-
-
 # RRR
 
 #%% 
 
 areas = ['V1','PM','AL','RSP']
 nareas = len(areas)
-
 
 # %% 
 # sessions,nSessions   = filter_sessions(protocols = 'GR',only_all_areas=areas,min_lab_cells_V1=20,min_lab_cells_PM=20)
@@ -88,7 +80,6 @@ calciumversion = 'dF'
 for ises in range(nSessions):
     sessions[ises].load_respmat(load_behaviordata=True, load_calciumdata=True,load_videodata=True,
                                 calciumversion=calciumversion,keepraw=False)
-
 
 #%% Test wrapper function: (should be fast, just one model fit etc. EV around .08 or 0.1)
 nsampleneurons  = 20
@@ -111,7 +102,6 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
     R2_cv[ises],optim_rank[ises],_      = RRR_wrapper(Y, X, nN=nsampleneurons,nK=None,lam=0,nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
 
 print(np.nanmean(R2_cv))
-
 
 #%% Perform RRR: 
 ises = 2
@@ -160,7 +150,6 @@ for r in range(nranks):
 U_sorted = U[np.argsort(-U[:,0]),:]
 V_sorted = V[np.argsort(-V[:,0]),:]
 
-
 #%% Make figure:
 nrankstoshow = 5 
 fig,axes = plt.subplots(nrankstoshow,2,figsize=(6,nrankstoshow),sharex=False,sharey=True)
@@ -195,7 +184,6 @@ ax.set_xlabel('Dimension')
 ax.set_ylabel('Mean weight')
 sns.despine(right=True,top=True,offset=3,trim=True)
 my_savefig(fig,figdir,'RRR_Meanweights_acrossranks_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
-
 
 #%% 
 
@@ -241,7 +229,6 @@ print('%1.2f average overlap of significant target neurons across pairs of dimen
 
 sns.despine(right=True,top=True,offset=3,trim=True)
 my_savefig(fig,figdir,'RRR_SigWeightOverlap_acrossranks_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
-
 
 #%% Perform RRR on all neurons in V1 to PM for one session and show labeled weights:
 ises = 2
@@ -312,11 +299,6 @@ for r in range(nrankstoshow):
     ax.set_xlim([0,np.sum(idx_lab)])
 # plt.tight_layout()
 my_savefig(fig,figdir,'RRR_weights_acrossranks_V1PMlabeled_%s' % ses.sessiondata['session_id'][0],formats=['png'])
-
-
-
-
-
 
 #%% Do RRR in FF and FB direction and compare performance:
 nsampleneurons  = 100
@@ -395,8 +377,6 @@ else:
 plt.tight_layout()
 sns.despine(top=True,right=True,offset=3,trim=True)
 my_savefig(fig,figdir,'RRR_R2_acrossranks_V1PM_%dsessions' % nSessions,formats=['png'])
-
-
 
 #%% Do RRR in FF and FB direction and compare performance:
 nsampleneurons  = 100
@@ -498,9 +478,6 @@ ax_nticks(ax,3)
 add_corr_results(ax,dims.flatten(),optim_rank.flatten())
 
 #%% Is the difference in feedforward vs feedback (V1-PM vs PM-V1) due to different dimensionality?
-
-
-
 
 #%% 
 ######  ####### #     # ### #     #    #    #     # #######                                
@@ -635,7 +612,6 @@ optim_rank      = np.full((4),np.nan)
 for i in range(4):
     R2_cv[i],optim_rank[i] = rank_from_R2(np.nanmean(R2_ranks[:,i,:,:,:],axis=0).reshape([nranks,nmodelfits*kfold]),nranks,nmodelfits*kfold)
 
-
 #%% Make figure: show predictive performance for dominant vs predictive dimensions in predicting PM or another V1 population:
 fig,axes = plt.subplots(1,2,figsize=(5.5,2.5),sharex=True,sharey=True)
 ax = axes[0]
@@ -681,7 +657,6 @@ sns.despine(offset=5,top=True,right=True)
 fig.tight_layout()
 my_savefig(fig,figdir,'V1PM_dominant_predictive_ranks_%dsessions' % (nSessions),formats=['png'])
 
-
 #%% 
 #     #    #         ######  #     #    #          #    #     # ####### ######   #####  
 #     #   ##         #     # ##   ##    #         # #    #   #  #       #     # #     # 
@@ -690,7 +665,6 @@ my_savefig(fig,figdir,'V1PM_dominant_predictive_ranks_%dsessions' % (nSessions),
  #   #     #         #       #     #    #       #######    #    #       #   #         # 
   # #      #         #       #     #    #       #     #    #    #       #    #  #     # 
    #     #####       #       #     #    ####### #     #    #    ####### #     #  #####  
-
 
 #%%  #assign arealayerlabel
 for ises in range(nSessions):   
@@ -703,7 +677,6 @@ for ses in sessions:
 
 for ses in sessions:
     print(np.sum(ses.celldata['arealayer']=='V1L5'))
-
 
 #%% Parameters for decoding from size-matched populations of V1 and PM labeled and unlabeled neurons
 arealayerpairs  = ['V1L2/3-PML2/3',
@@ -823,8 +796,6 @@ plt.tight_layout()
 my_savefig(fig,figdir,'RRR_V1PM_Layers_%dsessions' % (nSessions),formats=['png'])
 # my_savefig(fig,figdir,'RRR_V1PM_Layers_%dsessions_stats' % (nSessions),formats=['png'])
 
-
-
 #%% 
 
 #     #    #      ######  #     #       #    #          ######   #####  ######  
@@ -836,9 +807,6 @@ my_savefig(fig,figdir,'RRR_V1PM_Layers_%dsessions' % (nSessions),formats=['png']
    #     #####    #       #     #    #     # #######    #     #  #####  #       
 
 #%% 
-
-
-
 
 #%% Parameters for decoding from size-matched populations of V1 and PM labeled and unlabeled neurons
 lam                 = 0
@@ -897,8 +865,6 @@ fig.tight_layout()
 my_savefig(fig,figdir,'RRR_R2_rank_allareas_%d_onlyall' % nSessions, formats=['png'])
 # my_savefig(fig,figdir,'RRR_R2_rank_allareas_%d' % nSessions, formats=['png'])
 
-
-
 #%% 
 ######  ######  ######     ######  #######  #####  ####### #     # ######  
 #     # #     # #     #    #     # #       #     # #     # ##   ## #     # 
@@ -909,7 +875,6 @@ my_savefig(fig,figdir,'RRR_R2_rank_allareas_%d_onlyall' % nSessions, formats=['p
 #     # #     # #     #    ######  #######  #####  ####### #     # #       
 
 #%% 
-
 
 #%% Compare mean response and taking the residuals:
 nsampleneurons  = 100
@@ -1015,7 +980,6 @@ kfold               = 5
 R2_cv_folds         = np.full((narealabelpairs,nSessions,4,nranks,nmodelfits,kfold),np.nan)
 # optim_rank          = np.full((narealabelpairs,2,nSessions),np.nan)
 
-
 for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model'):
     idx_T               = np.ones(len(ses.trialdata['stimCond']),dtype=bool)
     #Stimulus data:
@@ -1106,9 +1070,7 @@ plt.tight_layout()
 sns.despine(top=True,right=True,offset=3)
 my_savefig(fig,figdir,'RRR_V1PM_decomposition_%dneurons' % nsampleneurons,formats=['png'])
 
-
 #%% 
-
 
 #%% How much variance of each dimension is explained by each subspace?
 rankdata    = np.nanmean(R2_cv_folds[:,:,0,:,:,:],axis=(0,1))
@@ -1188,8 +1150,6 @@ axes[0].set_xticks(range(narealabelpairs),arealabelpairs,rotation=45,ha='right',
 axes[1].set_xticks(range(narealabelpairs),arealabelpairs,rotation=45,ha='right',fontsize=7)
 plt.tight_layout()
 my_savefig(fig,figdir,'RRR_V1PM_decomposition_%dneurons' % nsampleneurons,formats=['png'])
-
-
 
 #%% 
 
@@ -1277,8 +1237,6 @@ for r in range(nranks):
 
 cvR2_folds[3,:]     = cvR2_folds[0,:] - cvR2_folds[1,:] - cvR2_folds[2,:]
 
-
-
 #%%
 
 overlap = compute_subspace_overlap(U_stim, U_behav)
@@ -1286,7 +1244,6 @@ overlap = compute_subspace_overlap(U_stim, U_behav)
 print(f"Mean cosine of principal angles: {overlap['mean_cosine']:.3f}")
 print(f"Subspace overlap (squared sum of cosines): {overlap['squared_overlap']:.3f}")
 print(f"All singular values (cosines): {overlap['cosines']}")
-
 
 #%% 
 
@@ -1345,33 +1302,7 @@ print('ev_behav, order 1: %.3f' % EV(Y,Y_hat_behav))
 Y_hat_behav          = project_onto_subspace(Y_hat, U_behav_orth2)
 print('ev_behav, order 2: %.3f' % EV(Y,Y_hat_behav))
 
-
 #%% 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #%% 
 
@@ -1382,8 +1313,6 @@ print('ev_behav, order 2: %.3f' % EV(Y,Y_hat_behav))
 #   #   #       #     # #   #   #             #       #    #     # #       #     # #######  #   #  
 #    #  #       #     # #    #  #       #     # #     #    #     # #       #     # #     #   # #   
 #     # #######  #####  #     # #######  #####   #####     ######  ####### #     # #     #    #    
-
-
 
 #%% Validate regressing out behavior: 
 ises    = 4
@@ -1541,7 +1470,6 @@ arealabelpairs  = ['V1unl-V1unl',
                     'PMlab-V1unl',
                     'PMlab-V1lab']
 
-
 arealabelpairs  = ['V1unl-PMunl',
                     'V1unl-PMlab',
                     'V1lab-PMunl',
@@ -1609,7 +1537,6 @@ fig = plot_RRR_R2_regressout(R2_cv,optim_rank,arealabelpairs,clrs_arealabelpairs
 
 # my_savefig(fig,figdir,'RRR_cvR2_RegressOutBehavior_V1PM_LabUnl_%dsessions' % nSessions)
 
-
 #%% Print how many labeled neurons there are in V1 and Pm in the loaded sessions:
 print('Number of labeled neurons in V1 and PM:')
 for ises, ses in enumerate(sessions):
@@ -1621,7 +1548,6 @@ for ises, ses in enumerate(sessions):
                                               np.sum(np.all((ses.celldata['redcell']==1,
                                                              ses.celldata['roi_name']=='PM',
                                                              ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))))
-
 
 #%% Validate regressing out AL RSP activity: 
 for ises in range(nSessions):#
@@ -1688,9 +1614,6 @@ ax.set_xlabel('Rank')
 ax.set_xticks(range(nranks+1))
 sns.despine(top=True,right=True,offset=3)
 my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
-
-
-
 
 #%% Parameters for RRR between size-matched populations of V1 and PM labeled and unlabeled neurons
 arealabelpairs  = ['V1unl-PMunl',
@@ -1806,5 +1729,4 @@ sns.despine(top=True,right=True,offset=3)
 ax.set_xticklabels(arealabelpairs2,fontsize=7)
 
 my_savefig(fig,figdir,'RRR_V1PM_regressoutneural_Frac_var_shared_ALRSP_%dsessions' % (nSessions))
-
 

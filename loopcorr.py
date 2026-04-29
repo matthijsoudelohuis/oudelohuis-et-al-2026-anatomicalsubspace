@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2022-2026, Champalimaud Center, Lisbon
 
 #%% ###################################################
 import os
-os.chdir('e:\\Python\\molanalysis')
 from loaddata.get_data_folder import get_local_drive
 
 import numpy as np
@@ -30,7 +29,6 @@ from params import load_params
 
 params = load_params()
 figdir = os.path.join(params['figdir'],'NC','Labeling')
-
 
 #%% #############################################################################
 session_list        = np.array([
@@ -68,7 +66,6 @@ for ises,ses in enumerate(sessions):
     npairs[ises] = np.sum(~np.isnan(ses.trace_corr))/2
 print('Number of pairs: %d (mean: %d, std : %d across n=%d sessions)' % 
             (np.sum(npairs),np.mean(npairs),np.std(npairs),nSessions))
-
 
 #%% ##################### Compute pairwise neuronal distances: ##############################
 sessions = compute_pairwise_anatomical_distance(sessions)
@@ -334,7 +331,6 @@ sesidx = np.argmax(np.nanvar(varcorr[:,0,0,:],axis=-1))
 
 print('Session with largest difference in %s variance by labeling across areas is:\n%s' % (corr_type,ses[sesidx].sessiondata['session_id'][0]))
 
-
 #%% Show correlation matrix for this session.
 # sort by area and labeling identity:
 # sesidx = 8
@@ -368,7 +364,6 @@ cb = fig.colorbar(pcm, ax=ax,shrink=0.3)
 cb.set_label('Correlation',fontsize=10,loc='center')
 cb.set_ticks([cb.vmin,0,cb.vmax])
 fig.savefig(os.path.join(figdir,'CorrMat','CorrMat_%s_%s' % (corr_type,sessions[sesidx].sessiondata['session_id'][0]) + '.png'), format = 'png')
-
 
 #%% Plot distribution of pairwise correlations across sessions conditioned on area pairs:
 protocols           = ['GR','GN']
@@ -534,8 +529,6 @@ for corr_type in ['noise_corr']:
         # fig.savefig(os.path.join(figdir,'HistCorr','Histcorr_Proj_L23L5_%s_%s_%s' % (areapair,corr_type,'_'.join(protocols)) + '.png'), format = 'png')
         # fig.savefig(os.path.join(figdir,'HistCorr','Histcorr_MatchOSI_Proj_%s_%s_%s' % (areapair,corr_type,'_'.join(protocols)) + '.png'), format = 'png')
         # fig.savefig(os.path.join(figdir,'HistCorr','Histcorr_Proj_%s_%s_%s' % (areapair,corr_type,'_'.join(protocols)) + '.pdf'), format = 'pdf')
-
-
 
 #%% 
 for ses in sessions:

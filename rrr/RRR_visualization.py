@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-os.chdir('e:\\Python\\molanalysis')
 from loaddata.get_data_folder import get_local_drive
 
 import numpy as np
@@ -192,7 +191,6 @@ ax.set_xlabel('Target Neurons (M)')
 plt.tight_layout()
 my_savefig(fig,figdir,'RRR_visualization_%s.png' % ses.sessiondata['session_id'][0],formats=['png'])
 
-
 #%% Make figure
 minmax = 0.75
 nranks = 15
@@ -308,21 +306,14 @@ def plot_RRR_R2_regressout(R2data,rankdata,arealabelpairs,clrs_arealabelpairs):
     axes[1,1].set_xticklabels(arealabelpairs2,fontsize=7)
     return fig
 
-
 #%% 
 
 #%% ###################################################
-
-
-
 
 #%% Perform RRR on raw calcium data: 
 
 ises = 1
 ses = sessions[ises]
-
-
-
 
 #%% Fit:
 nN                  = 200
@@ -353,7 +344,6 @@ Y                   = zscore(Y,axis=0)
 
 Y_hat_rr               = np.full((nTs,nM,nranks),np.nan)  
 
-
 B_hat         = LM(Y,X, lam=lam)
 
 Y_hat         = X @ B_hat
@@ -370,7 +360,6 @@ targetweights = np.mean(np.abs(B_hat @ V[:r,:].T @ V[:r,:]),axis=0)
 
 r = nranks-1
 targetweights = r2_score(Y,Y_hat_rr[:,:,r],multioutput='raw_values') + (r2_score(Y,Y_hat_rr[:,:,r],multioutput='raw_values') - r2_score(Y,Y_hat_rr[:,:,1],multioutput='raw_values'))
-
 
 #%% Identify a chunk in time where there is a high prediction for high rank across areas:
 window_size = 10

@@ -15,7 +15,6 @@ from matplotlib.patches import Rectangle
 from cellpose import models
 from sklearn.preprocessing import minmax_scale
 from tqdm import tqdm
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 from loaddata.session_info import *
 from loaddata.get_data_folder import *
@@ -268,7 +267,6 @@ fig                 = show_labeling_plane(iplane,plane_folder,saveoverlay=True,
 
 my_savefig(fig,figdir,'ExamplePlane_%s_%s_Plane%d' % (animal_id,sessiondate,iplane))
 
-
 #%% Show example plane V1 for one animal
 animal_id           = 'LPE11622' #If empty than all animals in folder will be processed
 sessiondate         = '2024_03_27'
@@ -283,7 +281,6 @@ plane_folder        = plane_folders[iplane]
 fig                 = show_labeling_plane(iplane,plane_folder,saveoverlay=True,
                                           showcells=True,overlap_threshold=0.5,gcamp_proj='max_proj')
 my_savefig(fig,figdir,'ExamplePlane_%s_%s_Plane%d' % (animal_id,sessiondate,iplane))
-
 
 #%% Show cropped inset of example V1:
 # animal_id           = 'LPE10883' #If empty than all animals in folder will be processed
@@ -393,11 +390,6 @@ axes[2].text(cornercoords[0]+span-barlength-30,cornercoords[1]+20,s='10 um',colo
 my_savefig(fig,figdir,'Crop_%s_%s_Plane%d_%s' % (animal_id,sessiondate,iplane,gcamp_proj))
 
 #%% 
-
-
-
-
-
 
 ##### Show mean planes for each session and save in original dir:
 protocols           = ['GR','IM','GN']

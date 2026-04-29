@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 from sklearn.decomposition import PCA
@@ -52,7 +51,6 @@ elif params['direction'] =='FB_AL':
     sourcearealabelpairs = ['PMunl','PMunl','PMlab']
     targetarealabelpair = 'ALunl'
     only_all_areas = np.array(['V1','PM','AL'])
-
 
 #%% 
 session_list        = np.array([

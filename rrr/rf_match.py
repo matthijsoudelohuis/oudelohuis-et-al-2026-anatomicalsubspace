@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
@@ -82,7 +81,6 @@ for ses in sessions:
         # print(np.sum(~np.isnan( ses.celldata['rf_az_Fsmooth'])) / len(ses.celldata))
         # print(np.sum(~np.isnan( ses.celldata['rf_az_' + params['rf_field']])) / len(ses.celldata))
         print(np.sum(ses.celldata['rf_r2_' + params['rf_field']]>params['minrfR2']) / len(ses.celldata))
-
 
 #%% Matched and mismatched receptive fields across areas: 
 
@@ -250,7 +248,6 @@ ax.set_xlim([-0.25,1.25])
 # sns.despein
 my_savefig(fig,figdir,'R2_Ratio_MatchMismatch_RF_%s_%dsessions' % (params['rf_field'],nSessions))
 
-
 #%% Plot the results: 
 fig,axes = plt.subplots(1,narealabelpairs,figsize=(narealabelpairs*1.3,3),sharey=True,sharex=True)
 if narealabelpairs == 1:
@@ -294,7 +291,6 @@ sns.despine(top=True,right=True,offset=3)
 ax.set_xticks(range(narealabelpairs))
 ax.set_xticklabels(arealabelpairs,rotation=45,ha='right',fontsize=8)
 # my_savefig(fig,figdir,'R2_Ratio_MatchMismatch_RF_%dsessions' % (nSessions),formats = ['png'])
-
 
 #%% 
 narealabelpairs     = len(sourcearealabelpairs)

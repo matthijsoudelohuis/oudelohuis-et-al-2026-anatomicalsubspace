@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
@@ -62,7 +61,6 @@ nmodelfits = params['nmodelfits']
 Nsub = params['Nsub']
 dim_method = params['dim_method']
 
-
 #%% Show an example session:
 clrs_arealabelpairs = ['grey','grey','red']
 narealabelpairs = 3
@@ -88,7 +86,6 @@ plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_ExampleSesion' % (version))
 
-
 #%% 
 clrs_arealabelpairs = ['grey','grey','red']
 narealabelpairs = 3
@@ -107,7 +104,6 @@ ax.set_ylabel('Cross-validated R2')
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_%dsessions' % (version,params['nSessions']))
-
 
 #%% Show figure for each of the arealabelpairs and each of the dataversions
 #Reshape stim x sessions:
@@ -294,7 +290,6 @@ plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
 my_savefig(fig,figdir,'R2_2dhist_perrank_%s_%dsessions' % (version,params['nSessions']))
 
-
 #%% Which neurons are well predicted? Is this distribution Gaussian, or skewed?
 data = np.nanmean(R2_ranks_neurons,axis=(6)) #average across kfolds
 # data = np.nanmean(R2_ranks_neurons,axis=(3,6)) #average across stim and kfolds
@@ -368,7 +363,6 @@ plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
 my_savefig(fig,figdir,'R2_neuron_2dhist_perrank_%s_%dsessions' % (version,params['nSessions']))
 
-
 #%% Show the correlation between R2 predicted by labeled and unlabeled neurons:
 data = np.nanmean(R2_ranks_neurons,axis=(3,6)) #average across stimuli/kfolds
 data = np.diff(data,axis=3) #take the difference between rank r and r+1 (uniquely explained variance by rank r)
@@ -413,10 +407,6 @@ sns.despine(fig=fig,trim=True,top=True,right=True,offset=3)
 my_savefig(fig,figdir,'RRR_unique_cvR2_%dneurons_%dsessions' % (Nsub,params['nSessions']))
 
 #%%
-
-
-
-
 
 #%% Plot the fraction of output weights (onto target area) that have a positive projection onto firing rate for each rank:
 data = frac_pos_weight_out #take the maximum across all kfolds
@@ -468,7 +458,6 @@ my_savefig(fig,figdir,'Corr_pos_weight_%s_%dsessions' % (version,params['nSessio
 
 # WEIGHTS IN 
 
-
 #%% Plot the fraction of output weights (onto target area) that have a positive projection onto firing rate for each rank:
 data = frac_pos_weight_in #take the maximum across all kfolds
 ymeantoplot = np.nanmean(data[0],axis=(0,1,3,4)) #mean across sessions and stim and modelfits
@@ -498,7 +487,6 @@ ax.legend(handles,sourcearealabelpairs,frameon=False)
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
 my_savefig(fig,figdir,'Frac_pos_weightsin_%s_%dsessions' % (version,params['nSessions']))
-
 
 #%% Are those dimensions that are enhanced in V1lab, dimensions that are resulting from positive weights of labeled cells?
 r2data = np.nanmean(R2_ranks,axis=(5)) #average across kfolds
@@ -567,8 +555,6 @@ my_savefig(fig,figdir,'hist_weight_in_%s_%dsessions' % (version,params['nSession
 # sns.despine(fig=fig,top=True,right=True,offset=3)
 # # my_savefig(fig,figdir,'Corr_pos_weight_%s_%dsessions' % (version,params['nSessions']))
 
-
-
 #%% 
  #####  ####### #     # ######   #####  #######    #     # #######  #####  #     #    #    #     # ###  #####  #     #  #####  
 #     # #     # #     # #     # #     # #          ##   ## #       #     # #     #   # #   ##    #  #  #     # ##   ## #     # 
@@ -593,7 +579,6 @@ ax.set_xticks(np.arange(params['nranks'])[::3]+1)
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
 my_savefig(fig,figdir,'RRR_source_aligned_R2_%sversion_%dsessions' % (version,params['nSessions']))
-
 
 #%% Are subpopulations that are more predictive lower dimensional?
 fig, axes = plt.subplots(1,1,figsize=(5*cm,4*cm))
@@ -797,7 +782,6 @@ sns.despine(fig=fig,top=True,right=True,offset=3)
 
 #%% Comparison original and behavout:
 
-
 #%% Plotting parameters:
 set_plot_basic_config()
 cm      = 1/2.54  # centimeters in inches
@@ -824,7 +808,6 @@ for key in data.keys():
     if key in ['R2_cv','R2_ranks','optim_rank']:
         print(key)  
         exec(key+'_behavout'+'=data[key]')
-
 
 with open(os.path.join(resultdir,filename + '_params' + '.txt'), "rb") as myFile:
     params = pickle.load(myFile)
@@ -886,7 +869,6 @@ plt.tight_layout()
 sns.despine(fig=fig,trim=True)
 # my_savefig(fig,figdir,'RRR_cvR2_FF_FB_labeled_diffversions_%dsessions' % (nSessions))
 
-
 #%% Define the ratio of R2 between V1PM and V1ND
 ratiodata_FB_unlunl       = (R2_cv_2[2] / R2_cv_2[1])*100-100 #Unl1 / Unl2
 ratiodata_FB_labunl       = (R2_cv_2[3] / R2_cv_2[1])*100-100 #Lab / Unl1
@@ -930,7 +912,6 @@ ratiodata_FB_labunl       = (optim_rank_2[3] / optim_rank_2[1])*100-100 #Lab / U
 # #%% Define the ratio of R2 between V1PM and V1ND
 # ratiodata_FB_unlunl       = (optim_rank_2[2] - optim_rank_2[1])#Unl1 / Unl2
 # ratiodata_FB_labunl       = (optim_rank_2[3] - optim_rank_2[1]) #Lab / Unl1
-
 
 #%% Make the figure of the ratio:
 fig,axes = plt.subplots(1,1,sharex=True,sharey=True,figsize=(4*cm,5*cm))

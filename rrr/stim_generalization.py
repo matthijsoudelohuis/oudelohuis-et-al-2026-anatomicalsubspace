@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
@@ -30,7 +29,6 @@ figdir = os.path.join(params['figdir'],'RRR','Validation')
 #%% Plotting parameters:
 set_plot_basic_config()
 cm      = 1/2.54  # centimeters in inches
-
 
 #%% 
 session_list        = np.array([['LPE12223_2024_06_10'], #GR
@@ -326,7 +324,6 @@ for ises,ses in tqdm(enumerate([sessions[0]]),total=nSessions,desc='Fitting RRR 
                     R2_cv[iapl,0,ises,istim,jstim] = repmean
                     optim_rank[iapl,0,ises,istim,jstim] = rank
                     R2_ranks[iapl,0,ises,istim,jstim,:,:,:] = R2_cv_folds
-
 
 #%% Plot R2 for different crosscombinations of stimuli: 
 cmap = sns.color_palette('magma', as_cmap=True)

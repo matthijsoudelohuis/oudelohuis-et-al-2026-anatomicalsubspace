@@ -7,10 +7,8 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-os.chdir('c:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 from loaddata.get_data_folder import get_local_drive
-# os.chdir(os.path.join(get_local_drive(),'Python','molanalysis'))
 
 import numpy as np
 import pandas as pd
@@ -43,7 +41,6 @@ report_sessions(sessions)
 
 #%%  Load data properly:    
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=True,compute_respmat=False)
-
 
 #%% 
 #     # ### ####### #     # ### #     #    #     #  #####        #     #####  ######  #######  #####   #####  
@@ -194,6 +191,4 @@ ax.set_xticks(range(2),['V1','PM' ],rotation=0,fontsize=6)
 plt.tight_layout()
 sns.despine(offset=3,top=True,right=True)
 my_savefig(fig,figdir,'RRR_R2Rank_ratio_WithinVSAcross_%dneurons_behavout' % nsampleneurons)
-
-
 

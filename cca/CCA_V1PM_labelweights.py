@@ -7,9 +7,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\molanalysis')
 from loaddata.get_data_folder import get_local_drive
-# os.chdir(os.path.join(get_local_drive(),'Python','molanalysis'))
 
 import numpy as np
 import pandas as pd
@@ -63,7 +61,6 @@ t_axis = sessions[0].t_axis
 #       #       #######     #   #     #   #       #     #    #  #  # #        #  #     # #     #    #          # 
 #     # #     # #     #      # #      #   #       #     #    #  #  # #        #  #     # #     #    #    #     # 
  #####   #####  #     #       #     ##### #       #     #     ## ##  ####### ###  #####  #     #    #     #####  
-
 
 #%% Are the weights higher for V1lab or PMlab than unlabeled neurons?
 n_components        = 20
@@ -191,7 +188,6 @@ ax.axhline(0.1,linestyle='--',color='k')
 sns.despine(top=True,right=True,offset=2,trim=False)
 # my_savefig(fig,figdir,'CCA_V1PM_labeled_testcorr_%dsessions_%s' % (nSessions,varversion),formats=['png'])
 
-
 #%% 
 fig,axes = plt.subplots(1,2,figsize=(6,2.5),sharex=True,sharey=True)
 
@@ -246,7 +242,6 @@ ax.legend(frameon=False,loc='lower center')
 sns.despine(top=True,right=True,offset=2,trim=False)
 my_savefig(fig,figdir,'CCA_V1PM_labeled_loadings_%dsessions_%s' % (nSessions,varversion),formats=['png'])
 # my_savefig(fig,figdir,'CCA_V1PM_labeled_weights_v2_%dsessions' % nSessions,formats=['png'])
-
 
 #%% 
 varversion = 'stim'
@@ -309,7 +304,6 @@ ax.set_xticks(np.arange(0,n_components+5,5),np.arange(0,n_components+5,5)+1)
 sns.despine(top=True,right=True,offset=3,trim=True)
 my_savefig(fig,figdir,'CCA_V1PM_labeled_deltaloadings_%dsessions_%s' % (nSessions,varversion),formats=['png'])
 
-
 #%% 
 
  #####  ####### #     # ####### ######  ####### #        #####  
@@ -319,7 +313,6 @@ my_savefig(fig,figdir,'CCA_V1PM_labeled_deltaloadings_%dsessions_%s' % (nSession
 #       #     # #   # #    #    #   #   #     # #             # 
 #     # #     # #    ##    #    #    #  #     # #       #     # 
  #####  ####### #     #    #    #     # ####### #######  #####  
-
 
 #%% Controls: Are the weight difference due to some confounding difference between the populations?
 arealabels          = np.array(['V1unl', 'V1lab', 'PMunl', 'PMlab'])
@@ -457,7 +450,6 @@ ax.axhline(y=1,color='k',linestyle='--')
 plt.tight_layout()
 my_savefig(fig,figdir,'CCA_V1PM_labeled_weights_%dsessions_Controls' % (nSessions),formats=['png'])
 
-
 #%% 
 # sumdim = [0,2,3,4,5,6]
 sumdim = 5
@@ -511,8 +503,6 @@ for iarea,area in enumerate(areas):
 #  ax.scatter(1,PMlabdiff,s=20,color='k')
 plt.tight_layout()
 # my_savefig(fig,figdir,'CCA_V1PM_labeled_weights_%dsessions_Controls' % (nSessions),formats=['png'])
-
-
 
 #%% Dimensionality of the labeled and unlabeled populations: (estimated using PCA)
 
@@ -572,7 +562,6 @@ ax.set_ylabel('Explained variance')
 sns.despine(top=True,right=True,offset=1,trim=True)
 plt.tight_layout()
 # my_savefig(fig,figdir,'PCA_V1PM_labeled_GRGN_%dsessions' % (nSessions),formats=['png'])
-
 
 #%% Now control for the dimensionality: 
 
@@ -797,7 +786,6 @@ ax.set_xticks(np.arange(0,n_components+5,5),np.arange(0,n_components+5,5)+1)
 sns.despine(top=True,right=True,offset=3,trim=True)
 my_savefig(fig,figdir,'CCA_V1PM_labeled_deltaweights_%dsessions_%s_equaleigenspectrum' % (nSessions,varversion),formats=['png'])
 
-
 #%% 
    #    #          #     # ####### ###  #####  #     # #######  #####  
   # #   #          #  #  # #        #  #     # #     #    #    #     # 
@@ -830,8 +818,6 @@ for ises in range(nSessions):
     sessions[ises].load_tensor(load_calciumdata=True,calciumversion=calciumversion,keepraw=False)
 
 t_axis = sessions[0].t_axis
-
-
 
 #%% Are the weights higher for V1lab or PMlab than unlabeled neurons to the other area?
 n_components        = 20
@@ -905,7 +891,6 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting CCA model
             weights_CCA_V1AL[:,0,ises,istim,imf] = np.mean(np.abs(model_CCA.x_weights_[:nsampleneurons,:]),axis=0)
             weights_CCA_V1AL[:,1,ises,istim,imf] = np.mean(np.abs(model_CCA.x_weights_[nsampleneurons:,:]),axis=0)
 
-
 #%% Are the weights higher for V1lab or PMlab than unlabeled neurons to the other area?
 arealabels          = np.array(['PMunl', 'PMlab', 'ALunl'])
 arealabels          = np.array(['PMunl', 'PMlab', 'RSPunl'])
@@ -968,7 +953,6 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting CCA model
             
             weights_CCA_PMAL[:,0,ises,istim,imf] = np.mean(np.abs(model_CCA.x_weights_[:nsampleneurons,:]),axis=0)
             weights_CCA_PMAL[:,1,ises,istim,imf] = np.mean(np.abs(model_CCA.x_weights_[nsampleneurons:,:]),axis=0)
-
 
 #%% 
 varversion = 'stim'
@@ -1082,7 +1066,6 @@ for ises in tqdm(range(nSessions),total=nSessions,desc='Loading data'):
 
 #%% 
 
-
 #%% Are the weights higher for V1lab or PMlab than unlabeled neurons?
 n_components        = 20
 nStim               = 16
@@ -1182,7 +1165,6 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting CCA model
                 weights_CCA[irbh,:,2,ises,istim,imf] = np.mean(np.abs(model_CCA.y_weights_[:nsampleneurons,:]),axis=0)
                 weights_CCA[irbh,:,3,ises,istim,imf] = np.mean(np.abs(model_CCA.y_weights_[nsampleneurons:,:]),axis=0)
 
-
 #%% 
 plt.scatter(model_CCA.x_weights_,model_CCA.x_loadings_)
 
@@ -1201,7 +1183,6 @@ datatoplot2 = weights_CCA[:,:,3,:,:,:] / weights_CCA[:,:,2,:,:,:]
 
 # datatoplot = np.diff(weights_CCA,axis=2)[:,:,[0,2],:,:,:] #Get the difference between labeled and unlabeled
 datatoplot = np.concatenate((datatoplot1[:,:,np.newaxis,:,:,:],datatoplot2[:,:,np.newaxis,:,:,:]),axis=2) #Get the difference between labeled and unlabeled
-
 
 datatoplot = np.nanmean(datatoplot,axis=(-1)) #average modelfits
 # datatoplot = np.nansum(datatoplot[:,:sumdim,:,:,:],axis=1) #sum weight diff for first sumdim dims
@@ -1244,7 +1225,6 @@ sns.despine(top=True,right=True,offset=1,trim=True)
 plt.tight_layout()
 # my_savefig(fig,figdir,'CCA_V1PM_labeled_sumdeltaweights_behav_%dsessions_%s' % (nSessions,varversion),formats=['png'])
 
-
 #%% 
 
  #####   #####     #       ######  ####### ######     ######  ####### ######     ######     #    ### ######  
@@ -1255,10 +1235,7 @@ plt.tight_layout()
 #     # #     # #     #    #       #       #    #     #       #     # #          #       #     #  #  #    #  
  #####   #####  #     #    #       ####### #     #    #       ####### #          #       #     # ### #     # 
 
-
 #%%
-
-
 
 #%% Are the weights higher for V1lab or PMlab than unlabeled neurons?
 n_components        = 20
@@ -1279,7 +1256,6 @@ clrs_arealabelpairs = get_clr_area_labelpairs(arealabelpairs)
 narealabelpairs     = len(arealabelpairs)
 
 CCA_corrtest        = np.full((narealabelpairs,n_components,nSessions,nStim),np.nan)
-
 
 #%% Fit:
 model_CCA           = CCA(n_components=n_components,scale = False, max_iter = 1000)
@@ -1415,6 +1391,5 @@ ax.set_ylabel(u'Δ Correlation')
 ax.legend(handles,arealabelpairs,loc='upper right',frameon=False,fontsize=9)
 sns.despine(top=True,right=True,offset=1,trim=True)
 my_savefig(fig,figdir,'CCA_V1PM_pops_labeled_testcorr_normUnl_%dsessions' % (nSessions),formats=['png'])
-
 
 #%% 

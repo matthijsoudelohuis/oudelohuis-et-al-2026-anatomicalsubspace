@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
@@ -120,7 +119,6 @@ plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_%dsessions' % (version,params['nSessions']))
 
-
 #%% 
 clrs_arealabelpairs = ['grey','grey','red']
 narealabelpairs = 3
@@ -139,7 +137,6 @@ ax.set_ylabel('Cross-validated R2')
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_%dsessions' % (version,params['nSessions']))
-
 
 #%% Show figure for each of the arealabelpairs and each of the dataversions
 #Reshape stim x sessions:

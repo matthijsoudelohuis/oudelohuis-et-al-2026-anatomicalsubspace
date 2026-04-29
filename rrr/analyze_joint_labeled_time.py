@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
@@ -286,7 +285,6 @@ ax.set_xlim([-1,1.8])
 sns.despine(fig=fig, top=True, right=True, offset = 3)
 # my_savefig(fig,figdir,'RRR_joint_time_ratio_sigranks_%s' % (version))
 # my_savefig(fig,figdir,'RRR_R2_time_%s_rank_noiseconstant_%s_%dsessions' % (diffmetric,version,params['nSessions']))
-
 
 #%%  
 version = 'FF_original'

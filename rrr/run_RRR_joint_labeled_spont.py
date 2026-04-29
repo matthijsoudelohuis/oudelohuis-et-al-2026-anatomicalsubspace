@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 from sklearn.decomposition import PCA
@@ -263,7 +262,6 @@ figdir = os.path.join(params['figdir'],'RRR','Spontaneous','Labeling')
 set_plot_basic_config()
 cm      = 1/2.54  # centimeters in inches
 
-
 #%% Show an example session:
 clrs_arealabelpairs = ['grey','grey','red']
 narealabelpairs = 3
@@ -288,7 +286,6 @@ ax.set_ylabel('Cross-validated R2')
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 # my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_ExampleSesion' % (version))
-
 
 #%% Show the mean across sessions:
 clrs_arealabelpairs = ['grey','grey','red']

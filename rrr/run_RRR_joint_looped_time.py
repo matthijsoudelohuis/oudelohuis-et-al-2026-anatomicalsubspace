@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 from sklearn.decomposition import PCA
@@ -164,7 +163,6 @@ for ises,ses in enumerate(sessions):
                 B_hat_train             = LM(Y_train_r,X_train_r, lam=params['lam']) #fit RRR model on training data
 
                 Y_hat_train             = X_train_r @ B_hat_train
-
 
             # # OUTPUT: MAX PERF, OPTIM RANK, PERF FOR EACH RANK ACROSS FOLDS AND MODELFITS    
             # R2_kfold    = np.zeros((params['kfold']))

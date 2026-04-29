@@ -9,7 +9,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 import math, os
 
 # from rrr.deprecated.RRR_V1PM import R2_cv_folds
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 from scipy.stats import zscore
@@ -250,7 +249,6 @@ for ises in range(nSessions):
                         R2_cv[1,ises,istim,t],optim_rank[1,ises,istim] = rank_from_R2(R2_ranks[1,ises,istim,t,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
                         R2_cv[2,ises,istim,t],optim_rank[2,ises,istim] = rank_from_R2(R2_ranks[2,ises,istim,t,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
                         R2_cv[3,ises,istim,t],optim_rank[3,ises,istim] = rank_from_R2(R2_ranks[3,ises,istim,t,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-
 
 #%%
 params['Nsub']     = Nsub

@@ -7,9 +7,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\molanalysis')
 from loaddata.get_data_folder import get_local_drive
-# os.chdir(os.path.join(get_local_drive(),'Python','molanalysis'))
 
 import numpy as np
 import pandas as pd
@@ -51,7 +49,6 @@ nSessions           = len(sessions)
 calciumversion = 'dF'
 for ises in range(nSessions):
     sessions[ises].load_data(load_calciumdata=True)
-
 
 #%% 
  #####   #####     #       #     #    #   ######  #     #    #     # ####### ###  #####  #     # #######  #####  
@@ -216,7 +213,6 @@ ax.set_xticks(np.arange(0,n_components+5,5),np.arange(0,n_components+5,5)+1)
 ax.legend(frameon=False,loc='lower center')
 sns.despine(top=True,right=True,offset=2,trim=False)
 # my_savefig(fig,figdir,'CCA_V1PM_labeled_weights_%dsessions_%s' % (nSessions,protocol),formats=['png'])
-
 
 #%% 
 mindim = 8

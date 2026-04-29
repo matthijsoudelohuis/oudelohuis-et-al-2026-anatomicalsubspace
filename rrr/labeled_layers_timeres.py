@@ -7,9 +7,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 from loaddata.get_data_folder import get_local_drive
-# os.chdir(os.path.join(get_local_drive(),'Python','molanalysis'))
 
 import numpy as np
 import pandas as pd
@@ -36,7 +34,6 @@ session_list        = np.array([['LPE12223_2024_06_10'], #GR
                                 ['LPE10919_2023_11_06']]) #GR
 
 sessions,nSessions   = filter_sessions(protocols = 'GR',only_session_id=session_list)
-
 
 #%% Get all data 
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
@@ -88,7 +85,6 @@ for ses in sessions:
     ses.celldata['arealayer'] = ses.celldata['roi_name'] + ses.celldata['layer']
     #assign arealayerlabel
     ses.celldata['arealayerlabel'] = ses.celldata['arealabel'] + ses.celldata['layer'] 
-
 
 #%% Subtracting mean response across trials for each stimulus condition
 for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Subtracting mean response across trials'):
@@ -192,7 +188,6 @@ arealabelpairs  = np.array([
                     'PMunlL5-PMlabL2/3',
                     'PMlabL5-PMlabL2/3',
                    ])
-
 
 narealabelpairs     = len(arealabelpairs)
 clrs_arealabelpairs = sns.color_palette("tab10", narealabelpairs)
@@ -534,7 +529,6 @@ my_savefig(fig,figdir,'RRR_V1PM_diff_layer_labeled_GR_across_time',formats=['png
 # # my_savefig(fig,figdir,'RRR_V1PM_labeled_timeres')
 # # my_savefig(fig,figdir,'RRR_V1PM_labeled_GR_across_time',formats=['png'])
 # my_savefig(fig,figdir,'RRR_V1PM_labeled_GR_perOri_across_time',formats=['png'])
-
 
 # #%% Plotting:
 # t_ticks = np.array([-1,0,1,2])

@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 from loaddata.get_data_folder import get_local_drive
 
 import numpy as np
@@ -81,7 +80,6 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
     
         R2_cv[ises,1],optim_rank[ises,1],R2_ranks[ises,1,:,:,:]      = RRR_wrapper(X_r, Y_r, nN=nsampleneurons,nK=None,lam=params['lam'],nranks=nranks,kfold=params['kfold'],nmodelfits=nmodelfits)
 
-
 #%% Plot the performance across sessions as a function of rank: 
 clrs_areapairs = get_clr_area_pairs(['V1-PM','PM-V1'])
 datatoplot = np.nanmean(R2_ranks,axis=(3,4))
@@ -149,9 +147,7 @@ my_savefig(fig,figdir,'RRR_R2_acrossranks_V1PM_SPONT_%dsessions_%dsec_%dneurons'
 #    #  #    #  #    #     #       #     # #     #      # #   #     #    #     # #    ## #       
 #     # #     # #     #    ####### #     # ######        #     #####      #####  #     # ####### 
 
-
 figdir          = os.path.join(params['figdir'],'RRR','Spontaneous','Labeling')
-
 
 #%% Parameters for decoding from size-matched populations of V1 and PM labeled and unlabeled neurons
 
@@ -299,5 +295,4 @@ for idx in np.array([[0,1],[2,3]]):
 for idx in np.array([[0,1],[2,3]]):
     mean,sd = np.nanmean(R2_cv[idx[1]] / R2_cv[idx[0]])*100-100,np.nanstd(R2_cv[idx[1]] / R2_cv[idx[0]])
     print('%s vs %s: %2.1f %% +/- %2.1f' % (arealabelpairs[idx[1]],arealabelpairs[idx[0]],mean,sd))
-
 

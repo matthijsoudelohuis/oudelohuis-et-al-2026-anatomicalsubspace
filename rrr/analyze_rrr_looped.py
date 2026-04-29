@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-os.chdir('c:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
@@ -85,7 +84,6 @@ ax.set_title('Example session')
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 # my_savefig(fig,figdir,'RRR_joint_looped_cvR2_ranks_%s_ExampleSesion' % (version))
-
 
 #%% Show for all sessions:
 import matplotlib.gridspec as gridspec
@@ -212,7 +210,6 @@ my_savefig(fig,figdir,'RRR_joint_looped_%s_%dsessions' % (version,params['nSessi
    #     #  #     # #       
    #    ### #     # ####### 
 
-
 #%% Load the data:
 version = 'FF_original'
 filename = 'RRR_Joint_looped_FF_original_2026-04-28_22-38-28'
@@ -234,7 +231,6 @@ for key in data.keys():
 
 with open(os.path.join(resultdir,filename + '_params' + '.txt'), "rb") as myFile:
     params = pickle.load(myFile)
-
 
 #%% Plotting the mean across time across sessions: 
 
@@ -450,7 +446,6 @@ my_savefig(fig,figdir,'RRR_looped_time_ratio_%s' % (version))
 # ax.set_xticks(np.arange(4),labels,rotation=45,ha='right')
 # # my_savefig(fig,figdir,'RRR_joint_looped_optimrank_%s_%dsessions' % (version,params['nSessions']))
 
-
 #%% Identify which dimensions are particularly enhanced in labeled cells:
 data = np.nanmean(R2_ranks,axis=(5,6)) #average across kfolds
 # data = np.nanmean(np.clip(R2_ranks,0,1),axis=(6)) #average across kfolds
@@ -497,7 +492,6 @@ for isa,sourcearea in enumerate(sourcearealabelpairs):
         
         handles.append(shaded_error(np.arange(params['nranks']-1)+1,ymeantoplot,yerrortoplot,ax=ax,
                                     color=clrs_arealabelpairs[isa,ita],alpha=0.3))
-
 
     # ydata = (n
 
@@ -546,5 +540,4 @@ plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=3)
 # my_savefig(fig,figdir,'RRR_R2_%s_rank_noiseconstant_%s_%dsessions' % (diffmetric,version,params['nSessions']))
 # my_savefig(fig,figdir,'RRR_unique_cvR2_V1lab_V1unl_V1unl_%dneurons' % Nsub)
-
 

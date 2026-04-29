@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
@@ -41,7 +40,6 @@ session_list        = np.array([['LPE12223_2024_06_10'], #GR
 session_list        = np.array([['LPE09830_2023_04_10']]) #GR
 
 sessions,nSessions   = filter_sessions(protocols = 'GR',only_session_id=session_list)
-
 
 #%% Get all data 
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
@@ -94,7 +92,6 @@ for ises in range(nSessions):
 for ises in range(nSessions):
     sessions[ises].respmat_videome -= np.nanmin(sessions[ises].respmat_videome,keepdims=True)
     sessions[ises].respmat_videome /= np.nanmax(sessions[ises].respmat_videome,keepdims=True)
-
 
 #%%  Load data properly:        
 # ## Construct tensor: 3D 'matrix' of N neurons by K trials by T time bins
@@ -488,7 +485,6 @@ print('Population size: %d (%d-%d)' % (np.mean(sampleN[sampleN>minsampleneurons]
 #       #     # #     #      # #   #     #    #     # #    ## #       
 ####### #     # ######        #     #####      #####  #     # ####### 
 
-
 #%% Show figure for each of the arealabelpairs and each of the dataversions
 for iversion, version in enumerate(dataversions):
     #Reshape stim x sessions:
@@ -526,7 +522,6 @@ R2_ranks_2      = np.reshape(R2_ranks,(narealabelpairs,nversions,nSessions*nStim
 #%% Define the ratio of R2 between V1PM and V1ND
 ratiodata_FF       = (R2_cv_2[1] / R2_cv_2[0])*100-100 #
 ratiodata_FB       = (R2_cv_2[3] / R2_cv_2[2])*100-100
-
 
 #%% Plot the R2 for each of the arealabelpairs and each of the dataversions
 #Residual variance explained goes down with behavior or brainwide activity regressed out: 
@@ -599,7 +594,6 @@ plt.tight_layout()
 sns.despine(fig=fig,trim=True)
 # my_savefig(fig,figdir,'RRR_rank_FF_FB_diffversions_%dsessions' % (nSessions))
 
-
 #%% Make the figure: 
 fig,axes = plt.subplots(1,2,sharex=True,sharey=True,figsize=(5,4))
 ax = axes[0]
@@ -628,7 +622,6 @@ plt.tight_layout()
 sns.despine(fig=fig,trim=True)
 # my_savefig(fig,figdir,'RRR_cvR2_ratio_FF_FB_diffversions_%dsessions' % (nSessions))
 
-
 #%% 
 
 #######    #    ######   #####  ####### #######       #    ######  #######    #    
@@ -646,8 +639,6 @@ sns.despine(fig=fig,trim=True)
       # #       #       #        #  #        #  #        #     #       #    
 #     # #       #       #     #  #  #        #  #     #  #     #       #    
  #####  #       #######  #####  ### #       ###  #####  ###    #       #                       
-
-
 
 #%% 
 idx_FF = np.array([[0,1],[8,9],[10,11]])
@@ -681,7 +672,6 @@ for iversion, version in enumerate(dataversions):
             clrs        = ['grey',get_clr_area_labeled([arealabelpairs[idx[1]].split('-')[0]])]
             fig         = plot_RRR_R2_arealabels_paired(R2_data[idx],optim_rank_data[idx],R2_ranks_data[idx],np.array(arealabelpairs)[idx],clrs)
             # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
-
 
 #%% Define the ratio of R2 between V1PM and V1ND
 ratiodata_FF       = (R2_cv_2[9] / R2_cv_2[8])*100-100 #
@@ -769,7 +759,6 @@ for iversion, version in enumerate(dataversions):
             fig         = plot_RRR_R2_arealabels_paired(R2_data[idx],optim_rank_data[idx],R2_ranks_data[idx],np.array(arealabelpairs)[idx],clrs)
             # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (arealabelpairs[idx[1]],version,nSessions))
 
-
 #%% Define the ratio of R2 between V1PM and V1ND
 ratiodata_FF       = (R2_cv_2[5] / R2_cv_2[0])*100-100 #
 ratiodata_FB       = (R2_cv_2[7] / R2_cv_2[2])*100-100
@@ -811,7 +800,6 @@ ax.set_title('FB')
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=True)
-
 
 #%% Average across stim:
 # R2_cv_2         = np.nanmean(R2_cv,axis=2)
@@ -903,7 +891,6 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Deleting data'):
         delattr(sessions[ises],'tensor_neuralout')
     if hasattr(ses,'tensor_behavout'):
         delattr(sessions[ises],'tensor_behavout')
-
 
 #%% Do RRR of V1 and PM labeled and unlabeled neurons
 
@@ -1330,7 +1317,6 @@ plt.tight_layout()
 sns.despine(fig=fig,trim=True,top=True,right=True)
 # ax = axes[1]
 my_savefig(fig,figdir,'RRR_source_aligned_R2_V1lab_V1unl_PMunl_%dneurons' % Nsub)
-
 
 #%% Show the correlation between R2 predicted by labeled and unlabeled neurons:
 xdata = np.nanmean(R2_ranks_neurons[1,:,:,:,:,:,:],axis=(2,4)) #average across stimuli/kfolds

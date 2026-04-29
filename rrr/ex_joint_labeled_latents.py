@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import math, os
-os.chdir('c:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
@@ -57,7 +56,6 @@ session_list        = np.array([
 
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list,
                                        min_lab_cells_V1=20,filter_noiselevel=False)
-
 
 #%% Wrapper function to load the tensor data, 
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'])

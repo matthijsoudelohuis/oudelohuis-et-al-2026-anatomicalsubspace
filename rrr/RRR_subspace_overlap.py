@@ -9,7 +9,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 #%% ###################################################
 import os
 
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 from loaddata.get_data_folder import get_local_drive
 
 import numpy as np
@@ -34,7 +33,6 @@ from utils.RRRlib import *
 params = load_params()
 figdir = os.path.join(params['figdir'],'RRR','SubspaceOverlap')
 
-
 #%% Plotting parameters:
 set_plot_basic_config()
 cm      = 1/2.54  # centimeters in inches
@@ -45,7 +43,6 @@ cm      = 1/2.54  # centimeters in inches
 # %debug
 
 [x,y] = RRR_wrapper(pairpops, outpops, nN=None,nM=None,nK=None,lam=0,nranks=25,kfold=5,nmodelfits=5,fixed_rank=None)
-
 
 #%% 
 areas = ['V1','PM','AL']
@@ -252,8 +249,6 @@ np.savez(savefilename + '.npz',R2_cv=R2_cv,optim_rank=optim_rank,
 with open(savefilename +'_params' + '.txt', "wb") as myFile:
     pickle.dump(params, myFile)
 
-
-
 #%% Plotting the mean across time across sessions: 
 # R2_toplot = np.reshape(R2_cv,(narealabelpairs+1,params['nSessions']*params['nStim'],params['nT']))
 fig,axes = plt.subplots(1,1,figsize=(4.5*cm,4*cm))
@@ -365,8 +360,6 @@ sessiondata.loc[idx_good_ses,'good_session'] = True
 
 #%% 
 
-
-
 #%% 
 ######  ######  ### #     #  #####  ### ######  #       #######       #    #     #  #####  #       ####### 
 #     # #     #  #  ##    # #     #  #  #     # #       #            # #   ##    # #     # #       #       
@@ -377,9 +370,7 @@ sessiondata.loc[idx_good_ses,'good_session'] = True
 #       #     # ### #     #  #####  ### #       ####### #######    #     # #     #  #####  ####### ####### 
 #
 
-
 #%% 
-
 
 # #%% Parameters for RRR for size-matched populations of V1 and PM labeled and unlabeled neurons
 # lam                 = 0
@@ -397,7 +388,6 @@ sessiondata.loc[idx_good_ses,'good_session'] = True
 # filter_nearby       = True
 
 # fixed_rank          = None
-
 
 #%% 
 arealabelpairs  = [
@@ -537,7 +527,6 @@ subspace_angle = np.flip(subspace_angle,axis=2)
 
 #%%
 
-
 #%% Identify which dimensions are particularly enhanced at which timepoints in labeled cells:
 data = np.nanmean(subspace_angle,axis=()) #average across kfolds
 data = np.diff(data,axis=4) #take the difference between rank r and r+1 (uniquely explained variance by rank r)
@@ -561,11 +550,6 @@ sns.despine(fig=fig,top=True,right=True,offset=3)
 # my_savefig(fig,figdir,'SubspaceAngle_V1PMAL_%drank_%dneurons_%dsessions' % (fixed_rank,nsampleneurons,params['nSessions']))
 
 #%% 
-
-
-
-
-
 
 #%% 
  #####  #     # ######   #####  ######     #     #####  #######    ####### #     # ####### ######  #          #    ######  
@@ -814,12 +798,6 @@ ax.set_ylabel('CV R2')
 sns.despine(top=True,right=True,offset=3,trim=True)
 my_savefig(fig,figdir,'RRR_cvR2_CrossVsTarget_%dsessions' % nSessions,formats=['png'])
 
-
-
-
-
-
-
 #%% Cross area subspace predictions: 
 arealabels      = np.array(['V1unl', 'PMunl', 'ALunl','RSPunl'])
 # arealabels      = np.array(['V1unl', 'PMunl', 'ALunl'])
@@ -893,7 +871,6 @@ ax.set_yticks([0,0.1,0.2,0.3])
 sns.despine(top=True,right=True,offset=3)
 fig.tight_layout()
 # my_savefig(fig,figdir,'RRR_cvR2_DiffSamePopulations_AreaAverage_%dsessions' % (nSessions))
-
 
 #%% Performance on cross population prediction versus on neurons from the same area:
 clrs_conds = ['k','b','r']
@@ -1009,7 +986,6 @@ my_savefig(fig,figdir,'CrossSubspace_R2_diffpops_%dsessions' % (nSessions))
 # sns.despine(top=True,right=True,offset=3)
 # fig.tight_layout()
 # # my_savefig(fig,figdir,'R2_cross_vs_train_diffpops_%dsessions.png' % (nSessions))
-
 
 #%% 
 #          #    ######  ####### #       ####### ######      #####  ####### #       #        #####  
@@ -1255,7 +1231,6 @@ sns.despine(top=True,right=True,offset=3,trim=True)
 
 my_savefig(fig,figdir,'GeneralizationIndex_V1PM_Cross_%dsessions_%s' % (nSessions,rankversion))
 
-
 #%% Define function to plot these scatters with paired comparisons
 def scatter_cross_pop(ax,arealabels,data,combpairstoplot,color='k'):
 
@@ -1372,7 +1347,6 @@ sns.despine(top=True,right=True,offset=3,trim=True)
 plt.tight_layout()
 my_savefig(fig,figdir,'Generalization_V1PM_Labeled_Same_%dsessions_%s' % (nSessions,rankversion),formats=['png'])
 
-
 #%% Generalization to other target populations:
 # The idea is to compare the R2 performance when predicting neurons from the same populations
 # but that it was not trained on
@@ -1394,7 +1368,6 @@ fig = plot_paired_combpairs_ALRSP(ax,arealabels,data,combpairstoplot1,combpairst
 # my_savefig(fig,figdir,'Generalization_cross_area_labeledV1PM_%dsessions_%s' % (nSessions,rankversion))
 my_savefig(fig,figdir,'Generalization_cross_area_labeledSourceV1PM_%dsessions_%s' % (nSessions,rankversion),formats=['png'])
 
-
 #%% Generalization to other target populations:
 # The idea is to compare the R2 performance when predicting neurons from the same populations
 # but that it was not trained on
@@ -1415,21 +1388,7 @@ fig = plot_paired_combpairs_ALRSP(ax,arealabels,data,combpairstoplot1,combpairst
 
 my_savefig(fig,figdir,'Generalization_cross_area_labeledTargetV1PM_%dsessions_%s' % (nSessions,rankversion),formats=['png'])
 
-
 #%% 
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #%% Clustering of nodes in 2D space: 
 
@@ -1496,7 +1455,6 @@ plt.tight_layout()
 my_savefig(fig,figdir,'CrossArea_RRR_Subspace_Clustering_%dsessions_%s' % (nSessions,rankversion))
 # fig.savefig(os.path.join(figdir,'PCA_TuningCurve_HITMISS_%dsessions.png') % (nSessions), format='png')
 
-
 #%%  
 
 #%% Using trial averaged or using timepoint fluctuations:
@@ -1520,7 +1478,6 @@ print('Number of cells in AL per session:')
 for ises in range(nSessions):
     print('%d: %d' % (ises,np.sum(np.all((sessions[ises].celldata['roi_name']=='AL',
                                            sessions[ises].celldata['noise_level']<params['maxnoiselevel']),axis=0))))
-
 
 #%% Parameters for decoding from size-matched populations of V1 and PM labeled and unlabeled neurons
 areacombs  = [['V1','PM','AL'],

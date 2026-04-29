@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
@@ -90,7 +89,6 @@ plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 # my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_ExampleSesion' % (version))
 
-
 #%% Show the mean across sessions:
 clrs_arealabelpairs = ['grey','grey','red']
 
@@ -144,7 +142,6 @@ plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 my_savefig(fig,figdir,'RRR_joint_R2_MoveSplit_labunl_FF_%dsessions' % (params['nSessions']))
 
-
 #%% Show figure for each of the arealabelpairs and each of the dataversions
 #Reshape stim x sessions:
 R2_data                 = np.reshape(R2_cv_FF,(narealabelpairs+1,2,params['nSessions']*params['nStim']))
@@ -184,7 +181,6 @@ for istate in range(2):
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 # my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_ExampleSesion' % (version))
-
 
 #%% Show the mean across sessions:
 clrs_arealabelpairs = ['grey','grey','red']
@@ -239,7 +235,6 @@ plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 my_savefig(fig,figdir,'RRR_joint_R2_MoveSplit_labunl_FB_%dsessions' % (params['nSessions']))
 
-
 #%% Show figure for each of the arealabelpairs and each of the dataversions
 #Reshape stim x sessions:
 R2_data                 = np.reshape(R2_cv_FB,(narealabelpairs+1,2,params['nSessions']*params['nStim']))
@@ -252,8 +247,6 @@ if np.any(~np.isnan(R2_data)):
             clrs        = ['grey','red']
             fig         = plot_RRR_R2_arealabels_paired(R2_data[idx][:,istate],optim_rank_data[idx][:,istate],R2_ranks_data[idx][:,istate],np.array(sourcearealabelpairs_FF)[idx-1],clrs)
         # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (sourcearealabelpairs[idx[1]-1],version,params['nSessions']))
-
-
 
 #%% Identify which dimensions are particularly enhanced in labeled cells:
 data = np.nanmean(R2_ranks,axis=(5)) #average across kfolds
