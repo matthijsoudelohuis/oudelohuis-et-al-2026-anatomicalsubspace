@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-from loaddata.get_data_folder import get_local_drive
 
 import numpy as np
 import pandas as pd
@@ -19,6 +18,7 @@ from tqdm import tqdm
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from sklearn.preprocessing import MinMaxScaler
 
+from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
 from utils.psth import compute_tensor
 from utils.plot_lib import * #get all the fixed color schemes
