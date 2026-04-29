@@ -7,7 +7,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-os.chdir('e:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
+os.chdir('c:\\Python\\oudelohuis-et-al-2026-anatomicalsubspace')
 
 import numpy as np
 import pandas as pd
@@ -45,7 +45,7 @@ filename = 'RRR_Joint_looped_FF_behavout_2026-02-24_07-30-21'
 version = 'FB_behavout'
 filename = 'RRR_Joint_looped_FB_behavout_2026-02-24_10-57-25'
 
-#%% Save the data:
+#%% Load the data:
 data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
 
 for key in data.keys():
@@ -201,6 +201,128 @@ for icomb, comb in enumerate(combinations):
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=3)
 ax.set_xticks(np.arange(4),labels,rotation=45,ha='right')
 my_savefig(fig,figdir,'RRR_joint_looped_%s_%dsessions' % (version,params['nSessions']))
+
+#%% 
+
+####### ### #     # ####### 
+   #     #  ##   ## #       
+   #     #  # # # # #       
+   #     #  #  #  # #####   
+   #     #  #     # #       
+   #     #  #     # #       
+   #    ### #     # ####### 
+
+
+#%% Load the data:
+version = 'FF_original'
+filename = 'RRR_Joint_looped_FF_original_2026-04-28_22-38-28'
+
+# version = 'FF_behavout'
+# filename = 'RRR_Joint_looped_FF_behavout_2026-02-24_07-30-21'
+
+# version = 'FB_original'
+# filename = 'RRR_Joint_looped_FB_original_2026-04-29_02-22-58'
+
+# version = 'FB_behavout'
+# filename = 'RRR_Joint_looped_FB_behavout_2026-02-24_10-57-25'
+
+#%% Load the data:
+data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
+
+for key in data.keys():
+    exec(key+'=data[key]')
+
+with open(os.path.join(resultdir,filename + '_params' + '.txt'), "rb") as myFile:
+    params = pickle.load(myFile)
+
+
+#%% Plotting the mean across time across sessions: 
+
+clrs_arealabelpairs = np.array([['#7D7D7D','#D100EB'],
+                       ['#EB5200', '#EA0101']])
+nsourcearealabelpairs = len(sourcearealabelpairs)
+ntargetarealabelpairs = len(targetarealabelpairs)
+
+R2_toplot = np.reshape(R2_cv,(nsourcearealabelpairs,ntargetarealabelpairs,params['nSessions']*params['nStim'],params['nT']))
+
+t_ticks = np.array([-1,0,1,2])
+
+fig,axes = plt.subplots(1,1,figsize=(4*cm,4*cm))
+ax = axes
+handles = []
+labels = []
+for isa,sourcearea in enumerate(sourcearealabelpairs):
+    for ita,targetarea in enumerate(targetarealabelpairs):
+        handles.append(shaded_error(params['t_axis'],R2_toplot[isa,ita,:,:],error='sem',
+                                    color=clrs_arealabelpairs[isa,ita],alpha=0.3,ax=ax))#clrs[iapl],alpha=0.3,ax=ax))
+
+        labels.append(arealabeled_to_figlabels(sourcearea) + ' - ' + arealabeled_to_figlabels(targetarea))
+
+leg = ax.legend(handles,labels,frameon=False, reverse=True,bbox_to_anchor=(0.7,0.3))
+
+ymin = 0
+ax.set_ylim([ymin,my_ceil(ax.get_ylim()[1],3)])
+ax.set_xlim([-1,2])
+thickness = ax.get_ylim()[1]/15
+ax.fill_between([0,0.75], ymin - thickness/2, ymin + thickness/2, color='k', alpha=1)
+my_legend_strip(ax)
+ax_nticks(ax,3)
+ax.set_xticks(t_ticks)
+ax.set_xticklabels(t_ticks)
+ax.set_xlabel('Time (s)')
+ax.set_ylabel('R$^{2}$')
+
+# plt.tight_layout()
+sns.despine(fig=fig, top=True, right=True, offset = 3)
+# my_savefig(fig,figdir,'RRR_looped_time_%s' % (version))
+
+#%% Plot the ratio across time across sessions: 
+R2_toplot = np.reshape(R2_cv,(nsourcearealabelpairs,ntargetarealabelpairs,params['nSessions']*params['nStim'],params['nT']))
+# R2_toplot = np.clip(R2_toplot,np.nanpercentile(R2_toplot,1),np.nanpercentile(R2_toplot,99)) #clip negative R2 values to zero for better visualization of ratios (since negative R2 values can be very close to zero and lead to extreme ratios)
+# plotcontrasts = np.array([[1,2],[1,3]])
+noise_constant = 1e-3
+
+R2_toplot = np.clip(R2_toplot,1e-4,np.nanpercentile(R2_toplot,100)) #clip negative R2 values to zero for better visualization of ratios (since negative R2 values can be very close to zero and lead to extreme ratios)
+noise_constant = 0
+
+# noise_constant = 0 #add a small constant to avoid division by zero and extreme ratios when R2 values are close to zero (e.g. for shuffled data)              
+ymin = 0.9
+
+if params['direction'] == 'FF': 
+    figlabels = ['V1$_{ND1}$/V1$_{ND2}$','V1$_{PM}$/V1$_{ND1}$']
+elif params['direction'] == 'FB': 
+    figlabels = ['PM$_{ND1}$/PM$_{ND2}$','PM$_{V1}$/PM$_{ND1}$']
+clrs = ['grey','red']
+
+fig,axes = plt.subplots(1,1,figsize=(4*cm,4*cm))
+ax = axes
+handles = []
+labels = []
+for isa,sourcearea in enumerate(sourcearealabelpairs):
+    for ita,targetarea in enumerate(targetarealabelpairs):
+        # R2_ratio = (R2_toplot[isa,ita,:,:]+noise_constant) / (R2_toplot[0,0,:,:]+noise_constant) #add a small constant to avoid division by zero
+        R2_ratio = R2_toplot[isa,ita,:,:] - R2_toplot[0,0,:,:] #add a small constant to avoid division by zero
+        # print(np.nanmean(R2_ratio))
+        handles.append(shaded_error(params['t_axis'],R2_ratio,error='sem',
+                                    color=clrs_arealabelpairs[isa,ita],alpha=0.3,ax=ax))#clrs[iapl],alpha=0.3,ax=ax))
+
+        labels.append(arealabeled_to_figlabels(sourcearea) + ' - ' + arealabeled_to_figlabels(targetarea))
+leg = ax.legend(handles,labels,frameon=False, reverse=True,bbox_to_anchor=(0.7,0.3))
+
+# ax.axhline(y=1,color='grey',linestyle='--')
+# ax.set_ylim([ymin,my_ceil(ax.get_ylim()[1],2)])
+# thickness = ax.get_ylim()[1]/15
+# ax.fill_between([0,0.75], ymin - thickness/2, ymin + thickness/2, color='k', alpha=1)
+# ax.legend(handles=handles,labels=figlabels,loc='best')
+my_legend_strip(ax)
+ax.set_xlim([-1,2])
+ax_nticks(ax,3)
+ax.set_xticks(t_ticks)
+ax.set_xticklabels(t_ticks)
+ax.set_xlabel('Time (s)')
+ax.set_ylabel('R$^{2}$ ratio')
+sns.despine(fig=fig, top=True, right=True, offset = 3)
+my_savefig(fig,figdir,'RRR_looped_time_ratio_%s' % (version))
 
 #%% Show for all sessions:
 # fig, axes = plt.subplots(1,1,figsize=(6*cm,5*cm))
