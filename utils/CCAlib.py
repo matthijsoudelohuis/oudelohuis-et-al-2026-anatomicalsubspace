@@ -19,6 +19,15 @@ from scipy.stats import zscore
 from loaddata.session_info import load_sessions
 from utils.psth import compute_tensor
 
+def cca_svd(X, Y, n_components):
+    """CCA via QR + SVD. X, Y are (samples x features), already z-scored."""
+    Qx, Rx = np.linalg.qr(X)
+    Qy, Ry = np.linalg.qr(Y)
+    U, s, Vt = np.linalg.svd(Qx.T @ Qy, full_matrices=False)
+    x_loadings = np.linalg.solve(Rx, U[:, :n_components])
+    y_loadings = np.linalg.solve(Ry, Vt[:n_components].T)
+    return x_loadings, y_loadings, s[:n_components]
+
 def CCA_subsample(DATA1,DATA2,nN=None,nK=None,resamples=5,kFold=5,prePCA=None,n_components=1):
     # Data format: 
     #  DATA1 is the source data (number of number of trials x source neurons)

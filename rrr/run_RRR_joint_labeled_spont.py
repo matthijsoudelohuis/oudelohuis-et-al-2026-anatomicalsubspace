@@ -6,8 +6,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 """
 
 #%% ###################################################
-import math, os
-
+import os
 import numpy as np
 from sklearn.decomposition import PCA
 from scipy.stats import zscore
@@ -68,7 +67,7 @@ session_list        = np.array([
                                 # ['LPE11086_2024_01_05'], #Really much higher, best session, first dimensions are more predictive.
                                 ]) 
 
-sessions,nSessions   = filter_sessions(protocols = ['SP'],only_session_id=session_list,
+sessions,nSessions   = filter_sessions(protocols = ['SP'],
                                        filter_noiselevel=False)
 report_sessions(sessions)
 

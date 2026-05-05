@@ -42,7 +42,7 @@ cm      = 1/2.54  # centimeters in inches
 # import pdb
 # %debug
 
-[x,y] = RRR_wrapper(pairpops, outpops, nN=None,nM=None,nK=None,lam=0,nranks=25,kfold=5,nmodelfits=5,fixed_rank=None)
+# [x,y] = RRR_wrapper(pairpops, outpops, nN=None,nM=None,nK=None,lam=0,nranks=25,kfold=5,nmodelfits=5,fixed_rank=None)
 
 #%% 
 areas = ['V1','PM','AL']
