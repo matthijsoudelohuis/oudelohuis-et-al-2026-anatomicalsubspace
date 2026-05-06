@@ -9,7 +9,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 import  os
 import numpy as np
 from sklearn.decomposition import PCA
-from scipy.stats import zscore
+from scipy.stats import zscore, wilcoxon
 import pickle
 from datetime import datetime
 
@@ -26,7 +26,7 @@ params = load_params()
 # params['regress_behavout'] = True
 params['regress_behavout'] = False
 params['direction'] = 'FF'
-# params['direction'] = 'FB'
+params['direction'] = 'FB'
 # params['direction'] = 'FF_AL'
 # params['direction'] = 'FB_AL'
 
@@ -37,16 +37,6 @@ if not os.path.exists(resultdir):
     os.makedirs(resultdir)
 datetime_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 savefilename = os.path.join(resultdir,'RRR_%s_%s' % (version,datetime_str))
-
-#%% Do RRR of V1 and PM labeled and unlabeled neurons simultaneously
-if params['direction'] =='FF': 
-    sourcearealabelpairs = ['V1unl','V1unl','V1unl','V1lab']
-    targetarealabelpair = 'PMunl'
-    only_all_areas = np.array(['V1','PM'])
-elif params['direction'] =='FB': 
-    sourcearealabelpairs = ['PMunl','PMunl','PMunl','PMlab']
-    targetarealabelpair = 'V1unl'
-    only_all_areas = np.array(['V1','PM'])
 
 #%% 
 session_list        = np.array([
@@ -74,11 +64,23 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=s
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,filter_noiselevel=False)
 report_sessions(sessions)
 
-#%% Wrapper function to load the tensor data, 
+#%% Wrapper function to load the tensor data
+# params['calciumversion'] = 'deconv'
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'],compute_respmat=True)
 
 #%% Compute tuning metrics:
 sessions = compute_tuning_wrapper(sessions)
+
+#%% Do RRR of V1 and PM labeled and unlabeled neurons simultaneously
+if params['direction'] =='FF': 
+    sourcearealabelpairs = ['V1unl','V1unl','V1unl','V1lab']
+    targetarealabelpair = 'PMunl'
+    only_all_areas = np.array(['V1','PM'])
+elif params['direction'] =='FB': 
+    sourcearealabelpairs = ['PMunl','PMunl','PMunl','PMlab']
+    targetarealabelpair = 'V1unl'
+    only_all_areas = np.array(['V1','PM'])
+
 
 #%% 
 narealabelpairs     = len(sourcearealabelpairs)
@@ -86,18 +88,23 @@ narealabelpairs     = len(sourcearealabelpairs)
 Nsub                = 20
 # nmodelfits          = 100
 nmodelfits          = 50
+nranks              = 20
 
 params['nStim']     = 16
-params['mintuningvar'] = 0.0
 
-idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
-# idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=1))[0]
+# idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
+idx_resp            = np.where((t_axis>=-99) & (t_axis<=2))[0]
 
 # Per-neuron alignment with shared and private subspaces for X3 (held-out unlabeled) and X4 (labeled)
 alpha_unl           = np.full((Nsub,nSessions,params['nStim'],nmodelfits),np.nan) # shared alignment, X3
 beta_unl            = np.full((Nsub,nSessions,params['nStim'],nmodelfits),np.nan) # private alignment, X3
 alpha_lab           = np.full((Nsub,nSessions,params['nStim'],nmodelfits),np.nan) # shared alignment, X4
 beta_lab            = np.full((Nsub,nSessions,params['nStim'],nmodelfits),np.nan) # private alignment, X4
+
+np.random.seed(99) # for reproducibility of random subsampling
+fixed_rank = None
+fixed_rank = True
+fixed_rank = 5
 
 def _align(Q, X):
     """Fraction of each neuron's variance (columns of X) aligned with subspace Q.
@@ -116,31 +123,31 @@ for ises,ses in enumerate(sessions):
 
     idx_areax1      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpairs[0],
                                 ses.celldata['noise_level']<params['maxnoiselevel'],
-                                ses.celldata['tuning_var']>params['mintuningvar'],
+                                # ses.celldata['tuning_var']>params['mintuningvar'],
                                 idx_nearby
                                 ),axis=0))[0]
     idx_areax2      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpairs[1],
                                 ses.celldata['noise_level']<params['maxnoiselevel'],
-                                ses.celldata['tuning_var']>params['mintuningvar'],
+                                # ses.celldata['tuning_var']>params['mintuningvar'],
                                 idx_nearby
                                 ),axis=0))[0]
     idx_areax3      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpairs[2],
                                 ses.celldata['noise_level']<params['maxnoiselevel'],
-                                ses.celldata['tuning_var']>params['mintuningvar'],
+                                # ses.celldata['tuning_var']>params['mintuningvar'],
                                 idx_nearby
                                 ),axis=0))[0]
     idx_areax4      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpairs[3],
                                 ses.celldata['noise_level']<params['maxnoiselevel'],
-                                ses.celldata['tuning_var']>params['mintuningvar'],
+                                # ses.celldata['tuning_var']>params['mintuningvar'],
                                 idx_nearby
                                 ),axis=0))[0]
     idx_areay       = np.where(np.all((ses.celldata['arealabel']==targetarealabelpair,
-                                            ses.celldata['noise_level']<params['maxnoiselevel'],
-                                            ses.celldata['tuning_var']>params['mintuningvar'],
-                                            idx_nearby
-                                            ),axis=0))[0]
+                                # ses.celldata['noise_level']<params['maxnoiselevel'],
+                                # ses.celldata['tuning_var']>params['mintuningvar'],
+                                idx_nearby
+                                ),axis=0))[0]
     
-    if len(idx_areax1)<Nsub*3 or len(idx_areax4)<Nsub or len(idx_areay)<Nsub*2: #skip exec if not enough neurons in one of the populations
+    if len(idx_areax1)<Nsub*3 or len(idx_areax4)<Nsub or len(idx_areay)<Nsub: #skip exec if not enough neurons in one of the populations
         print('%d in %s, %d in %s, %d in %s' % (len(idx_areax4),sourcearealabelpairs[3],
                                                 len(idx_areax1),sourcearealabelpairs[0],
                                                 len(idx_areay),targetarealabelpair))
@@ -150,42 +157,38 @@ for ises,ses in enumerate(sessions):
     for istim,stim in tqdm(enumerate(np.unique(ses.trialdata['stimCond'])),total=params['nStim'],desc='Processing session %d/%d' % (ises+1,nSessions)):
         idx_T               = ses.trialdata['stimCond']==stim
 
-        # X1                  = sessions[ises].tensor[np.ix_(idx_areax1,idx_T,idx_resp)]
-        # X2                  = sessions[ises].tensor[np.ix_(idx_areax2,idx_T,idx_resp)]
-        # Y                   = sessions[ises].tensor[np.ix_(idx_areay,idx_T,idx_resp)]
+        if fixed_rank:
+            # rank_private = 4
+            # rank_shared =  3
+            rank_private = fixed_rank
+            rank_shared =  fixed_rank
+        else:
+            X1                  = sessions[ises].tensor[np.ix_(idx_areax1,idx_T,idx_resp)]
+            X2                  = sessions[ises].tensor[np.ix_(idx_areax2,idx_T,idx_resp)]
+            Y                   = sessions[ises].tensor[np.ix_(idx_areay,idx_T,idx_resp)]
 
-        # # reshape to neurons x time points
-        # X1                  = X1.reshape(len(idx_areax1),-1).T
-        # X2                  = X2.reshape(len(idx_areax2),-1).T
-        # Y                   = Y.reshape(len(idx_areay),-1).T
+            # reshape to neurons x time points
+            X1                  = X1.reshape(len(idx_areax1),-1).T
+            X2                  = X2.reshape(len(idx_areax2),-1).T
+            Y                   = Y.reshape(len(idx_areay),-1).T
+            
+            _,rank_private,_ = RRR_wrapper(X2,X1,nN=Nsub,lam=params['lam'],nranks=nranks,kfold=params['kfold'],
+                                               nmodelfits=nmodelfits,fixed_rank=None)
+            
+            _,rank_shared,_ = RRR_wrapper(Y,X1,nN=Nsub,lam=params['lam'],nranks=nranks,kfold=params['kfold'],
+                                               nmodelfits=nmodelfits,fixed_rank=None)
         
-        # _,rank_private,_ = RRR_wrapper(X2,X1,nN=Nsub,lam=params['lam'],nranks=nranks,kfold=params['kfold'],
-        #                                    nmodelfits=nmodelfits,fixed_rank=None)
-        
-        # _,rank_shared,_ = RRR_wrapper(Y,X1,nN=Nsub,lam=params['lam'],nranks=nranks,kfold=params['kfold'],
-        #                                    nmodelfits=nmodelfits,fixed_rank=None)
-        
-        # rank_private = 6
-        # rank_shared =  4
-        rank_private = 5
-        rank_shared =  5
-
-        # rank_private = 4
-        # rank_shared =  3
-
         # if rank_private <= rank_shared:
         # if rank_private >0:
             # print('Skipping session %d, stim %d, because private rank (%d) is smaller than shared rank (%d)' % (ises,istim,rank_private,rank_shared))
             # continue
 
-        # for imf in tqdm(range(nmodelfits),total=nmodelfits,desc='Fitting RRR model for session %d/%d' % (ises+1,nSessions)):
         for imf in range(nmodelfits):
             idx_areax1_sub       = np.random.choice(idx_areax1,Nsub,replace=False)
             idx_areax2_sub       = np.random.choice(np.setdiff1d(idx_areax2,idx_areax1_sub),Nsub,replace=False)
             idx_areax3_sub       = np.random.choice(np.setdiff1d(idx_areax3,[idx_areax1_sub,idx_areax2_sub]),Nsub,replace=False) # held-out unlabeled neurons for alignment
-            # idx_areax3_sub       = np.random.choice(idx_areax3,Nsub,replace=False)
             idx_areax4_sub       = np.random.choice(idx_areax4,Nsub,replace=False)
-            idx_areay_sub        = np.random.choice(idx_areay,Nsub+5,replace=False)
+            idx_areay_sub        = np.random.choice(idx_areay,Nsub,replace=False)
        
             X1                  = sessions[ises].tensor[np.ix_(idx_areax1_sub,idx_T,idx_resp)]
             X2                  = sessions[ises].tensor[np.ix_(idx_areax2_sub,idx_T,idx_resp)]
@@ -250,7 +253,45 @@ alpha_lab_ses = np.nanmean(alpha_lab, axis=(0, 2, 3))
 beta_unl_ses  = np.nanmean(beta_unl,  axis=(0, 2, 3))
 beta_lab_ses  = np.nanmean(beta_lab,  axis=(0, 2, 3))
 
-from scipy.stats import wilcoxon
+#%% Plot: session-level scatter (labeled vs unlabeled), one dot per session
+figdir = os.path.join(params['figdir'],'RRR','PrivateShared')
+cm = 1/2.54
+set_plot_basic_config()
+
+#%%
+metrics   = [alpha_unl_ses, beta_unl_ses,  s_unl_ses]
+metrics_l = [alpha_lab_ses, beta_lab_ses,  s_lab_ses]
+labels    = [r'$\alpha$ (shared)', r'$\beta$ (private)', r'$s$ (selectivity)']
+
+if params['direction'] == 'FB':
+    figlabels = ['PM$_{ND}$','PM$_{V1}$']
+elif params['direction'] == 'FF':
+    figlabels = ['V1$_{ND}$','V1$_{PM}$']
+
+fig, axes = plt.subplots(1, 3, figsize=(8*cm, 5*cm))
+for ax, xu, xl, lbl, i in zip(axes, metrics, metrics_l, labels, range(len(labels))):
+    # vmin = np.nanmin(np.concatenate([xu, xl])) * 0.9
+    vmax = np.nanmax(np.concatenate([xu, xl])) * 1.1
+    sns.stripplot(ax=ax, data=np.column_stack([xu, xl]), color='k', 
+                  size=4)
+    ax.plot(np.column_stack((np.zeros(len(xu)), np.ones(len(xu)))).T,
+            np.column_stack([xu, xl]).T, color='k', lw=0.4)
+    # ax.scatter(xu, xl, color='k', s=30, zorder=3)
+    # ax.plot([0, vmax], [0, vmax], ':', color='grey', lw=1)
+    ax.set_xticks([0, 1], labels=figlabels)
+    ax.set_ylabel('')
+    ax.set_title(lbl)
+    # ax.set_xlim([0, vmax])
+    if i < 2:
+        ax.set_ylim([0, 0.25])
+    if i == 2:
+        ax.set_ylim([0.65, 0.9])
+        # ax.axhline(0.5, color='grey', lw=1, ls='--')
+    add_paired_wilcoxon_results(ax, xu, xl,pos=[0.5,0.95], fontsize=8)
+    ax_nticks(ax,4)
+sns.despine(offset=2, top=True, right=True)
+plt.tight_layout()
+
 if np.sum(~np.isnan(s_lab_ses - s_unl_ses)) >= 5: # only do stats if at least 5 sessions have valid data
     stat, p_sel = wilcoxon(s_lab_ses[~np.isnan(s_lab_ses)], s_unl_ses[~np.isnan(s_unl_ses)])
     stat, p_alpha = wilcoxon(alpha_lab_ses[~np.isnan(alpha_lab_ses)], alpha_unl_ses[~np.isnan(alpha_unl_ses)])
@@ -258,16 +299,9 @@ if np.sum(~np.isnan(s_lab_ses - s_unl_ses)) >= 5: # only do stats if at least 5 
     print('Selectivity index:  labeled=%.3f  unlabeled=%.3f  p=%s' % (np.nanmean(s_lab_ses), np.nanmean(s_unl_ses), p_sel))
     print('Alpha (shared):     labeled=%.3f  unlabeled=%.3f  p=%s' % (np.nanmean(alpha_lab_ses), np.nanmean(alpha_unl_ses), p_alpha))
     print('Beta  (private):    labeled=%.3f  unlabeled=%.3f  p=%s' % (np.nanmean(beta_lab_ses), np.nanmean(beta_unl_ses), p_beta))
+# my_savefig(fig, figdir, 'PrivateShared_%s_%dsessions' % (version, nSessions))
 
-#%% Plot: session-level scatter (labeled vs unlabeled), one dot per session
-figdir = os.path.join(params['figdir'],'RRR','PrivateShared')
-cm = 1/2.54
-set_plot_basic_config()
-
-metrics   = [alpha_unl_ses, beta_unl_ses,  s_unl_ses]
-metrics_l = [alpha_lab_ses, beta_lab_ses,  s_lab_ses]
-labels    = [r'$\alpha$ (shared)', r'$\beta$ (private)', r'$s$ (selectivity)']
-
+#%% 
 fig, axes = plt.subplots(1, 3, figsize=(18*cm, 6*cm))
 for ax, xu, xl, lbl in zip(axes, metrics, metrics_l, labels):
     vmin = np.nanmin(np.concatenate([xu, xl])) * 0.9
@@ -284,22 +318,22 @@ sns.despine(offset=2, top=True, right=True)
 plt.tight_layout()
 # my_savefig(fig, figdir, 'PrivateShared_alpha_beta_selectivity_%dsessions' % nSessions)
 
-#%%
-params['Nsub']     = Nsub
-params['nranks']    = nranks
-params['nmodelfits'] = nmodelfits
-params['nSessions'] = nSessions
+# #%%
+# params['Nsub']     = Nsub
+# params['nranks']    = nranks
+# params['nmodelfits'] = nmodelfits
+# params['nSessions'] = nSessions
 
-#%% Save the data:
-np.savez(savefilename + '.npz',
-         alpha_unl=alpha_unl,beta_unl=beta_unl,
-         alpha_lab=alpha_lab,beta_lab=beta_lab,
-         s_unl=s_unl,s_lab=s_lab,
-         sourcearealabelpairs=sourcearealabelpairs,
-         targetarealabelpair=targetarealabelpair,
-         allow_pickle=True)
+# #%% Save the data:
+# np.savez(savefilename + '.npz',
+#          alpha_unl=alpha_unl,beta_unl=beta_unl,
+#          alpha_lab=alpha_lab,beta_lab=beta_lab,
+#          s_unl=s_unl,s_lab=s_lab,
+#          sourcearealabelpairs=sourcearealabelpairs,
+#          targetarealabelpair=targetarealabelpair,
+#          allow_pickle=True)
 
-with open(savefilename +'_params' + '.txt', "wb") as myFile:
-    pickle.dump(params, myFile)
+# with open(savefilename +'_params' + '.txt', "wb") as myFile:
+#     pickle.dump(params, myFile)
 
 #%%
