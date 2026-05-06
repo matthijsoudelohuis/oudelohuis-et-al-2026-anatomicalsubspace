@@ -35,16 +35,14 @@ savefilename = os.path.join(resultdir,'CCA_labeled_%s' % (datetime_str))
 session_list        = np.array([['LPE09665_2023_03_14'], #V1lab higher
                                 ['LPE10885_2023_10_23'], #V1lab much higher
                                 ])
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list)
+# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list)
 
 #%% 
-# sessions,nSessions   = filter_sessions(protocols = 'GR',only_all_areas=areas,min_lab_cells_V1=20,min_lab_cells_PM=20)
 # sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],min_lab_cells_V1=20,min_lab_cells_PM=20)
-# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
+sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
 
 #%% Wrapper function to load the tensor data, 
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=False)
-# sessions = load_resid_tensor(sessions,behavout=True)
 
 #%%
 
@@ -67,8 +65,8 @@ nmodelfits          = 10
 minsampleneurons    = 10
 weights_CCA         = np.full((params['n_components'],len(arealabels),nSessions,nStim,nmodelfits),np.nan)
 cancorr_CCA         = np.full((params['n_components'],nSessions,nStim,nmodelfits),np.nan)
-do_cv_cca           = False
-fit_fast            = True
+do_cv_cca           = True
+fit_fast            = False
 
 #%% Fit:
 model_CCA           = CCA(n_components=params['n_components'],scale = False, max_iter = 1000)
@@ -146,9 +144,6 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting CCA model
                         corr_test[icomp,ikf] = np.corrcoef(X_c[:,icomp],Y_c[:,icomp], rowvar = False)[0,1]
                 cancorr_CCA[:,ises,istim,imf] = np.nanmean(corr_test,axis=1)
 
-
-#%% 
-
 #%% 
  #####   #####     #       ######  ####### ######     ######  ####### ######     ######     #    ### ######  
 #     # #     #   # #      #     # #       #     #    #     # #     # #     #    #     #   # #    #  #     # 
@@ -159,9 +154,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting CCA model
  #####   #####  #     #    #       ####### #     #    #       ####### #          #       #     # ### #     # 
 
 #%% Are the weights higher for V1lab or PMlab than unlabeled neurons?
-nmodelfits          = 10
 Nsub                = 25
-
 arealabelpairs      = ['V1unl-PMunl',
                     'V1unl-PMlab',
                     'V1lab-PMunl',
@@ -221,7 +214,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting CCA model
             [g,_] = CCA_subsample(X,Y,nN=Nsub,resamples=nmodelfits,kFold=params['kfold'],prePCA=None,n_components=np.min([params['n_components'],nsampleneurons]))
             CCA_corrtest[iapl,:len(g),ises,istim] = g
 
-#%%
+#%% Save parameters
 params['Nsub']     = Nsub
 params['nmodelfits'] = nmodelfits
 params['nSessions'] = nSessions
