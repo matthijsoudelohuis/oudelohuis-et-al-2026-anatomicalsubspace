@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-
 import numpy as np
 from sklearn.decomposition import PCA
 from scipy.stats import zscore

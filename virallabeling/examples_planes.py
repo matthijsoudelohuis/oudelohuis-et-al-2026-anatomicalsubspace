@@ -22,7 +22,7 @@ from utils.plot_lib import *
 from utils.imagelib import *
 # from labeling.tdTom_labeling_cellpose import *
 from utils.params import load_params
-from labeling.tdTom_labeling_cellpose import *
+from virallabeling.tdTom_labeling_cellpose import *
 
 params = load_params()
 figdir = os.path.join(params['figdir'],'Labeling')

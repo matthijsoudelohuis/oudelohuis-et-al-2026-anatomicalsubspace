@@ -16,6 +16,7 @@ from datetime import datetime
 from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
 from utils.RRRlib import *
+from utils.corr_lib import filter_sharednan
 from utils.regress_lib import *
 from utils.params import load_params
 from utils.tuning import compute_tuning_wrapper
@@ -81,6 +82,11 @@ elif params['direction'] =='FB':
     targetarealabelpair = 'V1unl'
     only_all_areas = np.array(['V1','PM'])
 
+#%% Sig settings:
+nmodelfits = 50
+fixed_rank = 5
+idx_resp            = np.where(t_axis>=params['tresp_start'])[0]
+np.random.seed(99) # for reproducibility of random subsampling
 
 #%% 
 narealabelpairs     = len(sourcearealabelpairs)
@@ -93,7 +99,12 @@ nranks              = 20
 params['nStim']     = 16
 
 # idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
-idx_resp            = np.where((t_axis>=-99) & (t_axis<=2))[0]
+idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=2))[0]
+idx_resp            = np.where(t_axis>=params['tresp_start'])[0]
+
+# estimated rank:
+rank_private_ses    = np.full((nSessions,params['nStim']), np.nan)
+rank_shared_ses     = np.full((nSessions,params['nStim']), np.nan)
 
 # Per-neuron alignment with shared and private subspaces for X3 (held-out unlabeled) and X4 (labeled)
 alpha_unl           = np.full((Nsub,nSessions,params['nStim'],nmodelfits),np.nan) # shared alignment, X3
@@ -103,7 +114,7 @@ beta_lab            = np.full((Nsub,nSessions,params['nStim'],nmodelfits),np.nan
 
 np.random.seed(99) # for reproducibility of random subsampling
 fixed_rank = None
-fixed_rank = True
+# fixed_rank = True
 fixed_rank = 5
 
 def _align(Q, X):
@@ -158,8 +169,8 @@ for ises,ses in enumerate(sessions):
         idx_T               = ses.trialdata['stimCond']==stim
 
         if fixed_rank:
-            # rank_private = 4
-            # rank_shared =  3
+            # rank_private = 5
+            # rank_shared =  2
             rank_private = fixed_rank
             rank_shared =  fixed_rank
         else:
@@ -178,7 +189,10 @@ for ises,ses in enumerate(sessions):
             _,rank_shared,_ = RRR_wrapper(Y,X1,nN=Nsub,lam=params['lam'],nranks=nranks,kfold=params['kfold'],
                                                nmodelfits=nmodelfits,fixed_rank=None)
         
-        # if rank_private <= rank_shared:
+            rank_private_ses[ises,istim] = rank_private
+            rank_shared_ses[ises,istim] = rank_shared
+
+        # if rank_private < rank_shared:
         # if rank_private >0:
             # print('Skipping session %d, stim %d, because private rank (%d) is smaller than shared rank (%d)' % (ises,istim,rank_private,rank_shared))
             # continue
@@ -284,8 +298,9 @@ for ax, xu, xl, lbl, i in zip(axes, metrics, metrics_l, labels, range(len(labels
     # ax.set_xlim([0, vmax])
     if i < 2:
         ax.set_ylim([0, 0.25])
+        # ax.set_ylim([0, 0.1])
     if i == 2:
-        ax.set_ylim([0.65, 0.9])
+        ax.set_ylim([0.6, 0.9])
         # ax.axhline(0.5, color='grey', lw=1, ls='--')
     add_paired_wilcoxon_results(ax, xu, xl,pos=[0.5,0.95], fontsize=8)
     ax_nticks(ax,4)
@@ -299,7 +314,7 @@ if np.sum(~np.isnan(s_lab_ses - s_unl_ses)) >= 5: # only do stats if at least 5 
     print('Selectivity index:  labeled=%.3f  unlabeled=%.3f  p=%s' % (np.nanmean(s_lab_ses), np.nanmean(s_unl_ses), p_sel))
     print('Alpha (shared):     labeled=%.3f  unlabeled=%.3f  p=%s' % (np.nanmean(alpha_lab_ses), np.nanmean(alpha_unl_ses), p_alpha))
     print('Beta  (private):    labeled=%.3f  unlabeled=%.3f  p=%s' % (np.nanmean(beta_lab_ses), np.nanmean(beta_unl_ses), p_beta))
-# my_savefig(fig, figdir, 'PrivateShared_%s_%dsessions' % (version, nSessions))
+my_savefig(fig, figdir, 'PrivateShared_%s_%dsessions' % (params['direction'], nSessions))
 
 #%% 
 fig, axes = plt.subplots(1, 3, figsize=(18*cm, 6*cm))
@@ -318,7 +333,25 @@ sns.despine(offset=2, top=True, right=True)
 plt.tight_layout()
 # my_savefig(fig, figdir, 'PrivateShared_alpha_beta_selectivity_%dsessions' % nSessions)
 
-# #%%
+#%% Show the estimated ranks for all sessions and stimuli:
+fig, axes = plt.subplots(1, 1, figsize=(4*cm, 4*cm))
+nrankstoplot = 10
+ax = axes
+xdata = rank_shared_ses.flatten()
+ydata = rank_private_ses.flatten()
+xdata,ydata = filter_sharednan(xdata,ydata)
+ax.hist2d(xdata, ydata, bins=[np.arange(-0.5, nrankstoplot+1.5, 1), 
+                              np.arange(-0.5, nrankstoplot+1.5, 1)], cmap='Blues',
+            cmin=1)
+add_paired_wilcoxon_results(ax, xdata, ydata, pos=[0.4, 0.8], fontsize=8)
+ax.plot([0, 10], [0, 10], ':', color='grey', lw=1)
+ax.set_xlabel('Shared rank')
+ax.set_ylabel('Private rank')
+ax_nticks(ax,4)
+sns.despine(offset=0, top=True, right=True)
+my_savefig(fig, figdir, 'PrivateShared_rank_%dsessions' % nSessions)
+
+#%%
 # params['Nsub']     = Nsub
 # params['nranks']    = nranks
 # params['nmodelfits'] = nmodelfits
