@@ -46,7 +46,6 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=s
 #%%  Load data properly:        
 for ises in range(nSessions):
     sessions[ises].load_tensor(load_calciumdata=True,calciumversion=params['calciumversion'],keepraw=True)
-
 t_axis = sessions[0].t_axis
 
 #%% 
@@ -328,9 +327,10 @@ def split_half_reliability(Y):
 #%% Get all data 
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
 report_sessions(sessions)
+# sessions = sessions[:10]
 
 #%%  Load data properly:    
-# params['calciumversion'] = 'dF'
+params['calciumversion'] = 'deconv'
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=False,compute_respmat=True)
 
 #%%
@@ -387,7 +387,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
             R2_cv[iapl,:,ises,istim],optim_rank[iapl,:,ises,istim],R2_ranks[iapl,:,ises,istim,:,:,:]      = RRR_wrapper_tensor(
                                                                         Y,X, nN=nsampleneurons,lam=lam,
                                                                        nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
-
+            # RRR_wrapper_tensor
             # for ibin in range(ntimebins):
                 # X       = ses.tensor[np.ix_(idx_areax,idx_T,[ibin])].squeeze().T
                 # Y       = ses.tensor[np.ix_(idx_areay,idx_T,[ibin])].squeeze().T
@@ -430,12 +430,12 @@ ax.legend(handles=handles,labels=arealabelpairs,loc='best',fontsize=8)
 my_legend_strip(ax)
 ax_nticks(ax,3)
 ax.set_xticks(t_ticks)
-# ax.set_xlim([0,2])
+ax.set_xlim([-.5,2])
 ax.set_xticklabels(t_ticks)
 ax.set_xlabel('Time (sec)')
 ax.set_ylabel('$R^2$')
 sns.despine(fig=fig,top=True,right=True,trim=False,offset=3)
-my_savefig(fig,figdir,'RRR_perf_across_time')
+my_savefig(fig,figdir,'RRR_perf_across_time_deconv')
 
 #%% Plotting, showing rank across time:
 t_ticks = np.array([-1,0,1,2])
@@ -510,8 +510,8 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
                     R2_cv[ises,istim,ixpop,iypop],optim_rank[ises,istim,ixpop,iypop],_ = RRR_wrapper(Y, X, nN=xpop,nM=ypop,nK=None,lam=0,nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
 
 #%% Plot R2 for different number of V1 and PM neurons
-from  matplotlib.colors import LinearSegmentedColormap
-cmap=LinearSegmentedColormap.from_list('rg',["r","g"], N=256) 
+# from  matplotlib.colors import LinearSegmentedColormap
+# cmap=LinearSegmentedColormap.from_list('rg',["r","g"], N=256) 
 # cmap=LinearSegmentedColormap.from_list('rp',["green","white","purple"], N=256) 
 cmap = sns.color_palette('magma', as_cmap=True)
 fig,axes = plt.subplots(1,2,figsize=(6,3),sharey=True,sharex=True)

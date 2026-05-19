@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-This script analyzes noise correlations in a multi-area calcium imaging
-dataset with labeled projection neurons. The visual stimuli are oriented gratings.
-Matthijs Oude Lohuis, 2023, Champalimaud Center
+This script analyzes reduced rank regression in a multi-area calcium imaging
+dataset with labeled projection neurons. The data is spontaneous activity.
+Matthijs Oude Lohuis, 2023-2026, Champalimaud Center
 """
 
 #%% ###################################################
 import os
 import numpy as np
-from sklearn.decomposition import PCA
 from scipy.stats import zscore
 import pickle
 from datetime import datetime
@@ -24,10 +23,8 @@ params = load_params()
 
 # params['regress_behavout'] = True
 params['regress_behavout'] = False
-params['direction'] = 'FF'
+# params['direction'] = 'FF'
 params['direction'] = 'FB'
-# params['direction'] = 'FF_AL'
-# params['direction'] = 'FB_AL'
 
 version = 'Joint_labeled_%s_%s_spont' % (params['direction'],'behavout' if params['regress_behavout'] else 'original')
 
@@ -46,34 +43,9 @@ elif params['direction'] =='FB':
     sourcearealabelpairs = ['PMunl','PMunl','PMlab']
     targetarealabelpair = 'V1unl'
     only_all_areas = np.array(['V1','PM'])
-elif params['direction'] =='FF_AL': 
-    sourcearealabelpairs = ['V1unl','V1unl','V1lab']
-    targetarealabelpair = 'ALunl'
-    only_all_areas = np.array(['V1','PM','AL'])
-elif params['direction'] =='FB_AL': 
-    sourcearealabelpairs = ['PMunl','PMunl','PMlab']
-    targetarealabelpair = 'ALunl'
-    only_all_areas = np.array(['V1','PM','AL'])
-
-#%% 
-session_list        = np.array([
-                                # ['LPE12223_2024_06_10'], #V1lab actually lower
-                                ['LPE09830_2023_04_10'], #V1 labeled higher predictive than V1unl
-                                # ['LPE10919_2023_11_06'],  #V1lab actually lower
-                                # ['LPE12223_2024_06_08'], #V1lab actually lower
-                                # ['LPE11622_2024_03_25'], #same
-                                ['LPE09665_2023_03_14'], #V1lab higher
-                                # ['LPE10885_2023_10_23'], #V1lab much higher
-                                # ['LPE11086_2024_01_05'], #Really much higher, best session, first dimensions are more predictive.
-                                ]) 
-
-sessions,nSessions   = filter_sessions(protocols = ['SP'],
-                                       filter_noiselevel=False)
-report_sessions(sessions)
 
 #%% Get all data 
-# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
-sessions,nSessions   = filter_sessions(protocols = ['SP'],only_all_areas=only_all_areas,filter_noiselevel=False)
+sessions,nSessions   = filter_sessions(protocols = ['SP'],only_all_areas=only_all_areas)
 report_sessions(sessions)
 
 #%% Wrapper function to load the tensor data, 
@@ -119,7 +91,8 @@ narealabelpairs     = len(sourcearealabelpairs)
 
 Nsub                = 20
 nranks              = 20 #number of ranks of RRR to be evaluated
-nmodelfits          = 10
+# nmodelfits          = 10
+nmodelfits          = 100
 timechunck          = 180 #in seconds
 sampleschunk        = int(timechunck * sessions[ises].sessiondata['fs'][0]) #in seconds
 
@@ -239,10 +212,10 @@ for ises in range(nSessions):
                     R2_cv[3,ises,istim],optim_rank[3,ises,istim] = rank_from_R2(R2_ranks[3,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
 
 #%%
-params['Nsub']     = Nsub
-params['nranks']    = nranks
-params['nmodelfits'] = nmodelfits
-params['nSessions'] = nSessions
+params['Nsub']          = Nsub
+params['nranks']        = nranks
+params['nmodelfits']    = nmodelfits
+params['nSessions']     = nSessions
 
 #%% Save the data:
 np.savez(savefilename + '.npz',R2_cv=R2_cv,R2_ranks=R2_ranks,optim_rank=optim_rank,
@@ -253,90 +226,11 @@ np.savez(savefilename + '.npz',R2_cv=R2_cv,R2_ranks=R2_ranks,optim_rank=optim_ra
 with open(savefilename +'_params' + '.txt', "wb") as myFile:
     pickle.dump(params, myFile)
 
-#%%
 
-figdir = os.path.join(params['figdir'],'RRR','Spontaneous','Labeling')
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
+#%% 
 
-#%% Show an example session:
-clrs_arealabelpairs = ['grey','grey','red']
-narealabelpairs = 3
-fig, axes = plt.subplots(1,1,figsize=(6*cm,5*cm))
-ax = axes
-ises = 0
-handles = []
-# ax.plot(range(params['nranks']),np.nanmean(R2_ranks[0],axis=(0,1,3,4)),label='All neurons',color='grey')
-# ax.plot(np.nanmean(R2_ranks[1][ises],axis=(0,2,3)),label=sourcearealabelpairs[0],color=clrs_arealabelpairs[0])
-# ax.plot(np.nanmean(R2_ranks[2][ises],axis=(0,2,3)),label=sourcearealabelpairs[1],color=clrs_arealabelpairs[1])
-# ax.plot(np.nanmean(R2_ranks[3][ises],axis=(0,2,3)),label=sourcearealabelpairs[2],color=clrs_arealabelpairs[2])
-for iapl,apl in enumerate(sourcearealabelpairs):
-    ymeantoplot = np.nanmean(R2_ranks[iapl+1][ises],axis=(0,2,3))
-    yerrortoplot = np.nanstd(R2_ranks[iapl+1][ises],axis=(0,2,3)) / np.sqrt(nmodelfits)
-    handles.append(shaded_error(np.arange(params['nranks'])+1,ymeantoplot,yerrortoplot,ax=ax,color=clrs_arealabelpairs[iapl],alpha=0.3))
 
-leg = ax.legend(handles,arealabeled_to_figlabels(sourcearealabelpairs),frameon=False)
-my_legend_strip(ax)
-ax.set_xlabel('Rank')
-ax.set_ylabel('Cross-validated R2')
 
-plt.tight_layout()
-sns.despine(fig=fig,trim=False,top=True,right=True)
-# my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_ExampleSesion' % (version))
 
-#%% Show the mean across sessions:
-clrs_arealabelpairs = ['grey','grey','red']
 
-nrankstoplot = 12
-xposrank = 10
-idxs = np.array([1,3])
-meanranks = np.nanmean(optim_rank,axis=(-1,-2))
-meanR2 = np.nanmean(R2_cv,axis=(-1,-2))
-sourcearealabelpairs = np.array(sourcearealabelpairs)
-fig, axes = plt.subplots(1,1,figsize=(5*cm,4.5*cm))
-ax = axes
-handles = []
-# ax.plot(np.nanmean(R2_ranks[idxs[0]],axis=(0,1,3,4)),label=arealabeled_to_figlabels(sourcearealabelpairs[idxs[0]-1]),
-#         color=clrs_arealabelpairs[idxs[0]-1],linewidth=2)
-# ax.plot(np.nanmean(R2_ranks[idxs[1]],axis=(0,1,3,4)),label=arealabeled_to_figlabels(sourcearealabelpairs[idxs[1]-1]),
-#         color=clrs_arealabelpairs[idxs[1]-1],linewidth=2)
-ydata = np.nanmean(R2_ranks[idxs[0]],axis=(3,4))
-ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
-handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
-                            color=clrs_arealabelpairs[idxs[0]-1],alpha=0.3))
-ydata = np.nanmean(R2_ranks[idxs[1]],axis=(3,4))
-ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
-handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
-                            color=clrs_arealabelpairs[idxs[1]-1],alpha=0.3))
-for idx in idxs:
-    ax.plot(meanranks[idx],meanR2[idx]+0.005,color=clrs_arealabelpairs[idx-1],marker='v',markersize=5)
-
-leg = ax.legend(handles,arealabeled_to_figlabels(sourcearealabelpairs[idxs-1]),frameon=False)
-my_legend_strip(ax)
-ax.set_xlabel('Rank')
-ax.set_ylabel(r'Cross-validated R$^2$')
-
-x = optim_rank[idxs[0],:]
-y = optim_rank[idxs[1],:]
-nas = np.logical_or(np.isnan(x), np.isnan(y))
-t,p = ttest_rel(x[~nas], y[~nas])
-print('Paired t-test (Rank): p=%.3f' % (p))
-ax.plot(meanranks[idxs],np.repeat(np.nanmean(meanR2[idxs]),2)+0.007,linestyle='-',color='k',linewidth=2)
-ax.text(np.nanmean(meanranks),np.nanmean(meanR2[idxs])+0.009,'%s' % get_sig_asterisks(p,return_ns=True),ha='center',va='center',color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
-
-x = R2_cv[idxs[0],:]
-y = R2_cv[idxs[1],:]
-nas = np.logical_or(np.isnan(x), np.isnan(y))
-t,p = ttest_rel(x[~nas], y[~nas])
-print('Paired t-test (R2): p=%.3f' % (p))
-ax.plot([xposrank,xposrank],meanR2[idxs],linestyle='-',color='k',linewidth=2)
-ax.text(xposrank+0.5,np.nanmean(meanR2[idxs])+0.005,'%s' % get_sig_asterisks(p,return_ns=True),ha='center',va='center',color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
-
-ax.set_xticks(np.arange(params['nranks'])[::3]+1)
-ax.set_xlim([0,nrankstoplot])
-ax.set_title(params['direction'])
-plt.tight_layout()
-sns.despine(fig=fig,trim=False,top=True,right=True)
-my_savefig(fig,figdir,'RRR_joint_R2_labunl_%s_%dsessions_spont' % (params['direction'],params['nSessions']))
