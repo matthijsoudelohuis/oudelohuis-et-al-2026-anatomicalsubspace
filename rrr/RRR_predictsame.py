@@ -69,7 +69,6 @@ sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=
 # [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=True)
 # sessions = load_resid_tensor(sessions,behavout=True)
 
-
 cache_path = os.path.join(params['resultdir'], 'sessions_cache_%d.pkl' % nSessions)
 
 if os.path.exists(cache_path):
@@ -82,6 +81,7 @@ else:
 
 #%% Do RRR of V1 and PM labeled and unlabeled neurons
 version = 'FF'
+version = 'FB'
 if version == 'FF': 
     sourcearealabelpairs = ['V1unl','V1lab']
     crossarealabelpairs  = ['V1unl','V1lab','ALunl']
@@ -97,7 +97,7 @@ ncrossarealabelpairs    = len(crossarealabelpairs)
 Nsub                = 25
 Nsub_pops           = np.array([5,10,15,20,25,30,35,40,45,50])
 # Nsub_pops           = np.array([10,20,30,50,100])
-Nsub_pops           = np.array([5,10,25,50,100])
+# Nsub_pops           = np.array([5,10,25,50,100])
 
 # Nsub                = 25
 # Nsub_pops           = np.array([5,10,15,20,25,30,40,50,75,100,150,200,250,300])
@@ -222,7 +222,7 @@ clrs_crossarealabelpairs = ['grey','red','blue']
 for iapl in range(nsourcearealabelpairs):
     ax = axes[iapl]
     handles = []
-    for icpl,crossarealabelpair in enumerate(crossarealabelpairs):
+    for icpl,crossarealabelpair in enumerate(crossarealabelpairs[:2]):
     # refperf = np.nanmean(R2_Y1_X1[iapl])
     # ax.plot(Nsub,refperf,marker='o',color=clrs[iapl],label=sourcearealabelpairs[iapl])
     
@@ -233,11 +233,11 @@ for iapl in range(nsourcearealabelpairs):
 
         handles.append(ax.plot(Nsub_pops,meantoplot,marker='o',markersize=5,
                                color=clrs_crossarealabelpairs[icpl],label=crossarealabelpair)[0])
-        curve_fit(power_law_func,Nsub_pops,meantoplot,p0=[1,1])
+        # curve_fit(power_law_func,Nsub_pops,meantoplot,p0=[1,1])
        
-        popt, pcov = curve_fit(power_law_func, Nsub_pops, meantoplot, p0=[1., 1.])
-        x_domain = np.arange(0,np.max(Nsub_pops))
-        y_domain = power_law_func(x_domain, *popt)
+        # popt, pcov = curve_fit(power_law_func, Nsub_pops, meantoplot, p0=[1., 1.])
+        # x_domain = np.arange(0,np.max(Nsub_pops))
+        # y_domain = power_law_func(x_domain, *popt)
 
         # ax.plot(x_domain, y_domain, color=clrs_crossarealabelpairs[icpl], linestyle='--', label='power law fit')
     
@@ -285,7 +285,7 @@ for iapl in range(nsourcearealabelpairs):
         # ax.set_xscale('log')
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=0)
-my_savefig(fig,figdir,'Latent_Crossprediction_%s_%dsessions_perrank%s' % (version,nSessions,'_norm' if normalize else ''))
+# my_savefig(fig,figdir,'Latent_Crossprediction_%s_%dsessions_perrank%s' % (version,nSessions,'_norm' if normalize else ''))
 
 #%% 
 
