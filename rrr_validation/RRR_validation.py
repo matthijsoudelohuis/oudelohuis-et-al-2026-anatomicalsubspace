@@ -34,146 +34,6 @@ set_plot_basic_config()
 cm      = 1/2.54  # centimeters in inches
 
 #%% 
-session_list        = np.array([['LPE12223_2024_06_10'], #GR
-                                ['LPE10919_2023_11_06']]) #GR
-
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list,filter_noiselevel=True)
-
-# #%% Get all data 
-# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
-# report_sessions(sessions)
-
-#%%  Load data properly:        
-for ises in range(nSessions):
-    sessions[ises].load_tensor(load_calciumdata=True,calciumversion=params['calciumversion'],keepraw=True)
-t_axis = sessions[0].t_axis
-
-#%% 
-for ises in range(nSessions):
-    sessions[ises].respmat = np.nanmean(sessions[ises].tensor[:,:,(t_axis>0) & (t_axis<1)],axis=2) #average across time axis to get mean response to each stimulus condition
-
-#%%
-sessions = compute_tuning_wrapper(sessions)
-
-#%% Example reconstruction of activity in the target area:
-#Perform RRR on raw calcium data: 
-ises    = 0
-ses     = sessions[ises]
-
-nN                  = 500
-nM                  = 500
-nranks              = 5
-lam                 = 0
-
-# idx_T               = ses.trialdata['Orientation']==0
-excerpt_length      = 1000
-t_start             = np.random.choice(ses.ts_F,1,replace=False)[0]
-idx_T               = (ses.ts_F>t_start) & (ses.ts_F<t_start+excerpt_length)
-ts                  = ses.ts_F[idx_T]
-nTs                 = np.sum(idx_T)
-
-idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
-                        ses.celldata['noise_level']<10),axis=0))[0]
-idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
-                        ses.celldata['noise_level']<10),axis=0))[0]
-
-np.random.seed(9)
-idx_areax_sub       = np.random.choice(idx_areax,nN,replace=False)
-idx_areay_sub       = np.random.choice(idx_areay,nM,replace=False)
-
-X                   = sessions[ises].calciumdata.to_numpy()[np.ix_(idx_T,idx_areax_sub)]
-Y                   = sessions[ises].calciumdata.to_numpy()[np.ix_(idx_T,idx_areay_sub)]
-
-X                   = zscore(X,axis=0)  #Z score activity for each neuron across trials/timepoints
-Y                   = zscore(Y,axis=0)
-
-Y_hat_rr               = np.full((nTs,nM,nranks),np.nan)  
-
-B_hat         = LM(Y,X, lam=lam)
-
-Y_hat         = X @ B_hat
-
-# decomposing and low rank approximation of A
-U, s, V = linalg.svd(Y_hat)
-S = linalg.diagsvd(s,U.shape[0],s.shape[0])
-
-for r in range(nranks):
-    Y_hat_rr[:,:,r]       = X @ B_hat @ V[:r,:].T @ V[:r,:] #project test data onto low rank subspace
-
-sourceweights = np.mean(np.abs(B_hat @ V[:r,:].T @ V[:r,:]),axis=1)
-targetweights = np.mean(np.abs(B_hat @ V[:r,:].T @ V[:r,:]),axis=0)
-
-targetr2 =np.full((nM,nranks),np.nan)
-for r in range(nranks):
-    targetr2[:,r]       = r2_score(Y,Y_hat_rr[:,:,r],multioutput='raw_values') 
-    
-r = nranks-1
-# targetweights = r2_score(Y,Y_hat_rr[:,:,r],multioutput='raw_values') + (r2_score(Y,Y_hat_rr[:,:,r],multioutput='raw_values') - r2_score(Y,Y_hat_rr[:,:,1],multioutput='raw_values'))
-targetweights = np.median(np.diff(targetr2,axis=1),axis=1)
-
-#%% Identify a chunk in time where there is a high prediction for high rank across areas:
-window_size = 10
-window_step = 1
-nTs = len(ts)
-nWindows = int(np.ceil((nTs-window_size)/window_step))
-variance_explained = np.full((nWindows,nranks),np.nan)  
-
-t_starts = np.empty(nWindows)
-for iw in range(nWindows):
-    t_starts[iw] = ts[0]+iw*window_step
-    t_end = t_starts[iw]+window_size
-    idx_window = (ts>=t_starts[iw]) & (ts<t_end)
-    Y_window = Y[idx_window]
-    for r in range(nranks):
-        variance_explained[iw,r] = EV(Y_window,Y_hat_rr[idx_window,:,r])
-
-plt.plot(t_starts,variance_explained)
-
-example_tstart = t_starts[np.nanargmax(variance_explained[:,1])]
-
-#%% Make figure
-scale = 0.2
-# lw_orig = 0.7
-lw = 0.4
-nshowneurons = 10
-nrankstoplot = 5
-clrs_ranks = sns.color_palette('magma_r',n_colors=nrankstoplot+1)
-
-fig,axes = plt.subplots(1,2,figsize=(7*cm,4*cm),sharex=True,sharey=True)
-ax = axes[0]
-
-source_example_neurons = np.argsort(-sourceweights)[:nshowneurons]
-for i,iN in enumerate(source_example_neurons):
-    ax.plot(ts,X[:,iN]*scale+i,color='k',lw=lw)
-ax.set_title('source activity (V1)')
-ax.axis('off')
-ax.add_artist(AnchoredSizeBar(ax.transData, 1,
-            "1 Sec", loc=4, frameon=False))
-
-target_example_neurons = np.argsort(-targetweights)[:nshowneurons]
-ax = axes[1]
-plothandles = []
-for r in range(0,nrankstoplot):
-    plothandles.append(plt.Line2D([0], [0], color=clrs_ranks[r], lw=lw))
-ax.legend(plothandles,['1','2','3','4','5'],title='Rank',bbox_to_anchor=(1.05, 1),
-          frameon=False,fontsize=6,ncol=1,loc='upper left')
-# handles2 = []
-for i,iN in enumerate(target_example_neurons):
-    ax.plot(ts,Y[:,iN]*scale+i,color='k',lw=lw)
-#     handles2.append(ax.plot(ts,Y[:,iN]*scale+i,color='k',lw=lw)[0])
-# ax.legend(handles2,['Target Neurons'],bbox_to_anchor=(1.05, 0.5),frameon=False,fontsize=6,ncol=1,loc='center left') 
-ax.set_title('target activity (PM)')
-ax.set_xlim([example_tstart-10,example_tstart+20])
-ax.axis('off')
-
-# my_savefig(fig,figdir,'V1PM_LowRank_Excerpt_%s_Rank%d.png' % (ses.sessiondata['session_id'][0],0),formats=['png']) 
-for r in range(1,nrankstoplot):
-    for i,iN in enumerate(target_example_neurons):
-        ax.plot(ts,Y_hat_rr[:,iN,r]*scale+i,color=clrs_ranks[r],lw=lw,linestyle='--')
-    # my_savefig(fig,figdir,'V1PM_LowRank_Excerpt_%s_Rank%d.png' % (ses.sessiondata['session_id'][0],r+1),formats=['png']) 
-# my_savefig(fig,figdir,'V1PM_LowRank_Excerpt_%s_Rank%d' % (ses.session_id,r+1)) 
-
-#%% 
 ####### #     #    #    #     # ######  #       #######    ######     #    #     # #    # 
 #        #   #    # #   ##   ## #     # #       #          #     #   # #   ##    # #   #  
 #         # #    #   #  # # # # #     # #       #          #     #  #   #  # #   # #  #   
@@ -181,6 +41,12 @@ for r in range(1,nrankstoplot):
 #         # #   ####### #     # #       #       #          #   #   ####### #   # # #  #   
 #        #   #  #     # #     # #       #       #          #    #  #     # #    ## #   #  
 ####### #     # #     # #     # #       ####### #######    #     # #     # #     # #    # 
+
+#%% Load one session:
+session_list        = np.array([['LPE10919_2023_11_06']])
+sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list,filter_noiselevel=True)
+sessions[0].load_tensor(load_calciumdata=True,calciumversion=params['calciumversion'],keepraw=False)
+t_axis = sessions[0].t_axis
 
 #%% Show RRR example: 
 nranks              = 40
@@ -213,16 +79,13 @@ Y                   = Y.reshape(len(idx_areay),-1).T
 
 ev,rank,R2_ranks = RRR_wrapper(Y, X, nN=nsampleneurons,nM=nsampleneurons,nK=None,lam=0,nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
 
-#%% 
-R2_ranks_r = np.reshape(R2_ranks,(nranks,nmodelfits*kfold))
-
 #%% Plotting, show performance across ranks:
 xticks = [0,10,20,30,40]
 fig,axes = plt.subplots(1,1,figsize=(3,3))
 ax = axes
 handles = []
+R2_ranks_r = np.reshape(R2_ranks,(nranks,nmodelfits*kfold))
 handles.append(shaded_error(range(nranks),R2_ranks_r.T,error='sem',color='k',alpha=0.3,ax=ax))
-# ax.text(rank,ev,'|',color='b',fontsize=15,horizontalalignment='center',verticalalignment='bottom')
 ax.axhline(y=ev,color='k',linestyle='--',alpha=0.5) #ax.text(rank,ev,'|',color='b',fontsize=15,horizontalalignment='center',verticalalignment='bottom')
 ax.axvline(x=rank,color='k',linestyle='--',alpha=0.5) #ax.text(rank,ev,'|',color='b',fontsize=15,horizontalalignment='center',verticalalignment='bottom')
 ax.set_ylim([0,my_ceil(ax.get_ylim()[1],2)])
@@ -232,12 +95,26 @@ ax.set_ylabel('Performance ($R^2$)')
 sns.despine(fig=fig,top=True,right=True,trim=True)
 my_savefig(fig,figdir,'RRR_rank_ev_procedure_%d' % nsampleneurons)
 
+
+####### ### #       ####### ####### ######  ### #     #  #####  
+#        #  #          #    #       #     #  #  ##    # #     # 
+#        #  #          #    #       #     #  #  # #   # #       
+#####    #  #          #    #####   ######   #  #  #  # #  #### 
+#        #  #          #    #       #   #    #  #   # # #     # 
+#        #  #          #    #       #    #   #  #    ## #     # 
+#       ### #######    #    ####### #     # ### #     #  #####  
+
+# #%% Get all data 
+sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
+sessions = sessions[:10]
+report_sessions(sessions)
+[sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=False,compute_respmat=True)
+sessions = compute_tuning_wrapper(sessions)
+
 #%% Show the effect of averaging over time, of reducing the signal and only having noise, 
 # and of selecting responsive neurons
-
 nranks              = 40
 nmodelfits          = 10 #number of times new neurons are resampled 
-kfold               = 5
 nsampleneurons      = 25
 # nsampleneurons      = 500
 idx_resp            = np.where((t_axis>=0) & (t_axis<=2))[0]
@@ -260,12 +137,10 @@ for iT in range(nT):
             idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
                     ses.celldata['noise_level']<params['maxnoiselevel'],
                     ses.celldata['gOSI']>0.5
-                    # ses.celldata['tuning_var']>0.025
                     ),axis=0))[0]
             idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
                             ses.celldata['noise_level']<params['maxnoiselevel'],
                             ses.celldata['gOSI']>0.5
-                            # ses.celldata['tuning_var']>0.025
                             ),axis=0))[0]
 
         else:
@@ -284,17 +159,16 @@ for iT in range(nT):
 
         X           = block_reduce(X, block_size=(1,iT+1), func=np.mean, cval=np.mean(X))
         Y           = block_reduce(Y, block_size=(1,iT+1), func=np.mean, cval=np.mean(Y))
-        # if
-        R2_cv[iT,ifilter],_,_ = RRR_wrapper(Y, X, nN=nsampleneurons,nM=nsampleneurons,nK=None,lam=0,nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
 
-#%%
+        R2_cv[iT,ifilter],_,_ = RRR_wrapper(Y, X, nN=nsampleneurons,nM=nsampleneurons,nK=None,lam=params['lam'],nranks=nranks,
+                                            kfold=params['kfold'],nmodelfits=nmodelfits)
+
+#%% Plotting
 fig,axes = plt.subplots(1,1,figsize=(3.2*cm,3.2*cm))
 ax = axes
 handles = []
 for ifilter in range(2):
     handles.append(plt.plot(np.arange(1,nT+1),R2_cv[:,ifilter],color='k',label='Raw, All Neurons',linestyle=['-','--'][ifilter])[0])
-# handles.append(plt.plot(R2_cv[:,0,0],color='k',label='Raw, All Neurons')[0])
-# handles.append(plt.plot(R2_cv[:,0,1],color='k',label='Raw, All Neurons')[0])
 ax.legend(handles=handles,labels=['All neurons','Tuned neurons'],loc='center',frameon=False,fontsize=6,reverse=True)
 my_legend_strip(ax)
 ax.set_xlim([1,nT])
@@ -304,162 +178,6 @@ ax.set_xlabel('# Frames Averaged')
 ax.set_ylabel('Performance ($R^2$)')
 sns.despine(fig=fig,top=True,right=True,trim=True,offset=3)
 my_savefig(fig,figdir,'RRR_effect_of_averaging_and_selecting_responsive_neurons')
-
-#%%
-from scipy.stats import pearsonr
-
-# Y: shape (n_timepoints, n_neurons, n_trials)
-def split_half_reliability(Y):
-    n_trials = Y.shape[2]
-    idx = np.random.permutation(n_trials)
-    half = n_trials // 2
-    Y1 = np.mean(Y[:, :, idx[:half]], axis=2)
-    Y2 = np.mean(Y[:, :, idx[half:]], axis=2)
-    
-    # Flatten over time and neurons for population-level reliability
-    r, _ = pearsonr(Y1.flatten(), Y2.flatten())
-    
-    # Spearman–Brown correction
-    r_sb = (2 * r) / (1 + r)
-    R2_ceiling = r_sb ** 2
-    return R2_ceiling
-
-#%% Get all data 
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
-report_sessions(sessions)
-# sessions = sessions[:10]
-
-#%%  Load data properly:    
-params['calciumversion'] = 'deconv'
-[sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=False,compute_respmat=True)
-
-#%%
-# sessions = compute_tuning_wrapper(sessions)
-
-#%% 
-   #     #####  ######  #######  #####   #####     ####### ### #     # ####### 
-  # #   #     # #     # #     # #     # #     #       #     #  ##   ## #       
- #   #  #       #     # #     # #       #             #     #  # # # # #       
-#     # #       ######  #     #  #####   #####        #     #  #  #  # #####   
-####### #       #   #   #     #       #       #       #     #  #     # #       
-#     # #     # #    #  #     # #     # #     #       #     #  #     # #       
-#     #  #####  #     # #######  #####   #####        #    ### #     # ####### 
-
-#%% RRR across time relative to stimulus onset:
-lam                 = 0
-nranks              = 10 #number of ranks of RRR to be evaluated
-nmodelfits          = 10 #number of times new neurons are resampled - many for final run
-kfold               = 5
-maxnoiselevel       = 20
-nStim               = 8
-
-ntimebins           = len(t_axis)
-nsampleneurons      = 100
-
-arealabelpairs      = ['V1-PM','PM-V1']
-narealabelpairs     = len(arealabelpairs)
-clrs_arealabelpairs = get_clr_area_pairs(arealabelpairs)
-
-R2_cv               = np.full((narealabelpairs,ntimebins,nSessions,nStim),np.nan)
-optim_rank          = np.full((narealabelpairs,ntimebins,nSessions,nStim),np.nan)
-R2_ranks            = np.full((narealabelpairs,ntimebins,nSessions,nStim,nranks,nmodelfits,kfold),np.nan)
-
-for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model across time relative to stimulus onset'):
-    for iapl, arealabelpair in enumerate(arealabelpairs):
-        ses.trialdata['stimCond'] = np.mod(ses.trialdata['stimCond'],8)
-        alx,aly = arealabelpair.split('-')
-
-        idx_areax           = np.where(np.all((ses.celldata['roi_name']==alx,
-                                ses.celldata['noise_level']<maxnoiselevel),axis=0))[0]
-        idx_areay           = np.where(np.all((ses.celldata['roi_name']==aly,
-                                ses.celldata['noise_level']<maxnoiselevel,	
-                                ),axis=0))[0]
-        if len(idx_areax)<nsampleneurons or len(idx_areay)<nsampleneurons:
-            continue
-
-        # for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
-        for istim,stim in enumerate([1,2]): # loop over orientations 
-            idx_T   = ses.trialdata['stimCond']==stim
-
-            X       = ses.tensor[np.ix_(idx_areax,idx_T,np.arange(ntimebins))]#.squeeze().T
-            Y       = ses.tensor[np.ix_(idx_areay,idx_T,np.arange(ntimebins))]#.squeeze().T
-
-            R2_cv[iapl,:,ises,istim],optim_rank[iapl,:,ises,istim],R2_ranks[iapl,:,ises,istim,:,:,:]      = RRR_wrapper_tensor(
-                                                                        Y,X, nN=nsampleneurons,lam=lam,
-                                                                       nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
-            # RRR_wrapper_tensor
-            # for ibin in range(ntimebins):
-                # X       = ses.tensor[np.ix_(idx_areax,idx_T,[ibin])].squeeze().T
-                # Y       = ses.tensor[np.ix_(idx_areay,idx_T,[ibin])].squeeze().T
-
-                # R2_cv[iapl,ibin,ises,istim],optim_rank[iapl,ibin,ises,istim],R2_ranks[iapl,ibin,ises,istim,:,:,:]      = RRR_wrapper(
-                #                                                         Y[:,:,ibin].T, X[:,:,ibin].T, nN=nsampleneurons,lam=lam,
-                #                                                        nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
-       
-            # for ibin in range(ntimebins):
-            #     idx_bins = np.arange(ibin-1,ibin+2)
-            #     idx_bins = idx_bins[(idx_bins>=0) & (idx_bins<ntimebins)]
-            #     # print(idx_bins)
-            #     X       = ses.tensor[np.ix_(idx_areax,idx_T,idx_bins)].reshape(len(idx_areax),-1).T
-            #     Y       = ses.tensor[np.ix_(idx_areay,idx_T,idx_bins)].reshape(len(idx_areay),-1).T
-
-            #     R2_cv[iapl,ibin,ises,istim],optim_rank[iapl,ibin,ises,istim],R2_ranks[iapl,ibin,ises,istim,:,:,:]      = RRR_wrapper(
-            #                                                             Y, X, nN=nsampleneurons,lam=lam,
-            #                                                            nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
-
-print(np.nanmean(R2_cv))
-
-#%% Average across FF and FB and across folds: 
-# R2_toplot            = np.nanmean(R2_cv,axis=(0,3))
-# rank_toplot          = np.nanmean(optim_rank,axis=(0,3))
-
-#%% Plotting, show performance across time:
-t_ticks = np.array([-1,0,1,2])
-fig,axes = plt.subplots(1,1,figsize=(3.5*cm,3.5*cm))
-ax = axes
-handles = []
-for iapl, arealabelpair in enumerate(arealabelpairs):
-    R2_toplot            = R2_cv[iapl].reshape(ntimebins,nSessions*nStim)
-    handles.append(shaded_error(t_axis,R2_toplot.T,error='sem',color=clrs_arealabelpairs[iapl],alpha=0.3,ax=ax))
-
-# handles.append(shaded_error(t_axis,R2_toplot[:,:].T,error='sem',color=clrs_arealabelpairs[iapl],alpha=0.3,ax=ax))
-ax.set_ylim([0,my_ceil(ax.get_ylim()[1],2)])
-thickness = ax.get_ylim()[1]/20
-ax.fill_between([0,0.75], 0 - thickness/2, 0 + thickness/2, color='k', alpha=1)
-ax.legend(handles=handles,labels=arealabelpairs,loc='best',fontsize=8)
-my_legend_strip(ax)
-ax_nticks(ax,3)
-ax.set_xticks(t_ticks)
-ax.set_xlim([-.5,2])
-ax.set_xticklabels(t_ticks)
-ax.set_xlabel('Time (sec)')
-ax.set_ylabel('$R^2$')
-sns.despine(fig=fig,top=True,right=True,trim=False,offset=3)
-my_savefig(fig,figdir,'RRR_perf_across_time_deconv')
-
-#%% Plotting, showing rank across time:
-t_ticks = np.array([-1,0,1,2])
-fig,axes = plt.subplots(1,1,figsize=(3.5*cm,3.5*cm))
-ax = axes
-handles = []
-for iapl, arealabelpair in enumerate(arealabelpairs):
-    rank_toplot            = optim_rank[iapl].reshape(ntimebins,nSessions*nStim)
-    handles.append(shaded_error(t_axis,rank_toplot.T,error='sem',color=clrs_arealabelpairs[iapl],alpha=0.3,ax=ax))
-
-# for iapl, arealabelpair in enumerate(arealabelpairs):
-# handles.append(shaded_error(t_axis,rank_toplot[:,:].T,error='sem',color=clrs_arealabelpairs[iapl],alpha=0.3,ax=ax))
-ax.set_ylim([0,my_ceil(ax.get_ylim()[1],2)])
-thickness = ax.get_ylim()[1]/20
-ax.fill_between([0,0.75], 0 - thickness/2, 0 + thickness/2, color='k', alpha=1)
-# ax.legend(handles=handles,labels=arealabelpairs,loc='best',fontsize=8)
-# my_legend_strip(ax)
-ax_nticks(ax,3)
-ax.set_xticks(t_ticks)
-ax.set_xticklabels(t_ticks)
-ax.set_xlabel('Time (sec)')
-ax.set_ylabel('RRR R2')
-sns.despine(fig=fig,top=True,right=True,trim=True)
-# my_savefig(fig,figdir,'RRR_rank_across_time')
 
 #%% 
 ######  ####### ######      #####  ### ####### ####### 
@@ -477,7 +195,6 @@ npopsizes           = len(popsizes)
 nranks              = 40
 nStim               = 16
 nmodelfits          = 5 #number of times new neurons are resampled 
-kfold               = 5
 idx_resp            = np.where((t_axis>=0) & (t_axis<=1.5))[0]
 R2_cv               = np.full((nSessions,nStim,npopsizes,npopsizes),np.nan)
 optim_rank          = np.full((nSessions,nStim,npopsizes,npopsizes),np.nan)
@@ -507,7 +224,8 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
         for ixpop,xpop in enumerate(popsizes):
             for iypop,ypop in enumerate(popsizes):
                 if len(idx_areax)>=xpop and len(idx_areay)>=ypop:
-                    R2_cv[ises,istim,ixpop,iypop],optim_rank[ises,istim,ixpop,iypop],_ = RRR_wrapper(Y, X, nN=xpop,nM=ypop,nK=None,lam=0,nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
+                    R2_cv[ises,istim,ixpop,iypop],optim_rank[ises,istim,ixpop,iypop],_ = RRR_wrapper(Y, X, nN=xpop,nM=ypop,nK=None,
+                                                                                                     lam=params['lam'],nranks=nranks,kfold=params['kfold'],nmodelfits=nmodelfits)
 
 #%% Plot R2 for different number of V1 and PM neurons
 # from  matplotlib.colors import LinearSegmentedColormap
@@ -555,7 +273,7 @@ arealabelpairs  = ['V1-V1',
 clrs_arealabelpairs = get_clr_area_pairs(arealabelpairs)
 narealabelpairs     = len(arealabelpairs)
 
-nsampleneurons      = 50
+# nsampleneurons      = 50
 nsampleneurons      = 100
 nranks              = 25
 nmodelfits          = 15 #number of times new neurons are resampled 
@@ -685,6 +403,10 @@ plt.tight_layout()
 sns.despine(offset=3,top=True,right=True)
 my_savefig(fig,figdir,'RRR_R2Rank_ratio_WithinVSAcross_%dneurons' % nsampleneurons)
 
+
+
+
+
 #%% 
 ######  ####### ######  ######  #######  #####     #    ####### ####### ######  
 #     # #       #     # #     # #       #     #   # #      #    #       #     # 
@@ -694,121 +416,6 @@ my_savefig(fig,figdir,'RRR_R2Rank_ratio_WithinVSAcross_%dneurons' % nsampleneuro
 #     # #       #       #    #  #       #     # #     #    #    #       #     # 
 ######  ####### #       #     # #######  #####  #     #    #    ####### ######  
 
-#%% Does performance increase with increasing number of neurons? Predicting PM from V1 with different number of V1 and PM neurons
-popsizes            = np.array([5,10,20,50,100,200,500])
-# popsizes            = np.array([5,10,20])
-npopsizes           = len(popsizes)
-nranks              = 40
-nmodelfits          = 5 #number of times new neurons are resampled 
-kfold               = 5
-R2_cv               = np.full((nSessions,npopsizes,npopsizes),np.nan)
-optim_rank          = np.full((nSessions,npopsizes,npopsizes),np.nan)
-
-for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for different population sizes'):
-    # idx_T               = ses.trialdata['Orientation']==0
-    idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
-    idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
-                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
-    idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
-                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
-    
-    X                   = sessions[ises].respmat[np.ix_(idx_areax,idx_T)].T
-    Y                   = sessions[ises].respmat[np.ix_(idx_areay,idx_T)].T
-    for ixpop,xpop in enumerate(popsizes):
-        for iypop,ypop in enumerate(popsizes):
-            if len(idx_areax)>=xpop and len(idx_areay)>=ypop:
-                R2_cv[ises,ixpop,iypop],optim_rank[ises,ixpop,iypop] = RRR_wrapper(Y, X, nN=xpop,nM=ypop,nK=None,lam=0,nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
-
-#%% Plot R2 for different number of V1 and PM neurons
-from  matplotlib.colors import LinearSegmentedColormap
-cmap=LinearSegmentedColormap.from_list('rg',["r","g"], N=256) 
-cmap = sns.color_palette('magma', as_cmap=True)
-fig,axes = plt.subplots(1,2,figsize=(6,3),sharey=True,sharex=True)
-ax = axes[0]
-s = ax.imshow(np.nanmean(R2_cv,axis=0).T,cmap=cmap,vmin=0,vmax=np.nanmax(np.nanmean(R2_cv,axis=0)),origin='lower')
-ax.set_xticks(range(npopsizes),labels=popsizes)
-ax.set_yticks(range(npopsizes),labels=popsizes)
-fig.colorbar(s, ax=ax,shrink=0.3,orientation='vertical')
-ax.set_title('R2')
-ax.set_xlabel('# source neurons')
-ax.set_ylabel('# target neurons')
-
-# Does the dimensionality increase with increasing number of neurons?
-ax = axes[1]
-s = ax.imshow(np.nanmean(optim_rank,axis=0).T,cmap=cmap,vmin=0,vmax=20,origin='lower')
-ax.set_xticks(range(npopsizes),labels=popsizes)
-ax.set_yticks(range(npopsizes),labels=popsizes)
-fig.colorbar(s, ax=ax,shrink=0.3,orientation='vertical')
-ax.set_xlabel('# source neurons')
-# ax.set_ylabel('# target neurons')
-ax.set_title('Rank')
-
-sns.despine(top=True,right=True,offset=3)
-
-plt.tight_layout()
-my_savefig(fig,figdir,'R2_RRR_Rank_PopSize_Both_V1PM_%dsessions.png' % nSessions,formats=['png'])
-
-#%% Does performance increase with increasing number of neurons? Predicting PM from V1 with different number of V1 and PM neurons
-popsizes            = np.array([5,10,20,50,100,200,500])
-# popsizes            = np.array([5,10,20,50,100])
-npopsizes           = len(popsizes)
-nranks              = 50
-nmodelfits          = 5 #number of times new neurons are resampled 
-kfold               = 5
-R2_cv               = np.full((nSessions,npopsizes),np.nan)
-optim_rank          = np.full((nSessions,npopsizes),np.nan)
-
-for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model for different population sizes'):
-    # idx_T               = ses.trialdata['Orientation']==0
-    idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
-    idx_areax           = np.where(np.all((ses.celldata['roi_name']=='V1',
-                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
-    idx_areay           = np.where(np.all((ses.celldata['roi_name']=='PM',
-                            ses.celldata['noise_level']<params['maxnoiselevel']),axis=0))[0]
-    
-    X                   = sessions[ises].respmat[np.ix_(idx_areax,idx_T)].T
-    Y                   = sessions[ises].respmat[np.ix_(idx_areay,idx_T)].T
-    for ipop,pop in enumerate(popsizes):
-        if len(idx_areax)>=pop and len(idx_areay)>=pop:
-            R2_cv[ises,ipop],optim_rank[ises,ipop]             = RRR_wrapper(Y, X, nN=pop,nK=None,lam=0,nranks=nranks,kfold=kfold,nmodelfits=nmodelfits)
-
-#%% Plot R2 for different number of V1 and PM neurons
-clrs_popsizes = sns.color_palette("rocket",len(popsizes))
-
-fig,axes = plt.subplots(1,2,figsize=(6,3),sharex=True)
-ax = axes[0]
-ax.scatter(popsizes, np.nanmean(R2_cv,axis=0), marker='o', color=clrs_popsizes)
-# ax.plot(popsizes, np.nanmean(R2_cv,axis=0),color='k', linewidth=2)
-shaded_error(popsizes,R2_cv,center='mean',error='sem',color='k',ax=ax)
-ax.set_ylim([0,0.3])
-# ax.set_xticks(popsizes)
-ax.axhline(y=0,color='k',linestyle='--')
-
-ax.set_xlabel('Population size')
-ax.set_ylabel('RRR R2')
-ax_nticks(ax,4)
-# ax.set_xscale('log')
-
-# Does the dimensionality increase with increasing number of neurons?
-ax = axes[1]
-ax.scatter(popsizes, np.nanmean(optim_rank,axis=0), marker='o', color=clrs_popsizes)
-shaded_error(popsizes,optim_rank,center='mean',error='sem',color='k',ax=ax)
-
-ax.plot(popsizes,popsizes**0.5,color='r',linestyle='--',linewidth=1)
-ax.text(100,13,'$n^{1/2}$',color='r',fontsize=12)
-ax.plot(popsizes,popsizes**0.3333,color='g',linestyle='--',linewidth=1)
-ax.text(100,2,'$n^{1/3}$',color='g',fontsize=12)
-
-ax.set_ylim([0,20])
-ax.set_ylabel('Dimensionality')
-ax.set_xlabel('Population size')
-ax.set_xticks(popsizes[::2])
-ax.set_xticks([10,100,200,500])
-
-sns.despine(top=True,right=True,offset=3)
-
-plt.tight_layout()
-my_savefig(fig,figdir,'R2_RRR_Rank_PopSize_V1PM_%dsessions.png' % nSessions,formats=['png'])
 
 #%% Show RRR performance as a function of the number of trials:
 nsampleneurons  = 500

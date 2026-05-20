@@ -55,7 +55,7 @@ clrs_arealabelpairs = ['grey','grey','red']
 narealabelpairs = 3
 fig, axes = plt.subplots(1,1,figsize=(6*cm,5*cm))
 ax = axes
-ises = 0
+ises = 2
 handles = []
 # ax.plot(range(params['nranks']),np.nanmean(R2_ranks[0],axis=(0,1,3,4)),label='All neurons',color='grey')
 # ax.plot(np.nanmean(R2_ranks[1][ises],axis=(0,2,3)),label=sourcearealabelpairs[0],color=clrs_arealabelpairs[0])
@@ -78,8 +78,8 @@ sns.despine(fig=fig,trim=False,top=True,right=True)
 #%% Show the mean across sessions:
 clrs_arealabelpairs = ['grey','grey','red']
 
-nrankstoplot = 12
-xposrank = 10
+nrankstoplot = 10
+xposrank = 8
 idxs = np.array([1,3])
 
 fig,axes = plt.subplots(1,2,figsize=(7*cm,3.5*cm),sharex=True,sharey=True)
@@ -92,10 +92,6 @@ for idirec,(direc,optim_rank,R2_cv,R2_ranks,alps) in enumerate(zip(['FF','FB'],[
     alps = np.array(alps)
     ax = axes[idirec]
     handles = []
-    # ax.plot(np.nanmean(R2_ranks[idxs[0]],axis=(0,1,3,4)),label=arealabeled_to_figlabels(sourcearealabelpairs[idxs[0]-1]),
-    #         color=clrs_arealabelpairs[idxs[0]-1],linewidth=2)
-    # ax.plot(np.nanmean(R2_ranks[idxs[1]],axis=(0,1,3,4)),label=arealabeled_to_figlabels(sourcearealabelpairs[idxs[1]-1]),
-    #         color=clrs_arealabelpairs[idxs[1]-1],linewidth=2)
     ydata = np.nanmean(R2_ranks[idxs[0]],axis=(3,4))
     ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
     handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
@@ -136,13 +132,59 @@ plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 my_savefig(fig,figdir,'RRR_joint_R2_labunl_%dsessions_spont' % params['nSessions'])
 
-#%%
+#%% Show the mean R2_cv across sessions:
+clrs_arealabelpairs = ['grey','grey','red']
+normalize = True
+idxs = np.array([1,3])
+fig,axes = plt.subplots(1,2,figsize=(6*cm,3.8*cm),sharex=False,sharey=False)
+for idirec,(direc,optim_rank,R2_cv,R2_ranks,alps) in enumerate(zip(['FF','FB'],[optim_rank_FF,optim_rank_FB],[R2_cv_FF,R2_cv_FB],
+                                                                 [R2_ranks_FF,R2_ranks_FB],[sourcearealabelpairs_FF,sourcearealabelpairs_FB])):
+    ax = axes[idirec]
+    if normalize:
+        data = R2_cv[idxs]
+        data -= data[0][np.newaxis,:,:]
+        for iidx,idx in enumerate(idxs):
+            sns.stripplot(x=iidx,y=data[iidx].flatten(),color=clrs_arealabelpairs[idx-1],ax=ax,size=3,alpha=0.2)
+            sns.stripplot(x=iidx,y=np.nanmean(data[iidx],axis=-1),color=clrs_arealabelpairs[idx-1],ax=ax,size=4,alpha=1)
+
+            # sns.stripplot(x=iidx,y=R2_cv[idx].flatten(),color=clrs_arealabelpairs[idx-1],ax=ax,size=3,alpha=0.2)
+            # sns.stripplot(x=iidx,y=np.nanmean(R2_cv[idx],axis=-1),color=clrs_arealabelpairs[idx-1],ax=ax,size=4,alpha=1)
+        # ax.plot(np.row_stack((np.zeros(params['nSessions']*params['nStim']),np.ones(params['nSessions']*params['nStim']))),
+                # np.row_stack((R2_cv[idxs[0]].flatten(),R2_cv[idxs[1]].flatten())),color='k',alpha=0.3,linewidth=0.5)
+        ax.plot(np.row_stack((np.zeros(params['nSessions']),np.ones(params['nSessions']))),
+                np.row_stack((np.nanmean(data[0],axis=-1),np.nanmean(data[1],axis=-1))),color='k',alpha=0.3,linewidth=0.5)
+        
+    else:
+
+        for iidx,idx in enumerate(idxs):
+            sns.stripplot(x=iidx,y=R2_cv[idx].flatten(),color=clrs_arealabelpairs[idx-1],ax=ax,size=3,alpha=0.2)
+            sns.stripplot(x=iidx,y=np.nanmean(R2_cv[idx],axis=-1),color=clrs_arealabelpairs[idx-1],ax=ax,size=4,alpha=1)
+        # ax.plot(np.row_stack((np.zeros(params['nSessions']*params['nStim']),np.ones(params['nSessions']*params['nStim']))),
+                # np.row_stack((R2_cv[idxs[0]].flatten(),R2_cv[idxs[1]].flatten())),color='k',alpha=0.3,linewidth=0.5)
+        ax.plot(np.row_stack((np.zeros(params['nSessions']),np.ones(params['nSessions']))),
+                np.row_stack((np.nanmean(R2_cv[idxs[0]],axis=-1),np.nanmean(R2_cv[idxs[1]],axis=-1))),color='k',alpha=0.3,linewidth=0.5)
+        
 
 
+    ax.set_xticks([0,1],alps[idxs-1])
+    if idirec == 0:
+        ax.set_ylabel(r'Cross-validated R$^2$')
+
+    x = R2_cv[idxs[0],:]
+    y = R2_cv[idxs[1],:]
+    nas = np.logical_or(np.isnan(x), np.isnan(y))
+    t,p = ttest_rel(x[~nas], y[~nas])
+    print('Paired t-test (R2): p=%.3f' % (p))
+
+    add_paired_ttest_results(ax,R2_cv[idxs[0]].flatten(),R2_cv[idxs[1]].flatten(),color='k',pos=[0.5,0.9])
+    ax.set_title(direc)
+plt.tight_layout()
+sns.despine(fig=fig,top=True,right=True,offset=3)
+my_savefig(fig,figdir,'RRR_joint_R2cv_%dsessions_spont' % params['nSessions'])
 
 
 #%% Identify which dimensions are particularly enhanced in labeled cells:
-noise_constant = 0
+noise_constant = 1e-4
 diffmetric = 'ratio' #'difference'
 clipval = 1e-4
 pthr = 0.05 / (params['nranks']-1) #Bonferroni correction for multiple comparisons across ranks
@@ -166,10 +208,8 @@ for idirec,(direc,optim_rank,R2_cv,R2_ranks,alps) in enumerate(zip(['FF','FB'],[
     elif direc == 'FB': 
         figlabels = ['PM$_{ND1}$/PM$_{ND2}$','PM$_{V1}$/PM$_{ND1}$']
 
-
     ax = axes[idirec]
     handles = []
-
     for iplotcontrast,plotcontrast in enumerate(plotcontrasts):
         if diffmetric == 'ratio':
             R2_ratiodata = (R2_toplot[plotcontrast[1],:,:]+noise_constant) / (R2_toplot[plotcontrast[0],:,:]+noise_constant) #add a small constant to avoid division by zero
@@ -186,7 +226,7 @@ for idirec,(direc,optim_rank,R2_cv,R2_ranks,alps) in enumerate(zip(['FF','FB'],[
         elif diffmetric == 'difference':
             ymeantoplot = np.nanmean(data[2] - data[1],axis=(0,1,3))
             yerrortoplot = np.nanstd(data[2] - data[1],axis=(0,1,3)) / np.sqrt(params['nSessions']*nmodelfits)
-        handles.append(shaded_error(np.arange(params['nranks']-1)+1,R2_ratiodata,ax=ax,color=clrs[iplotcontrast],alpha=0.3))
+        handles.append(shaded_error(np.arange(params['nranks']-1)+1,R2_ratiodata,error='ci95',ax=ax,color=clrs[iplotcontrast],alpha=0.3))
 
         for r in range(nrankstoplot):
             # ydata = (data[2,:,:,r]+noise_constant) /  (data[1,:,:,r]+noise_constant)
@@ -205,7 +245,7 @@ for idirec,(direc,optim_rank,R2_cv,R2_ranks,alps) in enumerate(zip(['FF','FB'],[
     ax_nticks(ax,4)
     ax.set_xticks(np.arange(nrankstoplot)[::3]+1)
     ax.set_xlim([1,nrankstoplot])
-    # ax.set_ylim([0.9,1.25])
+    # ax.set_ylim([0.9,1.5])
     ax.set_xlabel('dimension')
     ax.set_ylabel('R$^{2}$ %s' % diffmetric)
     if diffmetric == 'ratio':
