@@ -26,8 +26,6 @@ from utils.params import load_params
 params = load_params()
 
 params['regress_behavout'] = False
-params['maxnoiselevel'] = 20
-params['radius'] = 50
 
 #%% 
 figdir = os.path.join(params['figdir'],'RRR','Labeling')
@@ -41,7 +39,7 @@ session_list        = np.array([
                                 # ['LPE12223_2024_06_10'], #V1lab actually lower
                                 ['LPE09830_2023_04_10'], #V1 labeled higher predictive than V1unl
                                 # ['LPE10919_2023_11_06'],  #V1lab actually lower
-                                # ['LPE12223_2024_06_08'], #V1lab actually lower
+                                ['LPE12223_2024_06_08'], #V1lab actually lower
                                 # ['LPE11998_2024_05_02'], # V1lab lower?
                                 # ['LPE11622_2024_03_25'], #same
                                 # ['LPE09665_2023_03_14'], #V1lab higher
@@ -78,25 +76,25 @@ Nsub  = np.sum(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpair
                             ),axis=0))
 
 #%% 
-params['direction'] = 'FB'
-sourcearealabelpairs = ['PMunl','PMlab']
-targetarealabelpair = 'V1unl'
-clrs_arealabelpairs = np.array(['grey','red'])
+params['direction']     = 'FB'
+sourcearealabelpairs    = ['PMunl','PMlab']
+targetarealabelpair     = 'V1unl'
+clrs_arealabelpairs     = np.array(['grey','red'])
 
-ises                = 1
-stim                = 3
-starttimepoint_idx  = 1900
-ntimebins           = 250
-Nsub                = 50 #number of cells to sample
+ises                    = 1
+stim                    = 8
+starttimepoint_idx      = 150
+ntimebins               = 250
+Nsub                    = 50 #number of cells to sample
 
-Nsub  = np.sum(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpairs[1],
+Nsub    = np.sum(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpairs[1],
                             sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
                             ),axis=0))
 
 #%% Show example shared latents: 
 idx_resp            = np.where((t_axis>=0) & (t_axis<=2))[0]
 # scale_eigenvalues = True # scale eigenvalues
-rank                = 5 #rank of RRR ranks to plot
+rank                = 3 #rank of RRR ranks to plot
 kernel_size         = 3 #size of smoothing kernel in frames
 
 idx_areax1          = np.where(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpairs[0],
@@ -171,13 +169,15 @@ for r in range(rank):
 clrs = sns.color_palette('viridis',rank)
 # fig,axes = plt.subplots(rank,1,figsize=(7*cm,rank*2*cm),sharex=True)
 
-fig,axes = plt.subplots(rank,1,figsize=(7*cm,rank*2*cm),sharex=True,sharey=True)
+fig,axes = plt.subplots(rank,1,figsize=(4*cm,3.7*cm),sharex=True,sharey=True)
 
 idx_K = np.arange(starttimepoint_idx,starttimepoint_idx+ntimebins)
 for r in range(rank):
     ax = axes[r]
-    ax.plot(Z_1_smooth[idx_K,r],color=clrs_arealabelpairs[0],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[0]]))
-    ax.plot(Z_2_smooth[idx_K,r],color=clrs_arealabelpairs[1],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[1]]))
+    ax.plot(Z_1_smooth[idx_K,r],color=clrs_arealabelpairs[0],alpha=1,lw=0.8,
+            label=arealabeled_to_figlabels([sourcearealabelpairs[0]]))
+    ax.plot(Z_2_smooth[idx_K,r],color=clrs_arealabelpairs[1],alpha=1,lw=0.8,
+            label=arealabeled_to_figlabels([sourcearealabelpairs[1]]))
     ax.set_ylabel('Latent dim %d' % (r+1))
     if r==0:
         ax.legend(frameon=False,loc='lower left',fontsize=8)
@@ -188,4 +188,4 @@ for r in range(rank):
         ax.add_artist(AnchoredSizeBar(ax.transData, 10*sessions[ises].sessiondata['fs'][0],
                         "10 Sec", loc=4, frameon=False))
 plt.tight_layout()
-# my_savefig(fig,figdir,'Example_Latents_Joint_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
+my_savefig(fig,figdir,'Example_Latents_Joint_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
