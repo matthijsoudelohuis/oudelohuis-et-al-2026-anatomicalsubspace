@@ -4,9 +4,10 @@ This script analyzes noise correlations in a multi-area calcium imaging
 dataset with labeled projection neurons. The visual stimuli are oriented gratings.
 Matthijs Oude Lohuis, 2023, Champalimaud Center
 """
-DEBUG = True
 
 #%% ###################################################
+DEBUG = False
+
 import os
 import numpy as np
 import pandas as pd
@@ -15,16 +16,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.decomposition import PCA
 from scipy.stats import zscore,wilcoxon,ttest_rel
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
-from skimage.measure import block_reduce
 from sklearn.linear_model import RidgeCV
 
 from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
-from utils.psth import compute_tensor,compute_respmat
 from utils.plot_lib import * #get all the fixed color schemes
 from utils.regress_lib import *
-from utils.tuning import compute_tuning_wrapper
 from utils.params import load_params
 from utils.RRRlib import *
 
@@ -224,14 +221,13 @@ targetareas         = ['V1','PM']
 nsourceareas        = len(sourceareas)
 ntargetareas        = len(targetareas)
 
-
 rank_subspace       = 5
 nrankstoremove      = 5
 # nsampleneurons      = 50
 nsampleneurons      = 50
 nStim               = 16
 idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
-params['nmodelfits'] = 3
+params['nmodelfits'] = 10
 
 kf          = KFold(n_splits=params['kfold'],shuffle=True)
 
@@ -268,8 +264,8 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
                                 ses.celldata['noise_level']<params['maxnoiselevel']
                                 ),axis=0))[0]
 
-        # for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
-        for istim,stim in enumerate([0,4,7]): # loop over orientations 
+        for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
+        # for istim,stim in enumerate([0,4,7]): # loop over orientations 
             idx_T               = ses.trialdata['stimCond']==stim
             for imf in range(params['nmodelfits']):
                 idx_areax_split, idx_areay_split = np.array_split(np.random.permutation(idx_areax), 2)

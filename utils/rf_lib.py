@@ -20,9 +20,9 @@ from scipy.sparse.linalg import svds
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
-from utils.rf_lib import *
+# from utils.rf_lib import *
 from utils.pair_lib import *
-from utils.plot_lib import * #get all the fixed color schemes
+# from utils.plot_lib import * #get all the fixed color schemes
 from loaddata.session import Session
 
 def plot_rf_plane(celldata,r2_thr=0,rf_type='Fneu'):

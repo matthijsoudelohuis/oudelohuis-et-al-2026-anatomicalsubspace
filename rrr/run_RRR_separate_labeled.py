@@ -22,10 +22,10 @@ from datetime import datetime
 #%% Load parameters and settings:
 params = load_params()
 params['regress_behavout'] = False
-params['direction'] = 'FF'
+# params['direction'] = 'FF'
 # params['direction'] = 'FB'
 # params['direction'] = 'FF_AL'
-# params['direction'] = 'FB_AL'
+params['direction'] = 'FB_AL'
 
 version = 'Separate_labeled_%s_%s' % (params['direction'],'behavout' if params['regress_behavout'] else 'original')
 
@@ -53,6 +53,9 @@ elif params['direction'] =='FB_AL':
     targetarealabelpair = 'ALunl'
     only_all_areas = np.array(['V1','PM','AL'])
 
+if 'sessions' in locals():
+    del sessions
+
 #%% 
 session_list        = np.array([
                                 # ['LPE12223_2024_06_10'], #V1lab actually lower
@@ -79,7 +82,7 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=s
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,filter_noiselevel=False)
 report_sessions(sessions)
 
-#%% Wrapper function to load the tensor data, 
+#%% Wrapper function to load the tensor data
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'])
 
 #%% 
@@ -88,7 +91,7 @@ narealabelpairs     = len(sourcearealabelpairs)
 params['nsampleneurons']    = 20
 params['nranks']     = 20 #number of ranks of RRR to be evaluated
 params['nmodelfits']  = 100
-params['nmodelfits']  = 10
+# params['nmodelfits']  = 10
 
 params['nStim']     = 16
 # params['radius']     = 30

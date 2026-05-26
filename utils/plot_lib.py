@@ -18,6 +18,8 @@ import copy
 from statannotations.Annotator import Annotator
 from itertools import product
 
+from utils.corr_lib import filter_sharednan
+
 def set_plot_basic_config():
     plt.rcParams.update({'font.size': 7, 'xtick.labelsize': 6, 'ytick.labelsize': 6, 'axes.titlesize': 8,
                      'axes.labelsize': 7,'axes.labelpad': 1, 'ytick.major.pad': 1, 'xtick.major.pad': 1})
@@ -615,8 +617,9 @@ def plot_RRR_R2_arealabels(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_arealab
 
 
 # Plot the performance across sessions as a function of rank:
-def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_arealabelpairs,normalize=False):
+def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_arealabelpairs,normalize=False,xyerror=False):
     cm = 1/2.54
+    nrankstoplot       = 10
     nranks              = R2_ranks.shape[2]
     nSessions           = R2_cv.shape[1]
     # arealabelpairs2     = [al.replace('-','-\n') for al in arealabelpairs]
@@ -667,47 +670,66 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
     # ax.set_yticks(np.arange(0,0.3,0.025))
     ax.set_xlim([0,nranks])
     ax.set_xticks(np.arange(0,nranks,5))
-    # ax.set_ylim([0,0.15])
+    ax.set_xlim([0,nrankstoplot])
 
     ax=axes[1]
-    ax.scatter(R2_cv[0,:],R2_cv[1,:],color=clrs_arealabelpairs[0],marker='o',s=8)
+    R2_toplot = R2_cv.copy()
+    plotclip = my_ceil(np.nanpercentile(R2_toplot,99),2)
+    R2_toplot = np.clip(R2_toplot,0,plotclip)
+    ax.scatter(R2_toplot[0,:],R2_toplot[1,:],color=clrs_arealabelpairs[0],marker='o',s=8,alpha=0.25)
     
-    temp = np.reshape(R2_ranks,np.shape(R2_ranks)[:3] + (np.prod(np.shape(R2_ranks)[3:]),))
-    temp = np.nanstd(temp,axis=3)
-    R2_cv_error = np.full(np.shape(R2_cv),np.nan)
-    for i,j in np.ndindex(np.shape(R2_cv)):
-        # print(i,j)
-        if np.isnan(optim_rank[i,j]):
-            continue
-        R2_cv_error[i,j] = temp[i,j,int(optim_rank[i,j])]
-    ax.errorbar(R2_cv[0,:],R2_cv[1,:], xerr=R2_cv_error[0,:],yerr=R2_cv_error[1,:],color=clrs_arealabelpairs[0],
+    if xyerror:
+        temp = np.reshape(R2_ranks,np.shape(R2_ranks)[:3] + (np.prod(np.shape(R2_ranks)[3:]),))
+        temp = np.nanstd(temp,axis=3)
+
+        R2_cv_error = np.full(np.shape(R2_toplot),np.nan)
+        for i,j in np.ndindex(np.shape(R2_toplot)):
+            # print(i,j)
+            if np.isnan(optim_rank[i,j]):
+                continue
+            R2_cv_error[i,j] = temp[i,j,int(optim_rank[i,j])]
+
+        ax.errorbar(R2_toplot[0,:],R2_toplot[1,:], xerr=R2_cv_error[0,:],yerr=R2_cv_error[1,:],color=clrs_arealabelpairs[0],
                 marker='o',elinewidth=0.5,capsize=0,capthick=0,
                 fmt='none',markersize=5)
 
     ax.plot([0,1],[0,1],color='k',linestyle='--',linewidth=0.5)
-    ax.set_xlabel(alx1)
-    ax.set_ylabel(alx2)
+    ax.set_xlabel(alx1,color=clrs_arealabelpairs[0])
+    ax.set_ylabel(alx2,color=clrs_arealabelpairs[1])
     add_paired_ttest_results(ax,R2_cv[0,:],R2_cv[1,:],pos=[0.7,0.1])
     # add_paired_wilcoxon_results(ax,R2_cv[0,:],R2_cv[1,:],pos=[0.7,0.1])
     ax.set_title('R2 (cv)')
-    ax.set_xlim([0,my_ceil(np.nanmax(R2_cv),2)])
-    ax.set_ylim([0,my_ceil(np.nanmax(R2_cv),2)])
+    ax.set_xlim([0,plotclip])
+    ax.set_ylim([0,plotclip])
+    # ax.set_xlim([0,my_ceil(np.nanmax(R2_cv),2)])
+    # ax.set_ylim([0,my_ceil(np.nanmax(R2_cv),2)])
     ax.set_xticks(np.linspace(0,ax.get_xlim()[1],3))
+    ax.set_xticklabels(np.linspace(0,ax.get_xlim()[1],3),color=clrs_arealabelpairs[0])
     ax.set_yticks(np.linspace(0,ax.get_ylim()[1],3))
-    # ax_nticks(ax,4)
+    ax.set_yticklabels(np.linspace(0,ax.get_ylim()[1],3),color=clrs_arealabelpairs[1])
 
     ax=axes[2]
-    ax.scatter(optim_rank[0,:],optim_rank[1,:],color=clrs_arealabelpairs[0],marker='o',s=10,alpha=0.8)
-    ax.plot([0,20],[0,20],color='k',linestyle='--',linewidth=0.5)
-    ax.set_xlabel(alx1)
-    ax.set_ylabel(alx2)
+
+    #Show the estimated ranks for all sessions and stimuli:
+    nrankstoplot = my_ceil(np.nanmax(optim_rank),0)+1
+    xdata = optim_rank[0,:].flatten()
+    ydata = optim_rank[1,:].flatten()
+    xdata,ydata = filter_sharednan(xdata,ydata)
+    ax.hist2d(xdata, ydata, bins=[np.arange(-0.5, nrankstoplot+1.5, 1), 
+                                np.arange(-0.5, nrankstoplot+1.5, 1)], cmap='Blues',cmin=1)
+    cbar = plt.colorbar(ax.collections[0], ax=ax)
+    cbar.set_label('#datasets', rotation=270, labelpad=10)
+    ax.plot([0, nrankstoplot], [0, nrankstoplot], color='k', linestyle='--', linewidth=0.5)
+    ax.set_xlabel(alx1,color=clrs_arealabelpairs[0])
+    ax.set_ylabel(alx2,color=clrs_arealabelpairs[1])
     add_paired_ttest_results(ax,optim_rank[0,:],optim_rank[1,:],pos=[0.7,0.1])
-    # add_paired_wilcoxon_results(ax,optim_rank[0,:],optim_rank[1,:],pos=[0.7,0.1])
-    ax_nticks(ax,4)
-    # ax.set_xticks(np.arange(0,20,5))
-    # ax.set_yticks(np.arange(0,20,5))
     ax.set_xlim([0,my_ceil(np.nanmax(optim_rank),0)+1])
     ax.set_ylim([0,my_ceil(np.nanmax(optim_rank),0)+1])
+    ticks = np.arange(0,nrankstoplot+1,2)
+    ax.set_xticks(ticks)
+    ax.set_xticklabels(ticks,color=clrs_arealabelpairs[0])
+    ax.set_yticks(ticks)
+    ax.set_yticklabels(ticks,color=clrs_arealabelpairs[1])
     ax.set_title('Rank')
 
     sns.despine(top=True,right=True,offset=3)
