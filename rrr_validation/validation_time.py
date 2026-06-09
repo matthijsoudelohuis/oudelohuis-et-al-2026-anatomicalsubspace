@@ -196,7 +196,7 @@ nranks              = 10 #number of ranks of RRR to be evaluated
 nmodelfits          = 10 #number of times new neurons are resampled - many for final run
 kfold               = 5
 maxnoiselevel       = 20
-nStim               = 8
+nStim               = 16
 
 ntimebins           = len(t_axis)
 nsampleneurons      = 100
@@ -251,8 +251,8 @@ ax_nticks(ax,3)
 ax.set_xticks(t_ticks)
 ax.set_xlim([-.5,2])
 ax.set_xticklabels(t_ticks)
-ax.set_xlabel('Time (sec)')
-ax.set_ylabel('$R^2$')
+ax.set_xlabel('time (s)')
+ax.set_ylabel('performance')
 sns.despine(fig=fig,top=True,right=True,trim=False,offset=3)
 my_savefig(fig,figdir,'RRR_perf_across_time_deconv')
 

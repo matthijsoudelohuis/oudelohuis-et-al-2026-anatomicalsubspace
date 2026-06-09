@@ -6,21 +6,16 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 """
 
 #%% ###################################################
-import math, os
-
+import os
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import zscore
-from scipy import stats
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
-from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
 from utils.plot_lib import * #get all the fixed color schemes
 from utils.RRRlib import *
 from utils.regress_lib import *
-from utils.psth import compute_tensor
 from utils.params import load_params
 
 params = load_params()
@@ -65,9 +60,9 @@ sourcearealabelpairs = ['V1unl','V1lab']
 targetarealabelpair = 'PMunl'
 clrs_arealabelpairs = np.array(['grey','red'])
 
-ises                = 0
-stim                = 4
-starttimepoint_idx  = 300
+ises                = 1
+stim                = 15
+starttimepoint_idx  = 500
 ntimebins           = 250
 Nsub                = 150 #number of cells to sample
 
@@ -112,7 +107,7 @@ np.random.seed(99)
 
 idx_areax1_sub       = np.random.choice(idx_areax1,Nsub,replace=False)
 idx_areax2_sub       = np.random.choice(idx_areax2,Nsub,replace=False)
-idx_areay_sub        = np.random.choice(idx_areay,Nsub*2,replace=False)
+idx_areay_sub        = np.random.choice(idx_areay,Nsub*3,replace=False)
 
 idx_T               = sessions[ises].trialdata['stimCond']==stim
 
@@ -130,7 +125,12 @@ X2                  = zscore(X2,axis=0)
 Y                   = zscore(Y,axis=0)
 
 X                   = np.concatenate((X1,X2),axis=1)
- 
+
+X_1 = copy.deepcopy(X)
+X_1[:,Nsub:] = 0
+X_2 = copy.deepcopy(X)
+X_2[:,:Nsub] = 0
+
 #RRR X to Y
 B_hat         = LM(Y,X, lam=params['lam'])
 Y_hat         = X @ B_hat
@@ -142,21 +142,21 @@ U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
 B_rrr           = B_hat @ V[:rank,:].T @ V[:rank,:] #project beta coeff into low rank subspace
 Y_hat_test_rr   = X @ B_rrr
 
+# Project latents into predictive subspace:
+W       = B_hat @ V.T @ np.diag(s)  # Predictive X-directions scaled by their predictive power (eigenvalues)
+Z_1     = X_1 @ W
+Z_2     = X_2 @ W
+
 # How much of the variance in the source area is aligned with the predictive subspace:
-Ub, sb, Vb = svds(B_rrr,k=rank,which='LM')
-Ub, sb, Vb = Ub[:, ::-1], sb[::-1], Vb[::-1, :]
+# Ub, sb, Vb = svds(B_rrr,k=rank,which='LM')
+# Ub, sb, Vb = Ub[:, ::-1], sb[::-1], Vb[::-1, :]
 
-X_1 = copy.deepcopy(X)
-X_1[:,Nsub:] = 0
-Z_1 = X_1 @ Ub 
+# Z_1 = X_1 @ Ub 
+# Z_2 = X_2 @ Ub
 
-X_2 = copy.deepcopy(X)
-X_2[:,:Nsub] = 0
-Z_2 = X_2 @ Ub
-
-Z_1 = Z_1 @ np.diag(sb)
-Z_2 = Z_2 @ np.diag(sb)
-
+# Z_1 = Z_1 @ np.diag(sb)
+# Z_2 = Z_2 @ np.diag(sb)
+    
 #Little bit of smoothing:
 Z_1_smooth = np.zeros_like(Z_1)
 Z_2_smooth = np.zeros_like(Z_2)
@@ -188,4 +188,4 @@ for r in range(rank):
         ax.add_artist(AnchoredSizeBar(ax.transData, 10*sessions[ises].sessiondata['fs'][0],
                         "10 Sec", loc=4, frameon=False))
 plt.tight_layout()
-my_savefig(fig,figdir,'Example_Latents_Joint_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
+# my_savefig(fig,figdir,'Example_Latents_Joint_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))

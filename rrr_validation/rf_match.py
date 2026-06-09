@@ -6,15 +6,11 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 """
 
 #%% ###################################################
-import math, os
-
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import zscore
-from scipy import stats
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
-import pickle
 
 from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
@@ -22,10 +18,7 @@ from utils.plot_lib import * #get all the fixed color schemes
 # from utils.corr_lib import *
 from utils.RRRlib import *
 from utils.regress_lib import *
-from utils.psth import compute_tensor
 from utils.params import load_params
-from utils.corr_lib import filter_sharednan
-from datetime import datetime
 
 #%% Load parameters and settings:
 params = load_params()

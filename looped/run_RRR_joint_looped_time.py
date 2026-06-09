@@ -82,7 +82,7 @@ nsourcearealabelpairs     = len(sourcearealabelpairs)
 ntargetarealabelpairs     = len(targetarealabelpairs)
 
 Nsub                = 20 #number of neurons to subsample from each population (labeled and unlabeled in each area) for RRR model fitting, set to 0 to use all neurons that pass the noise level filter
-nranks              = 15 #number of ranks of RRR to be evaluated
+nranks              = 20 #number of ranks of RRR to be evaluated
 nmodelfits          = 100
 
 params['nStim']     = 16

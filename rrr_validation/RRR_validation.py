@@ -50,9 +50,9 @@ t_axis = sessions[0].t_axis
 
 #%% Show RRR example: 
 nranks              = 40
-nmodelfits          = 5 #number of times new neurons are resampled 
+nmodelfits          = 100 #number of times new neurons are resampled 
 kfold               = 5
-nsampleneurons      = 25
+# nsampleneurons      = 25
 nsampleneurons      = 500
 idx_resp            = np.where((t_axis>=0) & (t_axis<=1.5))[0]
 R2_ranks            = np.full((nranks,nmodelfits,kfold),np.nan)

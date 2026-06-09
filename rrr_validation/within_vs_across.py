@@ -214,7 +214,7 @@ def semedo_uncorrelated_subspace(B_bar, X_train, r):
     return Q
 
 
-#%% Parameters for decoding from size-matched populations of V1 and PM labeled and unlabeled neurons
+#%% 
 
 sourceareas         = ['V1','PM']
 targetareas         = ['V1','PM']

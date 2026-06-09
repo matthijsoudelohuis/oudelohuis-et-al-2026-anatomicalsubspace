@@ -209,12 +209,14 @@ for ises,ses in enumerate(sessions):
             B_rrr           = B_hat @ V[:fixed_rank,:].T @ V[:fixed_rank,:] #project beta coeff into low rank subspace
             Y_hat_rr        = X_r @ B_rrr
 
-            # How much of the variance in the source area is aligned with the predictive subspace:
+            # 
             Ub, sb, Vb = svds(B_rrr,k=fixed_rank,which='LM')
             Ub, sb, Vb = Ub[:, ::-1], sb[::-1], Vb[::-1, :]
-
+            
             #### NOTE: 
             # The latent space is not exactly the same as the one used in RRR reconstruction
+            # # Project latents into predictive subspace: Predictive X-directions scaled by their predictive power (eigenvalues)
+            # Z = X @ B_hat @ V.T @ np.diag(s)
 
             # X_split = np.full((*X_r.shape,narealabelpairs),np.nan)
             X_split = np.repeat(X_r[:,:,np.newaxis],narealabelpairs,axis=2)
@@ -227,6 +229,7 @@ for ises,ses in enumerate(sessions):
             Z_orig = np.full((X_r.shape[0],fixed_rank,narealabelpairs),np.nan)
             for ial in range(narealabelpairs):
                 Z_orig[:,:,ial] = X_split[:,:,ial] @ Ub @ np.diag(sb)
+                Z_orig[:,:,ial] = X_split[:,:,ial] @ B_hat @ V.T  #project into the same latent space as the RRR reconstruction
 
             for icontrast, contrast in enumerate(contrasts):
                 idx_resp_r = np.tile(idx_resp,nK)

@@ -76,8 +76,8 @@ sourcearealabelpairs = ['PMunl','PMlab']
 targetarealabelpair = 'V1unl'
 clrs_arealabelpairs = np.array(['grey','red'])
 
-ises                = 1
-stim                = 6
+ises                = 0
+stim                = 5
 ntimebins           = 250
 
 Nsub  = np.sum(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpairs[1],
@@ -133,24 +133,20 @@ U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
 B_rrr           = B_hat @ V[:rank,:].T @ V[:rank,:] #project beta coeff into low rank subspace
 Y_hat_test_rr   = X @ B_rrr
 
-# # How much of the variance in the source area is aligned with the predictive subspace:
-# Ub, sb, Vb = svds(B_rrr,k=rank,which='LM')
-# Ub, sb, Vb = Ub[:, ::-1], sb[::-1], Vb[::-1, :]
-
-# The latent space is not exactly the same as the one used in RRR reconstruction
-# # Project latents into predictive subspace: Predictive X-directions scaled by their predictive power (eigenvalues)
-Z = X @ B_hat @ V.T #@ np.diag(s)
+# How much of the variance in the source area is aligned with the predictive subspace:
+Ub, sb, Vb = svds(B_rrr,k=rank,which='LM')
+Ub, sb, Vb = Ub[:, ::-1], sb[::-1], Vb[::-1, :]
 
 X_1 = copy.deepcopy(X)
 X_1[:,Nsub:] = 0
-Z_1 = X_1 @ B_hat @ V[:rank,:].T# @ np.diag(s)
+Z_1 = X_1 @ Ub 
 
 X_2 = copy.deepcopy(X)
 X_2[:,:Nsub] = 0
-Z_2 = X_2 @ B_hat @ V[:rank,:].T# @ np.diag(s)
+Z_2 = X_2 @ Ub
 
-# Z_1 = Z_1 @ np.diag(sb)
-# Z_2 = Z_2 @ np.diag(sb)
+Z_1 = Z_1 @ np.diag(sb)
+Z_2 = Z_2 @ np.diag(sb)
 
 #Apply DOC: 
 doc_eigvecs, doc_eigvals = doc_rotation(Z_1,Z_2)
@@ -255,39 +251,66 @@ plt.tight_layout()
 # my_savefig(fig,figdir,'Example_Latents_Joint_DOC_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
 
 #%% Now compute the R2 of the latents in the target area, to see if they are more predictive than the original RRR latents:
+
 R2_latents_orig = np.zeros((2,rank))
 R2_latents_doc = np.zeros((2,rank))
 
 print('full R2: %f' % EV(Y,Y_hat))
 Y_hat_rr = X @ B_rrr
 print('RRR R2: %f' % EV(Y,Y_hat_rr))
-Y_hat_rr_svd = Z @ V
-print('RRR R2 SVD: %f' % EV(Y,Y_hat_rr_svd))
+# Y_hat_doc = Z_1_doc @ np.linalg.pinv(Z_1_doc) @ Y
+
+# latent -> Y mapping before rotation
+
+Y_hat_rr_svd = X @ Ub @ np.diag(sb) @ Vb
+print('RRR R2: %f' % EV(Y,Y_hat_rr_svd))
+
+# print('RRR R2: %f' % EV(Y,Y_hat_rr_svd))
+
 assert(np.all(np.max(np.abs(Y_hat_rr - Y_hat_rr_svd)) < 1e-10)), 'RRR reconstruction should be the same as the one from the latent space'
 
-# Y_hat_doc = X @ B_hat @ V[:rank,:].T @ doc_eigvecs @ doc_eigvecs.T @ V# np.diag(sb) @ Vb
-Y_hat_doc = Z @ doc_eigvecs @ doc_eigvecs.T @ V
+# rotate into DOC space
+Vb_doc = doc_eigvecs.T @ Vb              # shape: (rank, n_Y)
+
+Z_doc = X @ Ub @ np.diag(sb) @ doc_eigvecs
+
+Y_hat_doc = Z_doc @ Vb_doc
+
 print('RRR R2 DOC: %f' % EV(Y,Y_hat_doc))
 
 assert(np.allclose(EV(Y,Y_hat_doc),EV(Y,Y_hat_rr),atol=1e-10)), 'DOC rotation should not change the overall R2'
 
 # R2 of original RRR latents:
 for r in range(rank):
-    Y_hat_latent_r = Z_1[:,r][:, np.newaxis] @ V[r,:][np.newaxis, :]
-    # Y_hat_latent_r = Z_1[:,r][:, np.newaxis] @ Vb[r,:][np.newaxis, :]
-    # @ doc_eigvecs.T @ V#
+    Y_hat_latent_r = Z_1[:,r][:, np.newaxis] @ Vb[r,:][np.newaxis, :]
     R2_latents_orig[0,r] = EV(Y,Y_hat_latent_r)
-    Y_hat_latent_r = Z_2[:,r][:, np.newaxis] @ V[r,:][np.newaxis, :]
+    Y_hat_latent_r = Z_2[:,r][:, np.newaxis] @ Vb[r,:][np.newaxis, :]
     R2_latents_orig[1,r] = EV(Y,Y_hat_latent_r)
 
 for r in range(rank):
-    # Y_hat_latent_r = Z_1_doc[:,r][:, np.newaxis] @ doc_eigvecs[r,:][np.newaxis, :] @ V[r,:][np.newaxis, :]
-    Y_hat_latent_r = Z_1_doc[:,r][:, np.newaxis] @ doc_eigvecs[:,r].T[np.newaxis, :] @ V
-    # Y_hat_latent_r = Z_1_doc[:,r][:, np.newaxis] @ doc_eigvecs[:,r][:,np.newaxis] @ V
+    Y_hat_latent_r = Z_1_doc[:,r][:, np.newaxis] @ Vb_doc[r,:][np.newaxis, :]
     R2_latents_doc[0,r] = EV(Y,Y_hat_latent_r)
-    # Y_hat_latent_r = Z_2_doc[:,r][:, np.newaxis] @ Vb_doc[r,:][np.newaxis, :]
-    Y_hat_latent_r = Z_2_doc[:,r][:, np.newaxis] @ doc_eigvecs[:,r].T[np.newaxis, :] @ V
+    Y_hat_latent_r = Z_2_doc[:,r][:, np.newaxis] @ Vb_doc[r,:][np.newaxis, :]
     R2_latents_doc[1,r] = EV(Y,Y_hat_latent_r)
+
+# # R2 of original RRR latents:
+# for r in range(rank):
+#     Y_hat_latent_r = Z_1[:,r][:, np.newaxis] @ A[r,:][np.newaxis, :]
+#     # Y_hat_latent_r = Z_1[:,:r+1] @ A[:r+1,:]
+#     R2_latents_orig[0,r] = EV(Y,Y_hat_latent_r)
+#     Y_hat_latent_r = Z_2[:,r][:, np.newaxis] @ A[r,:][np.newaxis, :]
+#     # Y_hat_latent_r = Z_2[:,:r+1] @ A[:r+1,:]
+#     R2_latents_orig[1,r] = EV(Y,Y_hat_latent_r)
+# R2_latents_orig = np.diff(np.concatenate((np.zeros((2,1)),R2_latents_orig),axis=1),axis=1)
+
+# for r in range(rank):
+#     Y_hat_latent_r = Z_1_doc[:,r][:, np.newaxis] @ Vb_doc[r,:][np.newaxis, :]
+#     # Y_hat_latent_r = Z_1_doc[:,:r+1] @ A[:r+1,:]
+#     R2_latents_doc[0,r] = EV(Y,Y_hat_latent_r)
+#     Y_hat_latent_r = Z_2_doc[:,r][:, np.newaxis] @ Vb_doc[r,:][np.newaxis, :]
+#     # Y_hat_latent_r = Z_2_doc[:,:r+1] @ A[:r+1,:]
+#     R2_latents_doc[1,r] = EV(Y,Y_hat_latent_r)
+# R2_latents_doc = np.diff(np.concatenate((np.zeros((2,1)),R2_latents_doc),axis=1),axis=1)
 
 #Plotting the R2 of the original and DOC latents:
 fig,axes = plt.subplots(1,2,figsize=(7*cm,4*cm),sharey=True,sharex=True)

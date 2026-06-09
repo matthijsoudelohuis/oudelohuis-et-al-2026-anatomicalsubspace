@@ -103,10 +103,10 @@ idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=2))[0]
 idx_resp            = np.where(t_axis>=params['tresp_start'])[0]
 
 # estimated rank:
-rank_private_ses    = np.full((nSessions,params['nStim']), np.nan)
+rank_within_ses    = np.full((nSessions,params['nStim']), np.nan)
 rank_shared_ses     = np.full((nSessions,params['nStim']), np.nan)
 
-# Per-neuron alignment with shared and private subspaces for X3 (held-out unlabeled) and X4 (labeled)
+# Per-neuron alignment with shared and within area subspaces for X3 (held-out unlabeled) and X4 (labeled)
 alpha_unl           = np.full((Nsub,nSessions,params['nStim'],nmodelfits),np.nan) # shared alignment, X3
 beta_unl            = np.full((Nsub,nSessions,params['nStim'],nmodelfits),np.nan) # private alignment, X3
 alpha_lab           = np.full((Nsub,nSessions,params['nStim'],nmodelfits),np.nan) # shared alignment, X4
@@ -171,7 +171,7 @@ for ises,ses in enumerate(sessions):
         if fixed_rank:
             # rank_private = 5
             # rank_shared =  2
-            rank_private = fixed_rank
+            rank_within = fixed_rank
             rank_shared =  fixed_rank
         else:
             X1                  = sessions[ises].tensor[np.ix_(idx_areax1,idx_T,idx_resp)]
@@ -183,18 +183,18 @@ for ises,ses in enumerate(sessions):
             X2                  = X2.reshape(len(idx_areax2),-1).T
             Y                   = Y.reshape(len(idx_areay),-1).T
             
-            _,rank_private,_ = RRR_wrapper(X2,X1,nN=Nsub,lam=params['lam'],nranks=nranks,kfold=params['kfold'],
+            _,rank_within,_ = RRR_wrapper(X2,X1,nN=Nsub,lam=params['lam'],nranks=nranks,kfold=params['kfold'],
                                                nmodelfits=nmodelfits,fixed_rank=None)
             
             _,rank_shared,_ = RRR_wrapper(Y,X1,nN=Nsub,lam=params['lam'],nranks=nranks,kfold=params['kfold'],
                                                nmodelfits=nmodelfits,fixed_rank=None)
         
-            rank_private_ses[ises,istim] = rank_private
+            rank_within_ses[ises,istim] = rank_within
             rank_shared_ses[ises,istim] = rank_shared
 
-        # if rank_private < rank_shared:
-        # if rank_private >0:
-            # print('Skipping session %d, stim %d, because private rank (%d) is smaller than shared rank (%d)' % (ises,istim,rank_private,rank_shared))
+        # if rank_within < rank_shared:
+        # if rank_within >0:
+            # print('Skipping session %d, stim %d, because within rank (%d) is smaller than shared rank (%d)' % (ises,istim,rank_within,rank_shared))
             # continue
 
         for imf in range(nmodelfits):
@@ -227,9 +227,9 @@ for ises,ses in enumerate(sessions):
             B_shared            = LM(Y,X1, lam=params['lam'])
             Y_hat               = X1 @ B_shared
 
-            #RRR X1 to X2 (intraareal RRR) — defines private subspace
-            B_private           = LM(X2,X1, lam=params['lam'])
-            X2_hat              = X1 @ B_private
+            #RRR X1 to X2 (intraareal RRR) — defines within area subspace
+            B_within            = LM(X2,X1, lam=params['lam'])
+            X2_hat              = X1 @ B_within
 
             # ---- Shared subspace: left singular vectors of Y_hat ----
             # Y_hat = X1 @ B_shared has shape (T, Nsub); SVD gives T-space directions.
@@ -237,12 +237,12 @@ for ises,ses in enumerate(sessions):
             U_share, _, _       = np.linalg.svd(Y_hat, full_matrices=False)
             Q_share             = U_share[:, :rank_shared]          # (T, rank_shared)
 
-            # ---- Private subspace: left singular vectors of X2_hat, orthogonalized to shared ----
-            U_priv, _, _        = np.linalg.svd(X2_hat, full_matrices=False)
-            Z_priv_raw          = U_priv[:, :rank_private]          # (T, rank_private)
-            Z_priv_orth         = Z_priv_raw - Q_share @ (Q_share.T @ Z_priv_raw)
-            Q_priv, _           = np.linalg.qr(Z_priv_orth)        # (T, rank_private), orthonormal
-            Q_priv              = Q_priv[:, :rank_private]
+            # ---- Within area subspace: left singular vectors of X2_hat, orthogonalized to shared ----
+            U_within, _, _      = np.linalg.svd(X2_hat, full_matrices=False)
+            Z_within_raw        = U_within[:, :rank_within]          # (T, rank_within)
+            Z_within_orth         = Z_within_raw - Q_share @ (Q_share.T @ Z_within_raw)
+            Q_within, _           = np.linalg.qr(Z_within_orth)        # (T, rank_within), orthonormal
+            Q_priv              = Q_priv[:, :rank_within]          # (T, rank_within)
 
             # ---- Per-neuron alignment: fraction of variance in each subspace ----
             alpha_unl[:, ises, istim, imf] = _align(Q_share, X3)
@@ -338,7 +338,7 @@ fig, axes = plt.subplots(1, 1, figsize=(4*cm, 4*cm))
 nrankstoplot = 10
 ax = axes
 xdata = rank_shared_ses.flatten()
-ydata = rank_private_ses.flatten()
+ydata = rank_within_ses.flatten()
 xdata,ydata = filter_sharednan(xdata,ydata)
 ax.hist2d(xdata, ydata, bins=[np.arange(-0.5, nrankstoplot+1.5, 1), 
                               np.arange(-0.5, nrankstoplot+1.5, 1)], cmap='Blues',
@@ -346,7 +346,7 @@ ax.hist2d(xdata, ydata, bins=[np.arange(-0.5, nrankstoplot+1.5, 1),
 add_paired_wilcoxon_results(ax, xdata, ydata, pos=[0.4, 0.8], fontsize=8)
 ax.plot([0, 10], [0, 10], ':', color='grey', lw=1)
 ax.set_xlabel('Shared rank')
-ax.set_ylabel('Private rank')
+ax.set_ylabel('Within rank')
 ax_nticks(ax,4)
 sns.despine(offset=0, top=True, right=True)
 my_savefig(fig, figdir, 'PrivateShared_rank_%dsessions' % nSessions)
