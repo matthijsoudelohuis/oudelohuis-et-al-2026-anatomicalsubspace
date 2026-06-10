@@ -18,21 +18,26 @@ def load_params():
                 tresp_start = 0, #Time window start for response calculation and analyzing residual activity
                 tresp_end   = 1.5,
 
-                # Parameters for RRR for size-matched populations of V1 and PM labeled and unlabeled neurons
+                # Parameters for session and neuron selection:
+                filter_nearby = True,
+                radius = 50, # distance in um to look for nearby cells
                 maxnoiselevel = 20, #maximum noise level to include cell
                 minnneurons = 10, #minimum number of neurons in labeled or unlabeled population to include session
-                # minrangeresp = 0.04, #minimum range of responses between stimulus conditions to include cell
+
+                #Default parameters for RRR:
                 lam = 0, #regularization parameter for RRR
                 kfold = 5,
+                nsubprojection = 20, #number of neurons to sample for each model fit, for each area and label type
+                nsubnonlabeled = 100, #number of neurons to sample for each model fit, for each area and label type
+                nranks = 25, #number of ranks of RRR to be evaluated
+                nmodelfits = 100, #number of times to fit RRR, subsampling different neurons
+                nStim = 16, #maximum number of stimulus conditions to evaluate (grating orientations)
 
                 # stilltrialsonly = True, #only use still trials for analysis
                 maxvideome = 0.2, #maximum video motion in normalized energy
                 maxrunspeed = 0.5, #maximum run speed in cm/s
 
+                # Default parameters for statistical testing:  
                 multcomp_method = 'holm', #method for multiple comparisons correction in statistical tests, e.g. 'holm', 'fdr_bh', 'bonferroni'
-
-                # Parameters for RRR for size-matched populations of V1 and PM labeled and unlabeled neurons
-                filter_nearby = True,
-                radius = 50, # distance in um to look for nearby cells
                 )
     return params

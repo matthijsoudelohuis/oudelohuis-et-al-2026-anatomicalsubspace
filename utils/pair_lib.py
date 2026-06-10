@@ -148,13 +148,15 @@ def value_matching(idx,group,values,bins=20,showFig=False):
     ugroups = np.unique(group)
     ngroups = len(ugroups)
     histdata = np.empty([bins,ngroups])
-    bin_lims = np.percentile(values, [0,100])
+    # bin_lims = np.percentile(values, [0,100])
     bin_lims = np.percentile(values, [1,99])
     for g in range(ngroups):
         [histdata[:,g],bin_edges] = np.histogram(values[group==ugroups[g]],bins=bins,range=bin_lims)
         # [histdata[:,g],bin_edges] = np.histogram(values[group==ugroups[g]],bins=bin_edges)
     hist = np.min(histdata, axis=1).astype(int) #take the minimum across groups
     bin_centers = (bin_edges[:-1] + bin_edges[1:])/2
+    bin_edges[0] = -np.inf
+    bin_edges[-1] = np.inf
     
     # go over the other groups and subsample without replacement from each of the groups the same number of values in each bin
     idx_subsampled = []

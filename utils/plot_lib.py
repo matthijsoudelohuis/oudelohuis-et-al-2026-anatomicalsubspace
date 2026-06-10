@@ -661,8 +661,8 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
 
     ax.legend(handles,[alx1,alx2],frameon=False,loc='lower right')
     my_legend_strip(ax)
-    ax.set_xlabel('Rank')
-    ax.set_ylabel('R2 (cv)')
+    ax.set_xlabel('rank')
+    ax.set_ylabel('performance')
     # ax.set_yticks(np.arange(0,0.3,0.05))
     ax.set_ylim([0,axlim])
     ax.set_yticks(np.linspace(0,axlim,3))
@@ -698,7 +698,7 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
     ax.set_ylabel(alx2,color=clrs_arealabelpairs[1])
     add_paired_ttest_results(ax,R2_cv[0,:],R2_cv[1,:],pos=[0.7,0.1])
     # add_paired_wilcoxon_results(ax,R2_cv[0,:],R2_cv[1,:],pos=[0.7,0.1])
-    ax.set_title('R2 (cv)')
+    ax.set_title('performance')
     ax.set_xlim([0,plotclip])
     ax.set_ylim([0,plotclip])
     # ax.set_xlim([0,my_ceil(np.nanmax(R2_cv),2)])
@@ -730,7 +730,7 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
     ax.set_xticklabels(ticks,color=clrs_arealabelpairs[0])
     ax.set_yticks(ticks)
     ax.set_yticklabels(ticks,color=clrs_arealabelpairs[1])
-    ax.set_title('Rank')
+    ax.set_title('rank')
 
     sns.despine(top=True,right=True,offset=3)
     fig.tight_layout()

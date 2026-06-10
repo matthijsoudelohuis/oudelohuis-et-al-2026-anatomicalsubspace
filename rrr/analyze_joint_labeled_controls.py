@@ -39,7 +39,6 @@ filename  = 'RRR_Joint_labeled_Controls_FF_original_2026-03-07_20-47-00'
 # filename = 'RRR_Joint_labeled_Controls_FB_original_2026-03-05_23-07-39'
 
 #%%
-
 valuematch_labels = np.array(['Cell radius','Noise level\n (Rupprecht et al. 2021)','Event rate','Tuning (gOSI)'])
 
 #%% Save the data:
@@ -70,12 +69,10 @@ for ivaluematching,valuematchfield in enumerate(valuematch_fields):
             # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (sourcearealabelpairs[idx[1]-1],version,params['nSessions']))
 
 #%% Define the ratio of R2 between V1PM and V1ND
-
 R2_ratio = R2_cv[:,2,:,:] / R2_cv[:,1,:,:]
 
 #%% Define the ratio of R2 between V1PM and V1ND
 #Only for dim 2-5
-
 R2_ratio = np.nanmean(R2_ranks,axis=(-1,-2))
 R2_ratio = np.diff(R2_ratio,axis=4)
 R2_ratio = np.nansum(R2_ratio[:,:,:,:,np.arange(1,5)],axis=-1)

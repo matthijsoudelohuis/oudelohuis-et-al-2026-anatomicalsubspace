@@ -6,22 +6,15 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 """
 
 #%% ###################################################
-import math, os
-
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
-from scipy.stats import zscore
-from scipy import stats
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
-from scipy.stats import ttest_ind
 
 from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
 from utils.plot_lib import * #get all the fixed color schemes
 from utils.psth import compute_tensor
-# from utils.explorefigs import plot_excerpt,plot_PCA_gratings,plot_tuned_response
 from utils.tuning import *
 from utils.params import load_params
 
@@ -39,22 +32,16 @@ session_list        = np.array([
                                 # ['LPE09665_2023_03_14'], #
                                 # ['LPE11622_2024_03_26'], #GR with AL
                                 ['LPE11998_2024_05_10'], #GR with AL
-                                ['LPE11622_2024_03_25'], #GN with AL
                                 ]) 
 
-# sessions,nSessions   = filter_sessions(protocols = ['GR'],filter_noiselevel=False,filter_areas=areas,
-                                    #    only_session_id=session_list,
-                                    #    )
-
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],filter_noiselevel=False,filter_areas=areas,
+sessions,nSessions   = filter_sessions(protocols = ['GR'],filter_noiselevel=False,filter_areas=areas,
                                        only_session_id=session_list,
                                        )
 
-#%% Get all data 
-sessions,nSessions   = filter_sessions(protocols = ['GR'],filter_noiselevel=True)
-# sessions,nSessions   = filter_sessions(protocols = ['GR'],min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
-
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=areas,filter_areas=areas)
+# #%% Get all data 
+# sessions,nSessions   = filter_sessions(protocols = ['GR'],filter_noiselevel=True)
+sessions,nSessions   = filter_sessions(protocols = ['GR'],min_lab_cells_V1=40,min_lab_cells_PM=40,filter_noiselevel=False)
+# sessions,nSessions   = filter_sessions(protocols = ['GR'],only_all_areas=areas,filter_areas=areas)
 
 #%% 
 report_sessions(sessions)
@@ -65,25 +52,88 @@ for ises in range(nSessions):
     sessions[ises].load_data(load_calciumdata=True,calciumversion=params['calciumversion'])
     [sessions[ises].tensor,t_axis] = compute_tensor(sessions[ises].calciumdata, sessions[ises].ts_F, sessions[ises].trialdata['tOnset'], 
                                  t_pre=params['t_pre'], t_post=params['t_post'], method='nearby')
-    sessions[ises].respmat = np.mean(sessions[ises].tensor[:,:,np.logical_and(t_axis>-0, t_axis<=1.5)] ,axis=2)
+    sessions[ises].respmat = np.mean(sessions[ises].tensor[:,:,np.logical_and(t_axis>0, t_axis<=1.5)] ,axis=2)
 
 #%% ########################### Compute tuning metrics: ###################################
 sessions = ori_remapping(sessions)
-for ises in range(nSessions):
-    if sessions[ises].sessiondata['protocol'][0] == 'GR':
-        sessions[ises].trialdata['Direction'] = sessions[ises].trialdata['Orientation']
-        sessions[ises].trialdata['Orientation'] = np.mod(sessions[ises].trialdata['Orientation'],180)
-        junk,junk,oriconds  = np.unique(sessions[ises].trialdata['Orientation'],return_index=True,return_inverse=True)
-        sessions[ises].trialdata['stimCond']    = oriconds
-
 sessions = compute_tuning_wrapper(sessions)
 
+#%% Function that takes in the tensor and computes the average response for some example neurons:
+def plot_tuned_response(calciumdata, trialdata, t_axis, example_cells,plot_n_trials=0,celllabels=None):
+    """
+    The plot_tuned_response function is used to visualize the average response of specific neurons to different orientations. It takes in four inputs:
+    calciumdata: a 3D tensor containing calcium imaging data for multiple cells, trials, and timepoints.
+    trialdata: a pandas DataFrame containing trial information, including orientation.
+    t_axis: a 1D array representing the time axis.
+    example_cells: a list of cell indices to plot.
+    plot_n_trials: the number of trials to plot as individual traces.
+    celllabels: a list of labels for each cell.
+    returns: a figure with subplots for each cell and each orientation.
+    """
+    if calciumdata.ndim != 3:
+        raise ValueError("calciumdata must have shape (n_cells, n_trials, n_timepoints)")
+
+    if t_axis.ndim != 1:
+        raise ValueError("t_axis must be a 1D array")
+
+    T = len(t_axis)
+    oris = np.sort(pd.Series.unique(trialdata['Orientation']))
+    colors = plt.cm.tab20(np.linspace(0, 1, len(oris)))  # assume this is the color palette used in plot_PCA_gratings
+    pal = sns.color_palette('husl', len(oris))
+    pal = np.tile(sns.color_palette('husl', int(len(oris)/2)),(2,1))
+
+    fig, axs = plt.subplots(len(example_cells), len(oris), figsize=[8*cm, len(example_cells)*0.7*cm], sharex=True, sharey=False)
+    axs = axs.flatten()
+    for i, cell in enumerate(example_cells):
+        row_max = 0
+        for j, ori in enumerate(oris):
+            resp_meanori = np.nanmean(calciumdata[np.ix_([cell], trialdata['Orientation'] == ori,range(T))], axis=1).squeeze()
+
+            axs[i * len(oris) + j].plot(t_axis, resp_meanori,color=pal[j],linewidth=0.8)
+            # axs[i * len(oris) + j].set_title(f'Cell {cell}, {ori} deg')
+            axs[i * len(oris) + j].set_xticks([])
+            axs[i * len(oris) + j].set_yticks([])
+            # REMOVE axis borders
+            axs[i * len(oris) + j].axis('off')
+            row_max = max(row_max, np.max(resp_meanori))
+        
+            if plot_n_trials > 0:
+                # for trial in range(plot_n_trials):
+                trialsel = np.random.choice(np.where(trialdata['Orientation'] == ori)[0],plot_n_trials)
+                tracedata = calciumdata[np.ix_([cell], trialsel,range(T))].squeeze().T
+                axs[i * len(oris) + j].plot(t_axis, tracedata, color='k', linewidth=0.1)
+                row_max = max(row_max, np.max(tracedata))
+            if j == 0 and celllabels is not None:
+                axs[i * len(oris) + j].text(0.5, 0.5, celllabels[i], transform=axs[i * len(oris) + j].transAxes, ha='center', va='center', fontsize=6,rotation=90)
+        for j in range(len(oris)):
+            axs[i * len(oris) + j].set_ylim(top=row_max * 1.1)  # add 10% padding
+            # Add vertical dotted line at t=0
+            axs[i * len(oris) + j].axvline(x=0, ymin=0,ymax=0.5,color='k', linestyle=':', linewidth=0.5)
+    fig.subplots_adjust(hspace=0)
+
+    return fig
+
+#%% 
+ises = 2
+perc = 70
+arealabels = np.array(['V1unl','V1lab','PMunl','PMlab'])
+example_cells = []
+for iarealabel,arealabel in enumerate(arealabels):
+    idx_N = np.where(np.all((sessions[ises].celldata['arealabel']==arealabel,
+                             sessions[ises].celldata['noise_level']<params['maxnoiselevel'],
+                             sessions[ises].celldata['gOSI']>np.nanpercentile(sessions[ises].celldata['gOSI'][sessions[ises].celldata['arealabel']==arealabel], perc)
+                             ),axis=0))[0]
+    example_cells.append(np.random.choice(idx_N,size=1,replace=False)[0])
+
+#%% 
+ises = 0
+example_cells = [553,77,1468,1531]
+
 #%% Show some tuned responses with calcium and deconvolved traces across orientations:
-example_cells = [3,100,58,62,70]
-fig = plot_tuned_response(sessions[0].tensor,sessions[0].trialdata,t_axis,example_cells)
-fig.suptitle('%s - Deconvolved' % sessions[0].sessiondata['session_id'][0],fontsize=12)
-# save the figure
-# fig.savefig(os.path.join(savedir,'TunedResponse_deconv_%s.png' % sessions[0].sessiondata['session_id']))
+np.random.seed(0)
+fig = plot_tuned_response(sessions[ises].tensor,sessions[ises].trialdata,t_axis,example_cells,plot_n_trials=15,celllabels=arealabels)
+# fig.suptitle('%s' % sessions[0].sessiondata['session_id'][0],fontsize=7)
+my_savefig(fig,figdir,'TunedResponses_%s' % (sessions[ises].session_id))
 
 #%% Construct matrix of trial-averaged responses for all cells and all orientations
 celldata    = pd.concat([ses.celldata for ses in sessions]).reset_index(drop=True)
@@ -92,8 +142,8 @@ nStim       = len(np.unique(sessions[0].trialdata['stimCond']))
 # stims       = np.unique(sessions[0].trialdata['Orientation'])
 stims       = np.unique(sessions[0].trialdata['stimCond'])
 nStim       = len(stims)
-nStim = 8
-stims = np.arange(nStim)
+# nStim       = 8
+stims       = np.arange(nStim)
 # nStim       = len(np.unique(sessions[0].trialdata['Orientation']))
 
 tensor_avg  = np.full((nCells,nStim,len(t_axis)),np.nan)
@@ -209,27 +259,3 @@ sns.despine(fig=fig,top=True,right=True,offset=3)
 # my_savefig(fig,figdir,'Tensor_avg_timetrace_GR_%dneurons' % (nCells))
 # zip(handles, arealabels)
 # handles, labels = zip(*zip(handles, arealabels))
-
-#%% ##################### Noise level for labeled vs unlabeled cells:
-
-# ## plot precentage of labeled cells as a function of depth:
-# # sns.barplot(x='depth', y='redcell', data=celldata[celldata['roi_name'].isin(['V1','PM'])], estimator=lambda y: sum(y==1)*100.0/len(y))
-# sns.lineplot(data=celldata[celldata['roi_name'].isin(['V1','PM'])],x='depth', y='redcell', estimator=lambda y: sum(y==1)*100.0/len(y))
-# # sns.lineplot(data=celldata,x='depth', y='redcell', hue='roi_name',estimator=lambda y: sum(y==1)*100.0/len(y),palette='Accent')
-# plt.ylabel('% labeled cells')
-
-# #Plot fraction of labeled cells across areas of recordings: 
-# sns.barplot(x='roi_name', y='redcell', data=celldata, estimator=lambda x: sum(x==1)*100.0/len(x),palette='Accent')
-# plt.ylabel('% labeled cells')
-
-# ## plot number of cells per plane across depths:
-# sns.histplot(data=celldata, x='depth',hue='roi_name',palette='Accent')
-
-# ## plot quality of cells per plane across depths with skew:
-# # sns.lineplot(data=celldata, x="depth",y=celldata['skew'],estimator='mean')
-# sns.lineplot(x=np.round(celldata["depth"],-1),y=celldata['skew'],estimator='mean')
-
-# ## plot quality of cells per plane across depths with noise level:
-# # sns.lineplot(data=celldata, x="depth",y=celldata['noise_level'],estimator='mean')
-# sns.lineplot(x=np.round(celldata["depth"],-1),y=celldata['noise_level'],estimator='mean')
-# plt.ylim([0,0.3])
