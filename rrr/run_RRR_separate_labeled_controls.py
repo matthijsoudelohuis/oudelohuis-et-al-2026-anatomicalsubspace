@@ -22,8 +22,8 @@ from utils.tuning import compute_tuning_wrapper
 #%% Load parameters and settings:
 params = load_params()
 params['regress_behavout'] = False
-# params['direction'] = 'FF'
-params['direction'] = 'FB'
+params['direction'] = 'FF'
+# params['direction'] = 'FB'
 
 version = 'Separate_labeled_controls_%s_%s' % (params['direction'],'behavout' if params['regress_behavout'] else 'original')
 
@@ -53,19 +53,6 @@ elif params['direction'] =='FB_AL':
 
 if 'sessions' in locals():
     del sessions # type: ignore
-
-#%% 
-session_list        = np.array([
-                                # ['LPE12223_2024_06_10'], #V1lab actually lower
-                                ['LPE09830_2023_04_10'], #V1 labeled higher predictive than V1unl
-                                ['LPE09665_2023_03_14'], #V1lab higher
-                                # ['LPE10885_2023_10_23'], #V1lab much higher
-                                # ['LPE11086_2024_01_05'], #Really much higher, best session, first dimensions are more predictive.
-                                # ['LPE11086_2024_01_10'], #Few v1 labeled cells, very noisy
-                                # ['LPE11086_2023_12_15'], #Same
-                                ]) 
-
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list,filter_noiselevel=False)
 
 #%% Get all data 
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,filter_noiselevel=False)

@@ -157,14 +157,12 @@ my_savefig(fig,figdir,'RRR_cvR2_%s_%dsessions' % (version,params['nSessions']))
  
 #%% Run block for FF 
 version = 'FF_original'
-filename = 'RRR_Separate_labeled_controls_FF_original_2026-06-09_18-31-07'
-exampleses = 12
+filename = 'RRR_Separate_labeled_controls_FF_original_2026-06-10_15-49-20'
 figdir = os.path.join(params['figdir'],'RRR','Labeling','Feedforward')
 
 #%% For FB:
 version = 'FB_original'
-filename = 'RRR_Separate_labeled_controls_FB_original_2026-06-09_21-13-03'
-exampleses = 1
+filename = 'RRR_Separate_labeled_controls_FB_original_2026-06-10_20-17-02'
 figdir = os.path.join(params['figdir'],'RRR','Labeling','Feedback')
 
 #%% Load the data:
@@ -179,11 +177,20 @@ R2_cv = data['R2_cv']
 optim_rank = data['optim_rank']
 R2_ranks = data['R2_ranks']
 valuematch_fields = data['valuematch_fields']
-valuematch_labels = np.array(['Cell radius','Noise level\n (Rupprecht et al. 2021)','Event rate','Tuning (gOSI)'])
+valuematch_labels = np.array(['cell radius','noise level','event rate','tuning (gOSI)'])
+# valuematch_labels = np.array(['Cell radius','Noise level\n (Rupprecht et al. 2021)',
+#                               'Event rate','Tuning (gOSI)','Tuning (EV)'])
 
 with open(os.path.join(resultdir,filename + '_params' + '.txt'), "rb") as myFile:
     params = pickle.load(myFile)
 nmodelfits = params['nmodelfits']
+
+#%% Remove tuning variance because it is complicated metric:
+R2_cv = R2_cv[:4]
+optim_rank = optim_rank[:4]
+R2_ranks = R2_ranks[:4]
+valuematch_fields = valuematch_fields[:4]
+params['nvaluefields'] = 4
 
 #%% Show figure for each of the arealabelpairs and each of the dataversions
 for ivaluematching,valuematchfield in enumerate(valuematch_fields):
@@ -205,8 +212,6 @@ fig,axes = plt.subplots(1,1,sharex=True,sharey=True,figsize=(3*cm,3.6*cm))
 ax = axes
 ax.errorbar(x=range(params['nvaluefields']),y=np.nanmean(R2_ratio,axis=(1,2)),yerr=np.nanstd(R2_ratio,axis=(1,2))/np.sqrt(params['nSessions']*params['nStim']),
             color='red',marker='o',linestyle='',capsize=0)
-# ax.errorbar(x=range(params['nvaluefields']),y=np.nanmean(ratiodata_FF_unlunl,axis=1),yerr=np.nanstd(ratiodata_FF_unlunl,axis=1)/np.sqrt(np.shape(ratiodata_FF_unlunl)[1]),
-#             color='grey',marker='o',linestyle='-',capsize=0)
 for ivaluematching in range(params['nvaluefields']):
     h,p = stats.ttest_1samp(R2_ratio[ivaluematching].flatten(),1,nan_policy='omit')
     ax.text(ivaluematching,np.nanmean(R2_ratio[ivaluematching])+0.05,get_sig_asterisks(p),rotation=0,ha='center',fontsize=9)
@@ -216,31 +221,27 @@ ax.axhline(y=1,color='k',linestyle='--')
 ax.set_xticks(range(params['nvaluefields']))
 ax.set_xticklabels(valuematch_labels,rotation=45,ha='right')
 ax.set_xlim([-0.5,params['nvaluefields']-1+.25])
-# plt.tight_layout()
-sns.despine(fig=fig,trim=True)
+sns.despine(fig=fig,trim=False)
 my_savefig(fig,figdir,'perf_ratio_separate_%s_controls_%dsessions' % (version,params['nSessions']))
 
 #%% Define the ratio of R2 between V1PM and V1ND
 rank_ratio = optim_rank[:,1,:,:] / optim_rank[:,0,:,:]
 
 #Make the figure of the ratio:
-fig,axes = plt.subplots(1,1,sharex=True,sharey=True,figsize=(4*cm,4.6*cm))
+fig,axes = plt.subplots(1,1,sharex=True,sharey=True,figsize=(3*cm,3.6*cm))
 ax = axes
 ax.errorbar(x=range(params['nvaluefields']),y=np.nanmean(rank_ratio,axis=(1,2)),yerr=np.nanstd(rank_ratio,axis=(1,2))/np.sqrt(params['nSessions']*params['nStim']),
             color='red',marker='o',linestyle='',capsize=0)
 for ivaluematching in range(params['nvaluefields']):
     h,p = stats.ttest_1samp(rank_ratio[ivaluematching].flatten(),1,nan_policy='omit')
     ax.text(ivaluematching,np.nanmean(rank_ratio[ivaluematching])+0.01,get_sig_asterisks(p),rotation=0,ha='center',fontsize=9)
-ax.set_title("Stratified sampling")
-ax.set_xlabel("Variable")
 ax.set_ylim([0.98,my_ceil(ax.get_ylim()[1],2)])
 ax_nticks(ax,4)
 ax.set_ylabel("rank ratio\n%s/%s" % (alx2,alx1))
 ax.axhline(y=1,color='k',linestyle='--')
 ax.set_xticks(range(params['nvaluefields']))
-ax.set_xticklabels(valuematch_fields,rotation=45,ha='right')
+ax.set_xticklabels(valuematch_labels,rotation=45,ha='right')
 ax.set_xlim([-0.5,params['nvaluefields']-1+.25])
-# plt.tight_layout()
-sns.despine(fig=fig,trim=True)
+sns.despine(fig=fig,trim=False)
 my_savefig(fig,figdir,'rank_ratio_separate_%s_controls_%dsessions' % (version,params['nSessions']))
 
