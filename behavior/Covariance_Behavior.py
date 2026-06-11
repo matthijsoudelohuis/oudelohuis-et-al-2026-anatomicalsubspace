@@ -7,7 +7,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -64,16 +63,20 @@ meanPM = np.nanmean(sessions[ises].calciumdata.iloc[:,idx_areay],axis=1)
 idx_areax_sub = np.random.choice(idx_areax,100,replace=False)
 idx_areay_sub = np.random.choice(idx_areay,100,replace=False)
 
-#RRR latent 1:
+nrankstoplot = 1
+#RRR latents:
 X               = zscore(sessions[ises].calciumdata.iloc[:,idx_areax_sub],axis=0).to_numpy()
 Y               = zscore(sessions[ises].calciumdata.iloc[:,idx_areay_sub],axis=0).to_numpy()
 B_hat           = LM(Y,X, lam=0) #linear regression
 Y_hat           = X @ B_hat #project X onto B_hat to obtain Y_hat
-U, s, V         = svds(Y_hat,k=1,which='LM') #decompose Y_hat, get maximally predictive dimensions
+U, s, V         = svds(Y_hat,k=nrankstoplot,which='LM') #decompose Y_hat, get maximally predictive dimensions
+U, s, V         = U[:, ::-1], s[::-1], V[::-1, :]
 W               = B_hat @ V.T   # Predictive X-directions
 Z               = X @ W   # Project X onto predictive dimensions
-Z               = Z.flatten() #remove redundant dim 
-Z               = Z*np.sign(np.corrcoef(Z,meanV1)[0,1]) #align sign with mean V1 rate
+# Z               = Z.flatten() #remove redundant dim 
+for irank in range(nrankstoplot):
+    Z[:,irank]    = Z[:,irank]*np.sign(np.corrcoef(Z[:,irank],meanV1)[0,1]) #align sign with mean V1 rate
+
 
 fig,ax = plt.subplots(1,1,figsize=(10*cm,5*cm)) #make the figure
 data        = [sessions[ises].behaviordata['runspeed'],
@@ -81,16 +84,24 @@ data        = [sessions[ises].behaviordata['runspeed'],
                sessions[ises].videodata['motionenergy'],
                meanV1,
                meanPM,
-               Z]
+               ]
+for irank in range(nrankstoplot):
+    data.append(Z[:,irank])
 ts          = [
                 sessions[ises].behaviordata['ts'],
                 sessions[ises].videodata['ts'],
                 sessions[ises].videodata['ts'],
                 sessions[ises].ts_F,
                sessions[ises].ts_F,
-               sessions[ises].ts_F,
                ]
-labels      = ['Run speed','Pupil area','Motion energy','Mean V1 Activity','Mean PM Activity','Subspace Latent 1']
+for irank in range(nrankstoplot):
+    ts.append(sessions[ises].ts_F)
+# labels      = ['Run speed','Pupil area','Motion energy','Mean V1 Activity','Mean PM Activity','Subspace Latent 1']
+labels      = ['Run speed','Pupil area','Motion energy','Mean V1 Activity',
+               'Mean PM Activity']
+for irank in range(nrankstoplot):
+    labels.append('Latent %d' % (irank+1))
+
 for i,(idata,its,ilabel) in enumerate(zip(data,ts,labels)):
     idx_T = np.where((its>=t_start) & (its<=t_stop))[0]
     plotdata = np.convolve(idata,np.ones(int(t_smooth * 1 / np.mean(np.diff(its)))),mode='same')
@@ -110,8 +121,8 @@ ax.add_artist(AnchoredSizeBar(ax.transData, 10,
 
 # my_savefig(fig,figdir,'Example_Behavior_V1PM_%s' % sessions[ises].session_id)
 
-#%% 
 
+#%% 
 ####### #     #    #    #     # ######  #       #######     #####  ####### #     # 
 #        #   #    # #   ##   ## #     # #       #          #     # #     # #     # 
 #         # #    #   #  # # # # #     # #       #          #       #     # #     # 
@@ -126,34 +137,9 @@ session_list        = np.array(['LPE12223_2024_06_10']) #GR
 sessions,nSessions   = filter_sessions(protocols = 'GR',only_session_id=session_list,filter_areas=areas)
 
 #%% 
-# areas = ['V1','PM','AL','RSP']
-sessions,nSessions   = filter_sessions(protocols = ['GR','GN'],only_all_areas=areas,filter_areas=areas,min_lab_cells_V1=50,min_lab_cells_PM=50)
-
-#%%  Load data properly:        
-## Construct tensor: 3D 'matrix' of N neurons by K trials by T time bins
-vidfields   = np.concatenate((['videoPC_%d'%i for i in range(30)],
-                            ['pupil_area','pupil_ypos','pupil_xpos']),axis=0)
-
-behavfields = np.array(['runspeed','diffrunspeed'])
-
-for ises in tqdm(range(nSessions),total=nSessions,desc='Loading data'):
-    sessions[ises].load_data(load_behaviordata=True, load_calciumdata=True,load_videodata=True,
-                                calciumversion=params['calciumversion'])
-    [sessions[ises].tensor,t_axis] = compute_tensor(sessions[ises].calciumdata, sessions[ises].ts_F, sessions[ises].trialdata['tOnset'], 
-                                 method='nearby')
-    
-    [sessions[ises].tensor_vid,t_axis] = compute_tensor(sessions[ises].videodata[vidfields], sessions[ises].videodata['ts'], sessions[ises].trialdata['tOnset'], 
-                                 params['t_pre'], params['t_post'], method='binmean',binsize=params['binsize'])
-    #Subsample behavioral data 10 times before binning:
-    sessions[ises].behaviordata.drop('session_id',axis=1,inplace=True)
-    sessions[ises].behaviordata = sessions[ises].behaviordata.groupby(sessions[ises].behaviordata.index // 10).mean()
-    sessions[ises].behaviordata['diffrunspeed'] = np.diff(sessions[ises].behaviordata['runspeed'],prepend=0)
-    [sessions[ises].tensor_run,t_axis] = compute_tensor(sessions[ises].behaviordata[behavfields], sessions[ises].behaviordata['ts'], sessions[ises].trialdata['tOnset'], 
-                                 params['t_pre'], params['t_post'], method='binmean',binsize=params['binsize'])
-    
-    delattr(sessions[ises],'calciumdata')
-    delattr(sessions[ises],'behaviordata')
-    delattr(sessions[ises],'videodata')
+report_sessions(sessions)
+[sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=False,compute_respmat=True,
+                                      load_behaviordata=True)
 
 #%% Show example covariance matrix predicted by behavior:  
 ises                = 0 #which session to compute covariance matrix for
@@ -256,50 +242,138 @@ fig.colorbar(im,ax=ax,shrink=0.3,location='right',label='Covariance')
             #  ax=ax,shrink=0.6,location='right',label='R$^2$')
 ax.yaxis.set_label_position("right")
 plt.tight_layout()
-my_savefig(fig,figdir,'CovarianceMatrix_V1PM_Behavior_%s' % sessions[ises].session_id)
-
-#%% Make as separate figures: 
-# fig,ax = plt.subplots(1,2,figsize=(6,3))
-# ax[0].imshow(Y_cov_sort,vmin=vmin,vmax=vmax,cmap='magma')
-# ax[0].set_title('Covariance\n(original)')
-# ax[0].set_yticks([])
-# for ial,arealabel in enumerate(arealabeled):
-#     start,stop = np.where(al_sorted==arealabel)[0][0],np.where(al_sorted==arealabel)[0][-1]
-#     ax[0].plot([-5,-5],[start,stop],color=get_clr_area_labeled([arealabel]),linestyle='-',linewidth=5)
-#     ax[0].text(-85,(start+stop)/2,arealabel,fontsize=9,color=get_clr_area_labeled([arealabel]),
-#                rotation=45,ha='center',va='center')
-# for ial,arealabel in enumerate(arealabeled):
-#     start,stop = np.where(al_sorted==arealabel)[0][0],np.where(al_sorted==arealabel)[0][-1]
-#     ax[0].plot([start,stop],[-5,-5],color=get_clr_area_labeled([arealabel]),linestyle='-',linewidth=5)
-#     ax[0].text((start+stop)/2,-85,arealabel,fontsize=9,color=get_clr_area_labeled([arealabel]),
-#                rotation=45,ha='center',va='center')
-# ax[0].set_xticks([0,np.shape(Y_cov)[0]-1])
-
-# ax[1].imshow(Y_cov_rrr_sort,vmin=vmin,vmax=vmax,cmap='magma')
-# ax[1].set_title('Covariance\n(predicted from behavior)')
-# ax[1].set_xticks([0,np.shape(Y_cov)[0]-1])
-# for ial,arealabel in enumerate(arealabeled):
-#     start,stop = np.where(al_sorted==arealabel)[0][0],np.where(al_sorted==arealabel)[0][-1]
-#     ax[1].plot([-5,-5],[start,stop],color=get_clr_area_labeled([arealabel]),linestyle='-',linewidth=5)
-#     ax[1].text(-85,(start+stop)/2,arealabel,fontsize=9,color=get_clr_area_labeled([arealabel]),
-#                rotation=45,ha='center',va='center')
-# for ial,arealabel in enumerate(arealabeled):
-#     start,stop = np.where(al_sorted==arealabel)[0][0],np.where(al_sorted==arealabel)[0][-1]
-#     ax[1].plot([start,stop],[-5,-5],color=get_clr_area_labeled([arealabel]),linestyle='-',linewidth=5)
-#     ax[1].text((start+stop)/2,-85,arealabel,fontsize=9,color=get_clr_area_labeled([arealabel]),
-#                rotation=45,ha='center',va='center')
-# for axi in ax:
-#     # w = ax.get_xaxis()
-#     # w.set_visible(False)
-#     # axi.axis["left"].set_visible(False)
-#     # axi.axis["top"].set_visible(False)
-#     # axi.axis["right"].set_visible(False)
-#     axi.set_axis_off()
-# plt.tight_layout()
-# my_savefig(fig,figdir,'CovarianceMatrix_V1PM_%s' % sessions[ises].session_id,formats=['png'])
+# my_savefig(fig,figdir,'CovarianceMatrix_V1PM_Behavior_%s' % sessions[ises].session_id)
 
 #%% 
+######  ####### #     #    #    #     # ####### #     # ####### 
+#     # #       #     #   # #   #     # #     # #     #    #    
+#     # #       #     #  #   #  #     # #     # #     #    #    
+######  #####   ####### #     # #     # #     # #     #    #    
+#     # #       #     # #######  #   #  #     # #     #    #    
+#     # #       #     # #     #   # #   #     # #     #    #    
+######  ####### #     # #     #    #    #######  #####     #    
 
+#%% 
+# areas = ['V1','PM','AL','RSP']
+sessions,nSessions   = filter_sessions(protocols = ['GR','GN'],only_all_areas=areas,filter_areas=areas,
+                                       min_lab_cells_V1=40,min_lab_cells_PM=40)
+report_sessions(sessions)
+
+#%% 
+[sessions,t_axis] = load_resid_tensor(sessions,params,load_behav=True)
+
+#%% Parameters for decoding from size-matched populations of V1 and PM labeled and unlabeled neurons
+arealabelpairs  = ['V1-PM','PM-V1']
+
+clrs_arealabelpairs = get_clr_area_pairs(arealabelpairs)
+narealabelpairs     = len(arealabelpairs)
+
+# nsampleneurons      = 100
+# nranks_neural       = 25
+nranks_behavout     = 5
+nmodelfits          = 15 #number of times new neurons are resampled for RRR
+idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
+
+R2_cv               = np.full((narealabelpairs,nranks_behavout,nSessions,params['nStim']),np.nan)
+optim_rank          = np.full((narealabelpairs,nranks_behavout,nSessions,params['nStim']),np.nan)
+
+for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model'):
+# for ises,ses in tqdm(enumerate(sessions[:2]),total=nSessions,desc='Fitting RRR model for within vs across populations'):
+    idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
+    if np.sum((ses.celldata['roi_name']=='V1') & (ses.celldata['noise_level']<params['maxnoiselevel']))<(nsampleneurons*2):
+        continue
+    
+    if np.sum((ses.celldata['roi_name']=='PM') & (ses.celldata['noise_level']<params['maxnoiselevel']))<(nsampleneurons*2):
+        continue
+
+    for iapl, arealabelpair in enumerate(arealabelpairs):
+        
+        alx,aly = arealabelpair.split('-')
+
+        idx_areax           = np.where(np.all((ses.celldata['roi_name']==alx,
+                                ses.celldata['noise_level']<params['maxnoiselevel']
+                                ),axis=0))[0]
+        idx_areay           = np.where(np.all((ses.celldata['roi_name']==aly,
+                                ses.celldata['noise_level']<params['maxnoiselevel']
+                                ),axis=0))[0]
+
+        if np.any(np.intersect1d(idx_areax,idx_areay)): #if interactions within one population:
+            if not np.array_equal(idx_areax, idx_areay): 
+                print('Arealabelpair %s has partly overlapping neurons'%arealabelpair)
+            idx_areax, idx_areay = np.array_split(np.random.permutation(idx_areax), 2)
+
+        B                   = np.concatenate((sessions[ises].tensor_vid,
+                                sessions[ises].tensor_run),axis=0)
+
+        # for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over stimuli 
+        for istim,stim in enumerate([0,4,7]): # loop over stimuli 
+            idx_T               = ses.trialdata['stimCond']==stim
+
+            #on tensor during the response:
+            X                   = sessions[ises].tensor[np.ix_(idx_areax,idx_T,idx_resp)]
+            Y                   = sessions[ises].tensor[np.ix_(idx_areay,idx_T,idx_resp)]
+            
+            # reshape to time points x neurons
+            X                   = X.reshape(len(idx_areax),-1).T
+            Y                   = Y.reshape(len(idx_areay),-1).T
+
+            #Get the behavioraldata in the same shape as the neural data:
+            Bstim                   = B[np.ix_(range(np.shape(B)[0]),idx_T,idx_resp)].reshape(np.shape(B)[0],-1).T
+            Bstim                   = zscore(Bstim,axis=0,nan_policy='omit')
+            Bstim                   = Bstim[:,~np.all(np.isnan(Bstim),axis=0)]
+            
+            #for each rank, regress out anything that can be behaviorally predicted
+            for rankout in range(nranks_behavout):
+                if rankout>0:
+                    X_orig,X_hat,X_out  = regress_out_cv(X=Bstim,Y=X,rank=rankout,lam=0,kfold=5)
+                    Y_orig,Y_hat,Y_out  = regress_out_cv(X=Bstim,Y=Y,rank=rankout,lam=0,kfold=5)
+                else:
+                    X_out               = X
+                    Y_out               = Y
+                #OUTPUT: MAX PERF, OPTIM RANK, PERF FOR EACH RANK ACROSS FOLDS AND MODELFITS
+                R2_cv[iapl,rankout,ises,istim],optim_rank[iapl,rankout,ises,istim],_  = RRR_wrapper(Y_out, X_out, nN=params['nsubnonlabeled '],nranks=params['nranks'],nmodelfits=nmodelfits)
+
+#%% Plotting:
+clr = clrs_arealabelpairs[0]
+R2_toplot = np.reshape(R2_cv,(narealabelpairs,nranks_behavout,nSessions*params['nStim']))
+rank_toplot = np.reshape(optim_rank,(narealabelpairs,nranks_behavout,nSessions*params['nStim']))
+
+fig,axes = plt.subplots(1,1,figsize=(3*cm,4*cm))
+
+clrs = get_clr_areas(['V1','PM'])
+ax = axes
+handles = []
+for iapl, arealabelpair in enumerate(arealabelpairs):
+    handles.append(shaded_error(range(nranks_behavout),R2_toplot[iapl].T,error='ci95',
+                                color=clrs_arealabelpairs[iapl],alpha=0.3,ax=ax))
+    ax_nticks(ax,3)
+    for irank in range(nranks_behavout-1):
+        x = R2_toplot[iapl][irank]
+        y = R2_toplot[iapl][irank+1]
+        nas = np.logical_or(np.isnan(x), np.isnan(y))
+        t,p = ttest_rel(x[~nas], y[~nas])
+
+        print('Paired t-test: p=%.3f' % (p))
+        ax.text((irank+1)/(nranks_behavout),0.95-0.05*iapl,'%s' % get_sig_asterisks(p),rotation=45,
+                transform=ax.transAxes,ha='center',va='center',fontsize=8,color=clrs_arealabelpairs[iapl]) #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
+
+ax.set_ylabel('performance')
+ax.legend(handles,['V1->PM','PM->V1'],frameon=False,loc='best',fontsize=6)
+my_legend_strip(ax)
+# ax.set_ylim([0,0.12])
+ax.set_xticks(np.arange(0,nranks_behavout))
+ax.set_xticklabels(['orig']+['%d'%i for i in range(1,nranks_behavout)])
+ax.set_xlabel('rank behavior out')
+plt.tight_layout()
+sns.despine(offset=3,top=True,right=True)
+my_savefig(fig,figdir,'RRR_Behavout_ranks_%dsessions' % nSessions)
+
+#%% Quantify in percentage how much RRR performance was reduced due to behavioral variability that was shared: 
+perfreduc = (R2_cv[:,-1,:]-R2_cv[:,0,:]) / R2_cv[:,0,:]
+for iapl, arealabelpair in enumerate(arealabelpairs):
+    print('%1.1f%% +- %1.1f%% of performance reduction in %s' % (np.nanmean(perfreduc[iapl]*100),np.nanstd(perfreduc[iapl]*100), arealabelpairs[iapl]))
+
+#%% 
    #    #       #           #####  #######  #####   #####  ### ####### #     #  #####  
   # #   #       #          #     # #       #     # #     #  #  #     # ##    # #     # 
  #   #  #       #          #       #       #       #        #  #     # # #   # #       
@@ -308,13 +382,13 @@ my_savefig(fig,figdir,'CovarianceMatrix_V1PM_Behavior_%s' % sessions[ises].sessi
 #     # #       #          #     # #       #     # #     #  #  #     # #    ## #     # 
 #     # ####### #######     #####  #######  #####   #####  ### ####### #     #  #####  
 
-#%% 
-areas = ['V1','PM','AL']
-session_list        = np.array(['LPE12223_2024_06_10']) #GR
-sessions,nSessions   = filter_sessions(protocols = 'GR',only_session_id=session_list,filter_areas=areas)
+# #%% 
+# areas = ['V1','PM','AL']
+# session_list        = np.array(['LPE12223_2024_06_10']) #GR
+# sessions,nSessions   = filter_sessions(protocols = 'GR',only_session_id=session_list,filter_areas=areas)
 
-#%% 
-sessions,nSessions   = filter_sessions(protocols = 'GR')
+# #%% 
+# sessions,nSessions   = filter_sessions(protocols = 'GR')
 
 #%% Get all data 
 only_all_areas = np.array(['V1','PM'])
@@ -368,7 +442,6 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Subtracting mean 
         sessions[ises].tensor[np.ix_(range(N),idx_T,idx_resp)] -= np.nanmean(sessions[ises].tensor[np.ix_(range(N),idx_T,idx_resp)],axis=1,keepdims=True)
 
 #%% Compute the variance and covariance explained by the behavior: 
-
 # Variance: 
 arealabeled         = np.array(['V1unl','V1lab','PMunl','PMlab'])
 clrs_arealabels     = get_clr_area_labeled(arealabeled)

@@ -7,24 +7,17 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-
-from loaddata.get_data_folder import get_local_drive
-
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.decomposition import PCA
-from scipy.stats import zscore,wilcoxon,ttest_rel
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
-from skimage.measure import block_reduce
+from scipy.stats import ttest_rel
 
+from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
-from utils.psth import compute_tensor,compute_respmat
 from utils.plot_lib import * #get all the fixed color schemes
 from utils.regress_lib import *
-from utils.tuning import compute_tuning_wrapper
 from utils.params import load_params
 from utils.RRRlib import *
 
@@ -134,9 +127,9 @@ for icomp,comp in enumerate(comps):
     ax_nticks(ax,3)
     _,pval = ttest_rel(R2_toplot[comp[0],:],R2_toplot[comp[1],:],nan_policy='omit')
     ax.text(0.6,0.1*(1+icomp),'%sp=%1.2e' % (get_sig_asterisks(pval),pval),transform=ax.transAxes,fontsize=5,color=clrs[icomp])
-ax.set_xlabel('Within')
-ax.set_ylabel('Across')
-ax.set_title(r'$R^2$')
+ax.set_xlabel('within')
+ax.set_ylabel('across')
+ax.set_title('performance')
     # ax.legend(['V1 (V1->V1 vs PM->V1)','PM (V1->PM vs PM->PM)'],frameon=False,loc='upper left')
 ax.legend(['V1','PM'],frameon=False,fontsize=7,loc='upper left')
 my_legend_strip(ax)
@@ -151,8 +144,8 @@ for icomp,comp in enumerate(comps):
     _,pval = ttest_rel(rank_toplot[comp[0],:],rank_toplot[comp[1],:],nan_policy='omit')
     ax.text(0.6,0.1*(1+icomp),'%sp=%1.2e' % (get_sig_asterisks(pval),pval),transform=ax.transAxes,fontsize=5,color=clrs[icomp])
 # ax.legend(['V1','PM'],frameon=False,fontsize=10)ax.set_xlabel('Within')
-ax.set_ylabel('Across')
-ax.set_title('Rank')
+ax.set_ylabel('across')
+ax.set_title('rank')
 
 # ax.legend(['V1 (V1->V1 vs PM->V1)','PM (V1->PM vs PM->PM)'],frameon=False,loc='upper left')
 # my_legend_strip(ax)
