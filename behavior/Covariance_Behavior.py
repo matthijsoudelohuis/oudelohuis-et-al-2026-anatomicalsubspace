@@ -20,7 +20,7 @@ from sklearn.preprocessing import MinMaxScaler
 from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
 from utils.psth import compute_tensor
-from utils.plot_lib import * #get all the fixed color schemes
+from utils.plot_lib import * 
 from utils.regress_lib import *
 from utils.RRRlib import *
 from utils.params import load_params
@@ -253,13 +253,15 @@ plt.tight_layout()
 #     # #       #     # #     #   # #   #     # #     #    #    
 ######  ####### #     # #     #    #    #######  #####     #    
 
-#%% 
-# areas = ['V1','PM','AL','RSP']
+#%% Identify sessions to load
+areas = ['V1','PM','AL']
 sessions,nSessions   = filter_sessions(protocols = ['GR','GN'],only_all_areas=areas,filter_areas=areas,
                                        min_lab_cells_V1=40,min_lab_cells_PM=40)
+
+sessions,nSessions   = filter_sessions(protocols = ['GR','GN'],filter_areas=areas)
 report_sessions(sessions)
 
-#%% 
+#%% Load the data including behavior
 [sessions,t_axis] = load_resid_tensor(sessions,params,load_behav=True)
 
 #%% Parameters for decoding from size-matched populations of V1 and PM labeled and unlabeled neurons
@@ -280,12 +282,6 @@ optim_rank          = np.full((narealabelpairs,nranks_behavout,nSessions,params[
 for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model'):
 # for ises,ses in tqdm(enumerate(sessions[:2]),total=nSessions,desc='Fitting RRR model for within vs across populations'):
     idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
-    if np.sum((ses.celldata['roi_name']=='V1') & (ses.celldata['noise_level']<params['maxnoiselevel']))<(nsampleneurons*2):
-        continue
-    
-    if np.sum((ses.celldata['roi_name']=='PM') & (ses.celldata['noise_level']<params['maxnoiselevel']))<(nsampleneurons*2):
-        continue
-
     for iapl, arealabelpair in enumerate(arealabelpairs):
         
         alx,aly = arealabelpair.split('-')
@@ -296,11 +292,8 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
         idx_areay           = np.where(np.all((ses.celldata['roi_name']==aly,
                                 ses.celldata['noise_level']<params['maxnoiselevel']
                                 ),axis=0))[0]
-
-        if np.any(np.intersect1d(idx_areax,idx_areay)): #if interactions within one population:
-            if not np.array_equal(idx_areax, idx_areay): 
-                print('Arealabelpair %s has partly overlapping neurons'%arealabelpair)
-            idx_areax, idx_areay = np.array_split(np.random.permutation(idx_areax), 2)
+        if len(idx_areax)<params['nsubnonlabeled'] or len(idx_areax)<params['nsubnonlabeled']:
+            continue
 
         B                   = np.concatenate((sessions[ises].tensor_vid,
                                 sessions[ises].tensor_run),axis=0)
@@ -331,7 +324,7 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
                     X_out               = X
                     Y_out               = Y
                 #OUTPUT: MAX PERF, OPTIM RANK, PERF FOR EACH RANK ACROSS FOLDS AND MODELFITS
-                R2_cv[iapl,rankout,ises,istim],optim_rank[iapl,rankout,ises,istim],_  = RRR_wrapper(Y_out, X_out, nN=params['nsubnonlabeled '],nranks=params['nranks'],nmodelfits=nmodelfits)
+                R2_cv[iapl,rankout,ises,istim],optim_rank[iapl,rankout,ises,istim],_  = RRR_wrapper(Y_out, X_out, nN=params['nsubnonlabeled'],nranks=params['nranks'],nmodelfits=nmodelfits)
 
 #%% Plotting:
 clr = clrs_arealabelpairs[0]
@@ -352,9 +345,9 @@ for iapl, arealabelpair in enumerate(arealabelpairs):
         y = R2_toplot[iapl][irank+1]
         nas = np.logical_or(np.isnan(x), np.isnan(y))
         t,p = ttest_rel(x[~nas], y[~nas])
-
+        p = p*nranks_behavout #bonferonni correction
         print('Paired t-test: p=%.3f' % (p))
-        ax.text((irank+1)/(nranks_behavout),0.95-0.05*iapl,'%s' % get_sig_asterisks(p),rotation=45,
+        ax.text((irank+1.5)/(nranks_behavout),0.95-0.1*iapl,'%s' % get_sig_asterisks(p),rotation=45,
                 transform=ax.transAxes,ha='center',va='center',fontsize=8,color=clrs_arealabelpairs[iapl]) #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
 
 ax.set_ylabel('performance')
@@ -371,7 +364,106 @@ my_savefig(fig,figdir,'RRR_Behavout_ranks_%dsessions' % nSessions)
 #%% Quantify in percentage how much RRR performance was reduced due to behavioral variability that was shared: 
 perfreduc = (R2_cv[:,-1,:]-R2_cv[:,0,:]) / R2_cv[:,0,:]
 for iapl, arealabelpair in enumerate(arealabelpairs):
-    print('%1.1f%% +- %1.1f%% of performance reduction in %s' % (np.nanmean(perfreduc[iapl]*100),np.nanstd(perfreduc[iapl]*100), arealabelpairs[iapl]))
+    print('%1.1f%% +- %1.1f%% reduction for %s' % (np.nanmean(perfreduc[iapl]*100),np.nanstd(perfreduc[iapl]*100), arealabelpairs[iapl]))
+
+#%% How many of the weights are positive at the source and target area? 
+arealabelpairs  = ['V1-PM','PM-V1']
+params['nmodelfits'] = 5
+clrs_arealabelpairs = get_clr_area_pairs(arealabelpairs)
+narealabelpairs     = len(arealabelpairs)
+
+frac_pos_weights_target = np.full((nSessions,params['nStim'],params['nranks'],params['nmodelfits']),np.nan)
+frac_pos_weights_source  = np.full((nSessions,params['nStim'],params['nranks'],params['nmodelfits']),np.nan)
+
+# for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model'):
+for ises,ses in tqdm(enumerate(sessions[:2]),total=nSessions,desc='Fitting RRR model for within vs across populations'):
+    idx_T               = np.ones(len(ses.trialdata['Orientation']),dtype=bool)
+    for iapl, arealabelpair in enumerate(arealabelpairs):
+        
+        alx,aly = arealabelpair.split('-')
+
+        idx_areax           = np.where(np.all((ses.celldata['roi_name']==alx,
+                                ses.celldata['noise_level']<params['maxnoiselevel']
+                                ),axis=0))[0]
+        idx_areay           = np.where(np.all((ses.celldata['roi_name']==aly,
+                                ses.celldata['noise_level']<params['maxnoiselevel']
+                                ),axis=0))[0]
+        if len(idx_areax)<params['nsubnonlabeled'] or len(idx_areax)<params['nsubnonlabeled']:
+            continue
+        
+        # for imf in tqdm(range(params['nmodelfits']),total=params['nmodelfits'],desc='Fitting RRR model for session %d/%d' % (ises+1,nSessions)):
+        for imf in range(params['nmodelfits']):
+            idx_areax_sub       = np.random.choice(idx_areax,params['nsubnonlabeled'],replace=False)
+            idx_areay_sub        = np.random.choice(idx_areay,params['nsubnonlabeled']*narealabelpairs,replace=False)
+
+            for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
+                idx_T               = ses.trialdata['stimCond']==stim
+
+                X                  = sessions[ises].tensor[np.ix_(idx_areax_sub,idx_T,idx_resp)]
+                Y                   = sessions[ises].tensor[np.ix_(idx_areay_sub,idx_T,idx_resp)]
+
+                # reshape to neurons x time points
+                X                  = X.reshape(len(idx_areax_sub),-1).T
+                Y                   = Y.reshape(len(idx_areay_sub),-1).T
+
+                X                  = zscore(X,axis=0) #zscore the activity per neuron
+                Y                   = zscore(Y,axis=0)
+
+                #RRR X to Y
+                B_hat         = LM(Y,X, lam=params['lam'])
+                Y_hat         = X @ B_hat
+
+                # decomposing and low rank approximation of Y_hat
+                U, s, V = svds(Y_hat,k=params['nranks'],which='LM')
+                U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
+
+                #Fraction of weights that is projecting positively onto firing rate:
+                for r in range(params['nranks']): #for each rank
+                    #find correct sign of weight by sign of inner product mean firing rate and left singular vector
+                    frac_pos_weights_target[ises,istim,r,imf] = np.sum(np.sign(V[r,:])==np.sign(U[:,r].T @ np.nanmean(Y, axis=1))) / np.shape(V)[1]
+                    
+                # Predictive source directions
+                W = B_hat @ V.T  # (N x k)
+                # Mean source firing rate across timepoints
+                mu_X = X.mean(axis=1)
+                for r in range(params['nranks']): #for each rank
+                    # Align sign to mean source firing
+                    sign = np.sign(np.dot(X @ W[:, r], mu_X))
+                    frac_pos_weights_source[ises,istim,r,imf] = np.sum(np.sign(W[:, r])==sign) / np.shape(W)[0]
+
+#%% Plot the fraction of weights that have a positive projection onto the mean firing rate for each rank:
+# data = frac_pos_weights_target #take the maximum across all kfolds
+# ymeantoplot = np.nanmean(data,axis=(0,1,3)) #mean across sessions and stim and modelfits
+# yerrortoplot = np.nanstd(data,axis=(0,1,3))# / np.sqrt(params['nSessions']*nmodelfits)
+subplotlabels = np.array(['Source weights','Target weights'])
+fig,axes = plt.subplots(1,2,figsize=(8*cm,4*cm),sharey=False,sharex=True)
+for idata,data in enumerate([frac_pos_weights_source,frac_pos_weights_target]):
+# for idata,data in enumerate([frac_pos_weight_in,frac_pos_weight_out]):
+    ax = axes[idata]
+    handles = []
+    for iapl, arealabelpair in enumerate(arealabelpairs):
+        # data = frac_pos_weights_target #take the maximum across all kfolds
+        ymeantoplot = np.nanmean(data[iapl],axis=(0,2)) #mean across sessions and stim and modelfits
+        # yerrortoplot = np.nanstd(data,axis=(0,1,3,4)) / np.sqrt(params['nSessions']*nmodelfits)
+        # yerrortoplot = np.nanstd(data,axis=(0,1,3))# / np.sqrt(params['nSessions']*nmodelfits)
+        yerrortoplot = np.nanstd(data[iapl],axis=(0,2))# / np.sqrt(params['nSessions']*nmodelfits)
+
+        handles.append(shaded_error(np.arange(params['nranks'])+1,ymeantoplot,yerrortoplot,ax=ax,color=clrs_arealabelpairs[iapl],alpha=0.3))
+    ax.legend(handles,arealabelpairs)
+    my_legend_strip(ax)
+    ax.axhline(y=0.5,color='grey',linestyle='--')
+    ax.set_xticks(np.arange(params['nranks'])[::3]+1)
+    ax.set_yticks([0.5,0.7,0.9])
+    ax.set_yticklabels([0.5,0.7,0.9])
+    ax.set_ylim([0.45,1])
+    ax.set_xlim([1,10])
+    ax.set_xlabel('dim.')
+    ax.set_title(subplotlabels[idata])
+    if idata == 0:
+        ax.set_ylabel('frac. pos. weights')
+plt.tight_layout()
+sns.despine(fig=fig,top=True,right=True,offset=3)
+my_savefig(fig,figdir,'frac_pos_weights_%dsessions' % (nSessions))
 
 #%% 
    #    #       #           #####  #######  #####   #####  ### ####### #     #  #####  

@@ -132,6 +132,12 @@ celldata = pd.concat([ses.celldata[filter_nearlabeled(ses,radius=params['radius'
 # celldata = pd.concat([ses.celldata for ses in sessions]).reset_index(drop=True)
 celldata = celldata[celldata['noise_level']<20]
 
+#%% Report number of neurons per arealabel:
+arealabels = ['V1unl','V1lab','PMunl','PMlab','ALunl']
+for arealabel in arealabels:
+    print('%d %s neurons\n' % (np.sum(celldata['arealabel']==arealabel),arealabel))
+
+
 #%% ##################### Cell properties for labeled vs unlabeled cells:
 pairs = [('V1unl','V1lab'),('PMunl','PMlab')]
 arealabels = ['V1unl','V1lab','PMunl','PMlab','ALunl']
@@ -181,6 +187,15 @@ for i in range(nfields):
 sns.despine(trim=False,top=True,right=True,offset=2)
 plt.tight_layout()
 my_savefig(fig,figdir,'Quality_Metrics_%dnearbycells_%dsessions' % (len(celldata),nsessions))
+
+#%% Preferred orientation difference?
+# The distribution of preferred stimulus directions was similar for 
+# labeled and unlabeled neurons 
+# in V1 and PM (Kolmogorov-Smirnov test. 
+
+
+
+
 
 #%% 
 # DEPRECATED:~~~~ 

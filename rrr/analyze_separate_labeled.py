@@ -136,6 +136,10 @@ plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 # my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_%dsessions' % (version,params['nSessions']))
 
+#%% How much more predictive are labeled neurons on average:
+perf_ratio = (R2_cv[1].flatten() / R2_cv[0].flatten())*100-100
+print('%1.1f%% +- %1.1f%% more predictive' % (np.nanmean(perf_ratio),np.nanstd(perf_ratio)))
+
 #%% Show figure for each of the arealabelpairs and each of the dataversions
 #Reshape stim x sessions:
 R2_data                 = np.reshape(R2_cv,(narealabelpairs,params['nSessions']*params['nStim']))

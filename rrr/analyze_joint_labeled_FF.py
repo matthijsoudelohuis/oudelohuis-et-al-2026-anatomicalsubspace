@@ -36,8 +36,8 @@ version = 'FF_original'
 # filename = 'RRR_Joint_labeled_FF_original_2026-02-19_18-05-04'
 filename = 'RRR_Joint_labeled_FF_original_2026-03-19_22-05-08'
 
-version = 'FF_behavout'
-filename = 'RRR_Joint_labeled_FF_behavout_2026-02-20_02-00-03'
+# version = 'FF_behavout'
+# filename = 'RRR_Joint_labeled_FF_behavout_2026-02-20_02-00-03'
 # filename = 'RRR_Joint_labeled_FF_behavout_2026-03-20_00-39-57'
 
 # version = 'FB_original'
@@ -69,10 +69,6 @@ fig, axes = plt.subplots(1,1,figsize=(6*cm,5*cm))
 ax = axes
 ises = 8
 handles = []
-# ax.plot(range(params['nranks']),np.nanmean(R2_ranks[0],axis=(0,1,3,4)),label='All neurons',color='grey')
-# ax.plot(np.nanmean(R2_ranks[1][ises],axis=(0,2,3)),label=sourcearealabelpairs[0],color=clrs_arealabelpairs[0])
-# ax.plot(np.nanmean(R2_ranks[2][ises],axis=(0,2,3)),label=sourcearealabelpairs[1],color=clrs_arealabelpairs[1])
-# ax.plot(np.nanmean(R2_ranks[3][ises],axis=(0,2,3)),label=sourcearealabelpairs[2],color=clrs_arealabelpairs[2])
 for iapl,apl in enumerate(sourcearealabelpairs):
     ymeantoplot = np.nanmean(R2_ranks[iapl+1][ises],axis=(0,2,3))
     yerrortoplot = np.nanstd(R2_ranks[iapl+1][ises],axis=(0,2,3)) / np.sqrt(nmodelfits)
