@@ -39,22 +39,8 @@ session_list        = np.array(['LPE12223_2024_06_10']) #GR
 sessions,nSessions   = filter_sessions(protocols = 'GR',only_all_areas=only_all_areas,only_session_id=session_list)
 
 #%% Get all data 
-# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,filter_noiselevel=False)
 report_sessions(sessions)
-
-#%% Load data :        
-# ises                = 0 #which session to plot
-# sessions[ises].load_data(load_behaviordata=True, load_calciumdata=True,load_videodata=True,
-#                             calciumversion=params['calciumversion'])
-
-# #%% Identify sessions to load
-# areas = ['V1','PM','AL']
-# sessions,nSessions   = filter_sessions(protocols = ['GR','GN'],only_all_areas=areas,filter_areas=areas,
-#                                        min_lab_cells_V1=40,min_lab_cells_PM=40)
-
-# sessions,nSessions   = filter_sessions(protocols = ['GR','GN'],filter_areas=areas)
-# report_sessions(sessions)
 
 #%% Load the data including behavior
 [sessions,t_axis] = load_resid_tensor(sessions,params,load_behav=False)
