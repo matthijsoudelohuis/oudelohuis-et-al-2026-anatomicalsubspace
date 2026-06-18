@@ -48,11 +48,11 @@ session_list        = np.array([
                                 # ['LPE11086_2023_12_15'], #Same
                                 ]) 
 
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list,
-                                       min_lab_cells_V1=20,filter_noiselevel=False)
+sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list)
 
 #%% Wrapper function to load the tensor data, 
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'])
+
 
 #%% Show an example session, stimulus for feedforward direction
 params['direction'] = 'FF'
@@ -62,7 +62,7 @@ clrs_arealabelpairs = np.array(['grey','red'])
 
 ises                = 0
 stim                = 5
-ntimebins           = 250
+offset              = 12
 
 Nsub  = np.sum(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpairs[1],
                             sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
@@ -75,8 +75,8 @@ targetarealabelpair = 'V1unl'
 clrs_arealabelpairs = np.array(['grey','red'])
 
 ises                = 1
-stim                = 6
-ntimebins           = 250
+stim                = 8
+offset              = 6
 
 Nsub  = np.sum(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpairs[1],
                             sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
@@ -87,13 +87,13 @@ rank                = 4 #rank of RRR ranks to plot
 idx_resp            = np.where((t_axis>=0) & (t_axis<=2))[0]
 
 idx_areax1          = np.where(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpairs[0],
-                            sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
+                            # sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
                             ),axis=0))[0]
 idx_areax2          = np.where(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpairs[1],
-                            sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
+                            # sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
                             ),axis=0))[0]
 idx_areay       = np.where(np.all((sessions[ises].celldata['arealabel']==targetarealabelpair,
-                                        sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
+                                        # sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
                                         ),axis=0))[0]
 print(len(idx_areax2))
 
@@ -131,24 +131,16 @@ U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
 B_rrr           = B_hat @ V[:rank,:].T @ V[:rank,:] #project beta coeff into low rank subspace
 Y_hat_test_rr   = X @ B_rrr
 
-# # How much of the variance in the source area is aligned with the predictive subspace:
-# Ub, sb, Vb = svds(B_rrr,k=rank,which='LM')
-# Ub, sb, Vb = Ub[:, ::-1], sb[::-1], Vb[::-1, :]
-
-# The latent space is not exactly the same as the one used in RRR reconstruction
 # # Project latents into predictive subspace: Predictive X-directions scaled by their predictive power (eigenvalues)
-Z = X @ B_hat @ V.T #@ np.diag(s)
+Z = X @ B_hat @ V.T 
 
 X_1 = copy.deepcopy(X)
 X_1[:,Nsub:] = 0
-Z_1 = X_1 @ B_hat @ V[:rank,:].T# @ np.diag(s)
+Z_1 = X_1 @ B_hat @ V[:rank,:].T
 
 X_2 = copy.deepcopy(X)
 X_2[:,:Nsub] = 0
-Z_2 = X_2 @ B_hat @ V[:rank,:].T# @ np.diag(s)
-
-# Z_1 = Z_1 @ np.diag(sb)
-# Z_2 = Z_2 @ np.diag(sb)
+Z_2 = X_2 @ B_hat @ V[:rank,:].T
 
 #Apply DOC: 
 doc_eigvecs, doc_eigvals = doc_rotation(Z_1,Z_2)
@@ -163,13 +155,81 @@ S = Cy - Cx
 Z_1_doc = Z_1 @ doc_eigvecs
 Z_2_doc = Z_2 @ doc_eigvecs
 
-# new covariance matrices
+#Plot excerpt of latent dimensions over time
+kernel_size         = 3 #size of smoothing kernel in frames
+ntimebins           = 250
+lw                  = 0.7
+startidx            = 100 #skip the first 100 frames
+
+#Little bit of smoothing:
+Z_1_smooth = np.zeros_like(Z_1)
+Z_2_smooth = np.zeros_like(Z_2)
+kernel = np.ones(kernel_size) / kernel_size
+for r in range(rank):
+    Z_1_smooth[:,r] = np.convolve(Z_1[:,r], kernel, mode='same')
+    Z_2_smooth[:,r] = np.convolve(Z_2[:,r], kernel, mode='same')
+
+#Little bit of smoothing:
+Z_1_doc_smooth = np.zeros_like(Z_1_doc)
+Z_2_doc_smooth = np.zeros_like(Z_2_doc)
+kernel = np.ones(kernel_size) / kernel_size
+for r in range(rank):
+    Z_1_doc_smooth[:,r] = np.convolve(Z_1_doc[:,r], kernel, mode='same')
+    Z_2_doc_smooth[:,r] = np.convolve(Z_2_doc[:,r], kernel, mode='same')
+
+diffs               = []
+#Find a good chunk of time to plot where the DOC is highlighting the difference between the two populations:
+for ichunk,idx_k0 in enumerate(np.arange(startidx,np.shape(X1)[0]-ntimebins,ntimebins)):
+    idx_K = np.arange(idx_k0,idx_k0+ntimebins)
+    # diff = np.sum(Z_1_doc_smooth[idx_K,:] - Z_2_doc_smooth[idx_K,:],axis=0)
+    # diffs.append(diff[0] - diff[1])
+    diff = np.var(Z_1_doc_smooth[idx_K,:],axis=0) - np.var(Z_2_doc_smooth[idx_K,:],axis=0)
+    diffs.append(np.sum(np.abs(diff)))
+
+    # diffdoc = np.sum(np.abs(Z_1_doc_smooth[idx_K,:] - Z_2_doc_smooth[idx_K,:]),axis=0)
+    # difforig = np.sum(np.abs(Z_1_smooth[idx_K,:] - Z_2_smooth[idx_K,:]),axis=0)
+    # diffdoc = np.var(Z_1_doc_smooth[idx_K,:],axis=0) - np.var(Z_2_doc_smooth[idx_K,:],axis=0)
+    # difforig = np.var(Z_1_smooth[idx_K,:],axis=0) - np.var(Z_2_smooth[idx_K,:],axis=0)
+    # diffs.append(np.sum(np.abs(diffdoc)) - np.sum(np.abs(difforig)))
+
+ichunk = np.argmax(diffs)
+idx_K = np.arange(ichunk*ntimebins+startidx,(ichunk+1)*ntimebins+startidx)
+
+#make the figure:
+fig,axes = plt.subplots(1,2,figsize=(8*cm,4*cm),sharex=True,sharey=True)
+ax = axes[0]
+for r in range(rank):
+    # ax = axes[r,0]
+    ax.plot(Z_1_smooth[idx_K,r]-r*offset,color=clrs_arealabelpairs[0],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[0]]),lw=lw)
+    ax.plot(Z_2_smooth[idx_K,r]-r*offset,color=clrs_arealabelpairs[1],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[1]]),lw=lw)
+ax.set_ylabel('Latent dim %d' % (r+1))
+# ax.text(0.5,0.9,'RRR Latent %d' % (r+1),fontsize=7,transform=ax.transAxes)
+ax.axis('off')
+ax.set_title('RRR latent space',fontsize=7)
+ax = axes[1]
+for r in range(rank):
+    # ax = axes[r,1]
+    ax.plot(Z_1_doc_smooth[idx_K,r]-r*offset,color=clrs_arealabelpairs[0],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[0]]),lw=lw)
+    ax.plot(Z_2_doc_smooth[idx_K,r]-r*offset,color=clrs_arealabelpairs[1],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[1]]),lw=lw)
+    # ax.set_ylabel('Latent dim %d' % (r+1))
+handles = ax.get_legend_handles_labels()[0]
+ax.legend(handles=handles[:2],frameon=False,bbox_to_anchor=(1.3,.8),
+          loc='upper right',fontsize=8,reverse=True)
+my_legend_strip(ax)
+ax.axis('off')
+ax.set_title('DOC latent space',fontsize=7)
+ax.add_artist(AnchoredSizeBar(ax.transData, 10*sessions[ises].sessiondata['fs'][0],
+                "10 Sec", loc=4, frameon=False))
+plt.tight_layout()
+my_savefig(fig,figdir,'Example_Latents_Joint_DOC_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
+
+#%% new covariance matrices
 Cx_doc = np.cov(Z_1_doc, rowvar=False)
 Cy_doc = np.cov(Z_2_doc, rowvar=False)
 # difference of covariances
 S_doc = Cy_doc - Cx_doc
 
-#%% Make figure of the covariance matrices before and after DOC:
+#Make figure of the covariance matrices before and after DOC:
 nanperc = np.nanpercentile(np.abs([Cx,Cy,S,S_doc]), 95)
 vmin,vmax = -nanperc,nanperc
 lw = 0.4
@@ -193,64 +253,7 @@ for ax in axes.flatten():
     # ax.grid(which='minor', color='grey', linestyle='-', linewidth=0.5, alpha=0.5)
     # ax.grid(True)
 
-# my_savefig(fig,figdir,'Example_Cov_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
-
-#%% Plot excerpt of latent dimensions over time
-kernel_size         = 3 #size of smoothing kernel in frames
-
-#Little bit of smoothing:
-Z_1_smooth = np.zeros_like(Z_1)
-Z_2_smooth = np.zeros_like(Z_2)
-kernel = np.ones(kernel_size) / kernel_size
-for r in range(rank):
-    Z_1_smooth[:,r] = np.convolve(Z_1[:,r], kernel, mode='same')
-    Z_2_smooth[:,r] = np.convolve(Z_2[:,r], kernel, mode='same')
-
-#Little bit of smoothing:
-Z_1_doc_smooth = np.zeros_like(Z_1_doc)
-Z_2_doc_smooth = np.zeros_like(Z_2_doc)
-kernel = np.ones(kernel_size) / kernel_size
-for r in range(rank):
-    Z_1_doc_smooth[:,r] = np.convolve(Z_1_doc[:,r], kernel, mode='same')
-    Z_2_doc_smooth[:,r] = np.convolve(Z_2_doc[:,r], kernel, mode='same')
-
-#Find a good chunk of time to plot where the DOC is highlighting the difference between the two populations:
-offset = 5
-lw = 0.7
-diffs = []
-for ichunk,idx_k0 in enumerate(np.arange(0,np.shape(X1)[0]-ntimebins,ntimebins)):
-    idx_K = np.arange(idx_k0,idx_k0+ntimebins)
-    diff = np.sum(Z_1_doc_smooth[idx_K,:] - Z_2_doc_smooth[idx_K,:],axis=0)
-    diffs.append(diff[0] - diff[1])
-ichunk = np.argmax(diffs)
-idx_K = np.arange(ichunk*ntimebins,(ichunk+1)*ntimebins)
-
-#make the figure:
-fig,axes = plt.subplots(1,2,figsize=(8*cm,4*cm),sharex=True,sharey=True)
-ax = axes[0]
-for r in range(rank):
-    # ax = axes[r,0]
-    ax.plot(Z_1_smooth[idx_K,r]-r*offset,color=clrs_arealabelpairs[0],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[0]]),lw=lw)
-    ax.plot(Z_2_smooth[idx_K,r]-r*offset,color=clrs_arealabelpairs[1],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[1]]),lw=lw)
-ax.set_ylabel('Latent dim %d' % (r+1))
-# ax.text(0.5,0.9,'RRR Latent %d' % (r+1),fontsize=7,transform=ax.transAxes)
-ax.axis('off')
-ax.set_title('RRR Latents',fontsize=7)
-ax = axes[1]
-for r in range(rank):
-    # ax = axes[r,1]
-    ax.plot(Z_1_doc_smooth[idx_K,r]-r*offset,color=clrs_arealabelpairs[0],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[0]]),lw=lw)
-    ax.plot(Z_2_doc_smooth[idx_K,r]-r*offset,color=clrs_arealabelpairs[1],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[1]]),lw=lw)
-    # ax.set_ylabel('Latent dim %d' % (r+1))
-handles = ax.get_legend_handles_labels()[0]
-ax.legend(handles=handles[:2],frameon=False,bbox_to_anchor=(1.3,.8),loc='upper right',fontsize=8)
-my_legend_strip(ax)
-ax.axis('off')
-ax.set_title('DOC Latents',fontsize=7)
-ax.add_artist(AnchoredSizeBar(ax.transData, 10*sessions[ises].sessiondata['fs'][0],
-                "10 Sec", loc=4, frameon=False))
-plt.tight_layout()
-# my_savefig(fig,figdir,'Example_Latents_Joint_DOC_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
+my_savefig(fig,figdir,'Example_Cov_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
 
 #%% Now compute the R2 of the latents in the target area, to see if they are more predictive than the original RRR latents:
 R2_latents_orig = np.zeros((2,rank))
@@ -288,16 +291,18 @@ for r in range(rank):
     R2_latents_doc[1,r] = EV(Y,Y_hat_latent_r)
 
 #Plotting the R2 of the original and DOC latents:
-fig,axes = plt.subplots(1,2,figsize=(7*cm,4*cm),sharey=True,sharex=True)
+fig,axes = plt.subplots(1,3,figsize=(10*cm,3.6*cm),sharey=False,sharex=True)
 ax = axes[0]
 x = np.arange(1,rank+1)
 ax.plot(x,R2_latents_orig[0,:],color=clrs_arealabelpairs[0],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[0]]))
 ax.plot(x,R2_latents_orig[1,:],color=clrs_arealabelpairs[1],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[1]]))
-ax.set_xlabel('RRR dimension')
-ax.set_ylabel('R$^{2}$')
-ax_nticks(ax,4)
-ax.set_title('Original (RRR)')
+ax.set_xlabel('RRR latent')
+ax.set_ylabel('performance')
+# ax_nticks(ax,4)
+ax.set_title('original RRR')
 ax.set_xticks(x)
+ax.set_yticks(np.arange(-1,1.1,0.01))
+ax.set_ylim([0,0.05])
 
 ax.legend(frameon=False,loc='center right',fontsize=8)
 my_legend_strip(ax)
@@ -305,32 +310,22 @@ my_legend_strip(ax)
 ax = axes[1]
 ax.plot(x,R2_latents_doc[0,:],color=clrs_arealabelpairs[0],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[0]]))
 ax.plot(x,R2_latents_doc[1,:],color=clrs_arealabelpairs[1],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[1]]))
-ax.set_xlabel('DOC dimension')
-ax.set_title('After DOC rotation')
-ax.set_ylim([0,ax.get_ylim()[1]])
+ax.set_xlabel('DOC latent')
+ax.set_title('after DOC')
+ax.set_ylabel('performance')
+ax.set_yticks(np.arange(-1,1.1,0.01))
+ax.set_ylim([0,0.04])
+ax.legend(frameon=False,loc='center right',fontsize=8)
+my_legend_strip(ax)
+
+ax = axes[2]
+ax.plot(x,R2_latents_doc[1,:]- R2_latents_doc[0,:],color='black',alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[0]]))
+ax.set_xlabel('DOC latent')
+ax.set_ylabel('$\Delta$ perf. (%s-%s)' % (arealabeled_to_figlabels([sourcearealabelpairs[1]]),arealabeled_to_figlabels([sourcearealabelpairs[0]])))
+ax.axhline(y=0,color='grey',linestyle='--')
+ax.set_yticks(np.arange(-1,1.1,0.01))
+ax.set_ylim([-0.02,0.02])
+
 plt.tight_layout()
-sns.despine(fig=fig, top=True, right=True, offset = 1,trim=True)
-# my_savefig(fig,figdir,'R2_DOC_Example_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
-
-#%%
-#Plotting the R2 of the original and DOC latents:
-fig,axes = plt.subplots(1,2,figsize=(7*cm,4*cm),sharey=True,sharex=True)
-ax = axes[0]
-x = np.arange(1,rank+1)
-ax.plot(x,R2_latents_orig[1,:] - R2_latents_orig[0,:],color='grey',alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[0]]))
-# ax.plot(x,R2_latents_orig[1,:],color=clrs_arealabelpairs[1],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[1]]))
-ax.set_xlabel('Latent dimension')
-ax.set_ylabel('$\Delta$R$^{2}$')
-ax_nticks(ax,4)
-ax.set_xticks(x)
-ax.axhline(y=0,color='grey',linestyle='--')
-# ax.legend(frameon=False,loc='upper right',fontsize=8)
-# my_legend_strip(ax)
-
-ax = axes[1]
-ax.plot(x,R2_latents_doc[1,:]- R2_latents_doc[0,:],color='grey',alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[0]]))
-# ax.plot(x,R2_latents_doc[1,:],color=clrs_arealabelpairs[1],alpha=1,label=arealabeled_to_figlabels([sourcearealabelpairs[1]]))
-ax.set_xlabel('Latent dimension')
-ax.set_ylabel('R$^{2}$')
-ax.axhline(y=0,color='grey',linestyle='--')
-sns.despine(fig=fig, top=True, right=True, offset = 3)
+sns.despine(fig=fig, top=True, right=True, offset = 2)
+my_savefig(fig,figdir,'R2_DOC_Example_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
