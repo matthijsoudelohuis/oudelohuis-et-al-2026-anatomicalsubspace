@@ -16,10 +16,7 @@ from statsmodels.stats.multitest import multipletests
 
 from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
-from looped.run_RRR_joint_looped_time import R2_ranks
 from utils.plot_lib import * #get all the fixed color schemes
-# from utils.corr_lib import *
-# from utils.RRRlib import *
 from utils.regress_lib import *
 from utils.params import load_params
 
@@ -41,8 +38,8 @@ filename = 'RRR_Joint_looped_FF_original_2026-02-23_23-26-57'
 # version = 'FB_original'
 # filename = 'RRR_Joint_looped_FB_original_2026-02-24_09-26-47'
 
-# version = 'FB_behavout'
-# filename = 'RRR_Joint_looped_FB_behavout_2026-02-24_10-57-25'
+version = 'FB_behavout'
+filename = 'RRR_Joint_looped_FB_behavout_2026-02-24_10-57-25'
 
 #%% Load the data:
 data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
@@ -139,6 +136,7 @@ df = pd.DataFrame(data.T,columns=labels)
 from itertools import combinations
 group_labels = df.columns
 combinations = list(combinations(group_labels, 2))
+tvalues = np.full((len(combinations)),np.nan)
 pvalues = np.full((len(combinations)),np.nan)
 xlocs = np.full((len(combinations),2),np.nan)
 
@@ -146,14 +144,15 @@ for icomb, comb in enumerate(combinations):
     group1 = df[comb[0]]
     group2 = df[comb[1]]
     t_stat, p_value = stats.ttest_rel(group1, group2, nan_policy='omit')
-    
+    tvalues[icomb] = t_stat
     pvalues[icomb] = p_value
     xlocs[icomb] = [np.where(labels == comb[0])[0][0], np.where(labels == comb[1])[0][0]]
 pvalues_corrected = multipletests(pvalues, method=params['multcomp_method'])[1]
 
+print("Comparison (performance):")
 for icomb, comb in enumerate(combinations):
     if pvalues_corrected[icomb] < 0.05:
-        print(f"Comparison: {comb[0]} vs {comb[1]}, p-value: {pvalues[icomb]:.4f}")
+        print(f"{comb[0]} vs {comb[1]}, t={tvalues[icomb]:.1f},p={pvalues[icomb]:.3f}")
         x1 = np.where(labels == comb[0])[0][0]
         x2 = np.where(labels == comb[1])[0][0]
         add_stat_annotation(ax, x1, x2, np.nanpercentile(data,90) + icomb*0.0015, pvalues[icomb], h=0)
@@ -167,10 +166,6 @@ for isa,sourcearea in enumerate(sourcearealabelpairs):
     for ita,targetarea in enumerate(targetarealabelpairs):
         data[isa*ntargetarealabelpairs+ita] = optim_rank[isa][ita].flatten()
         labels[isa*ntargetarealabelpairs+ita] = arealabeled_to_figlabels(sourcearea) + ' - ' + arealabeled_to_figlabels(targetarea)
-# ax.set_ylabel('Optimal rank')
-# ax.set_ylim([0,9])
-# ax_nticks(ax,4)
-# ax.set_yticks(np.arange(0,10,2))
 ax.set_axis_off()
 
 # Perform pairwise t-tests between the groups and multipletests correction for multiple comparisons:
@@ -178,6 +173,7 @@ df = pd.DataFrame(data.T,columns=labels)
 from itertools import combinations
 group_labels = df.columns
 combinations = list(combinations(group_labels, 2))
+tvalues = np.full((len(combinations)),np.nan)
 pvalues = np.full((len(combinations)),np.nan)
 xlocs = np.full((len(combinations),2),np.nan)
 
@@ -186,13 +182,15 @@ for icomb, comb in enumerate(combinations):
     group2 = df[comb[1]]
     t_stat, p_value = stats.ttest_rel(group1, group2, nan_policy='omit')
     
+    tvalues[icomb] = t_stat
     pvalues[icomb] = p_value
     xlocs[icomb] = [np.where(labels == comb[0])[0][0], np.where(labels == comb[1])[0][0]]
 pvalues_corrected = multipletests(pvalues, method=params['multcomp_method'])[1]
 
+print("Comparison (rank):")
 for icomb, comb in enumerate(combinations):
     if pvalues_corrected[icomb] < 0.05:
-        print(f"Comparison: {comb[0]} vs {comb[1]}, p-value: {pvalues[icomb]:.4f}")
+        print(f"{comb[0]} vs {comb[1]}, t={tvalues[icomb]:.1f},p={pvalues[icomb]:.3f}")
         x1 = np.where(labels == comb[0])[0][0]
         x2 = np.where(labels == comb[1])[0][0]
         add_stat_annotation(ax, x1, x2,8 + icomb*0.2, pvalues[icomb], h=0)
@@ -201,6 +199,16 @@ for icomb, comb in enumerate(combinations):
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=3)
 ax.set_xticks(np.arange(4),labels,rotation=45,ha='right')
 # my_savefig(fig,figdir,'RRR_joint_looped_%s_%dsessions' % (version,params['nSessions']))
+
+#%% How much more predictive are labeled-labeled neurons on average:
+perf_ratio = (R2_cv[1,1].flatten() / R2_cv[0,0].flatten())*100-100
+print('%s-%s more predictive than %s-%s' % (arealabeled_to_figlabels(sourcearealabelpairs[1]),
+                                            arealabeled_to_figlabels(targetarealabelpairs[1]),
+                                            arealabeled_to_figlabels(sourcearealabelpairs[0]),
+                                            arealabeled_to_figlabels(targetarealabelpairs[0])))
+
+print('%1.1f%% +- %1.1f%% more predictive' % (np.nanmean(perf_ratio),np.nanstd(perf_ratio)))
+
 
 #%% Show Performance R2 across stim and sessions:
 fig, axes = plt.subplots(1,1,figsize=(4.5*cm,5.9*cm))
@@ -258,8 +266,6 @@ for icomb, comb in enumerate(combinations):
 
 ax.set_ylabel('performance')
 ax.set_ylim([my_floor(np.nanmin(np.nanmean(data,axis=1))*0.9,3),my_ceil(np.nanmax(np.nanmean(data,axis=1))*1.2,3)])
-# ax.set_ylim([-.01,my_ceil(np.nanmax(data),2)])
-# ax.set_ylim([-.002,0.015])
 ax_nticks(ax,4)
 ax.set_xticks(np.arange(4),labels,rotation=45,ha='right')
 

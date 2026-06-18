@@ -22,8 +22,6 @@ from utils.params import load_params
 params = load_params()
 
 params['regress_behavout'] = False
-params['maxnoiselevel'] = 20
-params['radius'] = 50
 
 #%% 
 figdir = os.path.join(params['figdir'],'RRR','DOC')
@@ -85,7 +83,7 @@ Nsub  = np.sum(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpair
                             ),axis=0))
 
 #%% Compute example shared latents: 
-rank                = 5 #rank of RRR ranks to plot
+rank                = 4 #rank of RRR ranks to plot
 idx_resp            = np.where((t_axis>=0) & (t_axis<=2))[0]
 
 idx_areax1          = np.where(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpairs[0],

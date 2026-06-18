@@ -75,7 +75,7 @@ else:
 
 #%% Do RRR of V1 and PM labeled and unlabeled neurons
 version = 'FF'
-# version = 'FB'
+version = 'FB'
 if version == 'FF': 
     sourcearealabelpairs = ['V1unl','V1lab']
     # crossarealabelpairs  = ['V1unl','V1lab','ALunl']
@@ -209,7 +209,7 @@ R2_Z_Xpred_perrank[np.broadcast_to(idx_incomplete[:,np.newaxis,:,:,:,np.newaxis,
 
 #%%
 normalize = False
-fig, axes = plt.subplots(1,2,figsize=(8*cm,4*cm),sharex=True,sharey=True)
+fig, axes = plt.subplots(1,2,figsize=(7*cm,3.5*cm),sharex=True,sharey=False)
 
 clrs_crossarealabelpairs = ['grey','red','blue']
 for iapl in range(nsourcearealabelpairs):
@@ -221,36 +221,50 @@ for iapl in range(nsourcearealabelpairs):
         if normalize:
             datatoplot = datatoplot / np.nanmean(R2_Z_Xpred[iapl,0],axis=-1)
         datatoplot = np.reshape(datatoplot,(nSessions*params['nStim'],len(Nsub_pops)))
-        handles.append(shaded_error(Nsub_pops,datatoplot,ax=ax,error='sem',color=clrs_crossarealabelpairs[icpl]))
+        handles.append(shaded_error(Nsub_pops,datatoplot,ax=ax,error='sem',color=clrs_crossarealabelpairs[icpl],linewidth=0.5))
+        # ax.plot(Nsub_pops,np.nanmean(datatoplot,axis=0),linestyle=None,marker='.',markersize=5,color=clrs_crossarealabelpairs[icpl])
 
-        # meantoplot = np.nanmean(R2_Z_Xpred[iapl,icpl],axis=(0,1,3))
-        # if normalize:
-        #     meantoplot = meantoplot / np.nanmean(R2_Z_Xpred[iapl,0],axis=(0,1,3))
-
-        # handles.append(ax.plot(Nsub_pops,meantoplot,marker='o',markersize=5,
-        #                        color=clrs_crossarealabelpairs[icpl],label=crossarealabelpair)[0])
-      
         sestoplot = np.nanmean(R2_Z_Xpred[iapl,icpl],axis=(1,3))
         if normalize:
             sestoplot = sestoplot / np.nanmean(R2_Z_Xpred[iapl,0],axis=(1,3))
         # ax.plot(Nsub_pops,sestoplot.T,marker=None,color=clrs_crossarealabelpairs[icpl],lw=0.4)
 
-    leg = ax.legend(handles,arealabeled_to_figlabels(crossarealabelpairs),frameon=False)
-    # my_legend_strip(ax)
-    ax.set_title('Predicting %s latents' % arealabeled_to_figlabels(sourcearealabelpairs[iapl]))
+    leg = ax.legend(handles,arealabeled_to_figlabels(crossarealabelpairs),frameon=False,
+                    title='cross-predict\nwith',fontsize=6,alignment='center')
+    my_legend_strip(ax)
+    leg.get_title().set_fontsize(6)
+    ax.set_title('Predicting %s latents' % arealabeled_to_figlabels(sourcearealabelpairs[iapl]),fontsize=7)
     ax.set_xlabel('# neurons')
-    if iapl==0: 
-        ax.set_ylabel('performance')
+    # if iapl==0: 
+    ax.set_ylabel('performance')
+    ax.set_ylim([0,ax.get_ylim()[1]*1.08])
     ax_nticks(ax,3)
     ax.set_xticks(np.arange(0,60,10))
-    ax.set_ylim([0,ax.get_ylim()[1]])
+    ax.set_xlim([3,ax.get_xlim()[1]])
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=0)
 # my_savefig(fig,figdir,'Ridge_Latents_popsize_cvR2_labunl_%s_%dsessions' % (version,nSessions))
 
 #%% How many unlabeled neurons are needed to predict the same level:
-neuron_ratio = (np.nanmean(R2_Z_Xpred[1][1],axis=-1) / np.nanmean(R2_Z_Xpred[1][0],axis=-1)) * 100 - 100
+# neuron_ratio = (np.nanmean(R2_Z_Xpred[1][1],axis=-1) / np.nanmean(R2_Z_Xpred[1][0],axis=-1)) * 100 - 100
+# print('%s: %1.1f%% +- %1.1f%% more unlabeled neurons needed to decode the same predictive signals that are sent' % (version,np.nanmean(neuron_ratio),np.nanstd(neuron_ratio)))
+
+#%% How many unlabeled neurons are needed to predict the same level:
+xdata           = np.arange(0,50,1)
+ydata_unl       = np.interp(xdata,Nsub_pops,np.nanmean(R2_Z_Xpred[1][0],axis=(0,1,3)))
+ydata_lab       = np.interp(xdata,Nsub_pops,np.nanmean(R2_Z_Xpred[1][1],axis=(0,1,3)))
+
+perf_eval_x     = np.arange(np.max(np.min([ydata_unl,ydata_lab],axis=1)),
+                        np.min(np.max([ydata_unl,ydata_lab],axis=1)),
+                        0.01)
+neuron_ratio    = np.full(len(perf_eval_x),np.nan)
+
+for iperf,perf in enumerate(perf_eval_x):
+    neuron_ratio[iperf] = xdata[np.where(ydata_unl>perf)[0][0]] / xdata[np.where(ydata_lab>perf)[0][0]]
+neuron_ratio = neuron_ratio * 100 - 100
 print('%s: %1.1f%% +- %1.1f%% more unlabeled neurons needed to decode the same predictive signals that are sent' % (version,np.nanmean(neuron_ratio),np.nanstd(neuron_ratio)))
+
+
 
 #%% 
 normalize = True

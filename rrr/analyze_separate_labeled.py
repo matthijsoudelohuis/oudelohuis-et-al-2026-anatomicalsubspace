@@ -99,16 +99,16 @@ handles = []
 ydata = R2_rank_datatoplot[idxs[0]]
 ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
 handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
-                            color=clrs_arealabelpairs[idxs[0]-1],alpha=0.3))
+                            color=clrs_arealabelpairs[idxs[0]],alpha=0.3))
 ydata = R2_rank_datatoplot[idxs[1]]
-# ydata = np.nanmean(R2_rank_datatoplot[idxs[1]])
+
 ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
 handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
-                            color=clrs_arealabelpairs[idxs[1]-1],alpha=0.3))
+                            color=clrs_arealabelpairs[idxs[1]],alpha=0.3))
 for idx in idxs:
-    ax.plot(meanranks[idx],meanR2[idx]+0.005,color=clrs_arealabelpairs[idx-1],marker='v',markersize=5)
+    ax.plot(meanranks[idx],meanR2[idx]+0.005,color=clrs_arealabelpairs[idx],marker='v',markersize=5)
 
-leg = ax.legend(handles,arealabeled_to_figlabels(sourcearealabelpairs[idxs-1]),frameon=False)
+leg = ax.legend(handles,arealabeled_to_figlabels(sourcearealabelpairs[idxs]),frameon=False)
 my_legend_strip(ax)
 ax.set_xlabel('Rank')
 ax.set_ylabel('Cross-validated R2')
