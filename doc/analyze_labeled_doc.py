@@ -50,7 +50,7 @@ t_ticks = np.array([-1,0,1,2])
 x = np.arange(1,fixed_rank+1)
 
 #Plotting the R2 of the original and DOC latents:
-fig,axes = plt.subplots(2,2,figsize=(7.3*cm,6.3*cm),sharey=False,sharex=False)
+fig,axes = plt.subplots(2,2,figsize=(7.3*cm,6.8*cm),sharey=False,sharex=False)
 
 plotcontrasts = np.array([[1,2],[1,3]])
 ax = axes[0]
@@ -97,10 +97,16 @@ for idata,data in enumerate([R2_ranks_orig,R2_ranks_doc]):
         ax.set_ylim([0,ax.get_ylim()[1]])
         ax.set_xlabel('latent')
         ax.set_ylabel('performance')
-        ax_nticks(ax,4)
+        if idata==1:
+            ax.set_title('DOC %s vs %s' % (arealabeled_to_figlabels(sourcearealabelpairs[contrasts[icontrast,1]]),
+                                       arealabeled_to_figlabels(sourcearealabelpairs[contrasts[icontrast,0]])))
+        else:
+            ax.set_title('Original RRR')
+    
+        ax_nticks(ax,3)
         ax.set_xticks(x)
 plt.tight_layout()
-sns.despine(fig=fig, top=True, right=True, offset = 3)
+sns.despine(fig=fig, top=True, right=True, offset = 2)
 my_savefig(fig,figdir,'DOC_latents_r2_%s' % params['direction'])
 
 #%% Plotting the R2 for the first DOC latent as a scatter plot: 

@@ -11,15 +11,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.impute import SimpleImputer
 from scipy.stats import zscore
 from tqdm import tqdm
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
-from sklearn.preprocessing import MinMaxScaler
 
-from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
-from utils.psth import compute_tensor
 from utils.plot_lib import * 
 from utils.regress_lib import *
 from utils.RRRlib import *
@@ -37,6 +32,7 @@ only_all_areas = np.array(['V1','PM','AL'])
 #%% Only one session
 session_list        = np.array(['LPE12223_2024_06_10']) #GR
 sessions,nSessions   = filter_sessions(protocols = 'GR',only_all_areas=only_all_areas,only_session_id=session_list)
+report_sessions(sessions)
 
 #%% Get all data 
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,filter_noiselevel=False)
@@ -149,7 +145,7 @@ ax.set_xticklabels(['orig']+['%d'%i for i in range(1,nranks_neuralout)])
 ax.set_xlabel('rank neural out')
 plt.tight_layout()
 sns.despine(offset=3,top=True,right=True)
-# my_savefig(fig,figdir,'RRR_Neuralout_AL_ranks_%dsessions' % nSessions)
+my_savefig(fig,figdir,'RRR_Neuralout_AL_ranks_%dsessions' % nSessions)
 
 #%% Quantify in percentage how much RRR performance was reduced due to neural variability that was shared: 
 perfreduc = (R2_cv[:,-1,:]-R2_cv[:,0,:]) / R2_cv[:,0,:]
