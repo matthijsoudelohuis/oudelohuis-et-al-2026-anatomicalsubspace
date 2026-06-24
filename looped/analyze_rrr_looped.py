@@ -196,7 +196,7 @@ for icomb, comb in enumerate(combinations):
         add_stat_annotation(ax, x1, x2,8 + icomb*0.2, pvalues[icomb], h=0)
 
 # plt.tight_layout()
-sns.despine(fig=fig,trim=False,top=True,right=True,offset=3)
+sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
 ax.set_xticks(np.arange(4),labels,rotation=45,ha='right')
 # my_savefig(fig,figdir,'RRR_joint_looped_%s_%dsessions' % (version,params['nSessions']))
 

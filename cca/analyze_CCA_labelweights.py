@@ -240,7 +240,7 @@ ax.axhline(y=hlinepos,color='k',linestyle='--')
 ax_nticks(ax,5)
 ax.set_xticks(np.arange(0,params['n_components']+5,5),np.arange(0,params['n_components']+5,5)+1)
 
-sns.despine(top=True,right=True,offset=1,trim=True)
+sns.despine(top=True,right=True,offset=2,trim=True)
 # my_savefig(fig,figdir,'CCA_V1PM_labeled_ratioloadings_%dsessions_%s' % (params['nSessions'],params['varversion']))
 # my_savefig(fig,figdir,'CCA_V1PM_labeled_deltaloadings_%dsessions_%s' % (params['nSessions'],params['varversion']),formats=['png'])
 
@@ -275,7 +275,7 @@ ax.set_yticks([0,ax.get_ylim()[1]/2,ax.get_ylim()[1]])
 ax.set_xlabel('CCA Dimension')
 ax.set_ylabel('Correlation')
 ax.legend(handles,arealabelpair_to_figlabel(arealabelpairs),loc='upper right',frameon=False,fontsize=6)
-sns.despine(top=True,right=True,offset=1,trim=True)
+sns.despine(top=True,right=True,offset=2,trim=True)
 my_savefig(fig,figdir,'CCA_V1PM_pops_labeled_testcorr_%dsessions' % (params['nSessions']))
 
 #%%
@@ -295,7 +295,7 @@ ax.set_yticks([0,ax.get_ylim()[1]/2,ax.get_ylim()[1]])
 ax.set_xlabel('CCA Dimension')
 ax.set_ylabel('Correlation')
 ax.legend(arealabelpairs,loc='upper right',frameon=False,fontsize=9)
-sns.despine(top=True,right=True,offset=1,trim=True)
+sns.despine(top=True,right=True,offset=2,trim=True)
 # my_savefig(fig,figdir,'CCA_V1PM_pops_labeled_testcorr_normdim1_%dsessions_%s' % (nSessions,varversion),formats=['png'])
 
 #%%
@@ -331,7 +331,7 @@ ax.set_xlabel('CCA Dimension')
 ax.set_ylabel(u'Δ Correlation')
 ax.legend(handles,arealabelpair_to_figlabel(arealabelpairs),loc='upper right',frameon=False,fontsize=6)
 my_legend_strip(ax)
-sns.despine(top=True,right=True,offset=1,trim=False)
+sns.despine(top=True,right=True,offset=2,trim=False)
 my_savefig(fig,figdir,'CCA_V1PM_pops_labeled_testcorr_divUnl_%dsessions' % (params['nSessions']))
 
 #%% 
@@ -419,7 +419,7 @@ my_savefig(fig,figdir,'CCA_V1PM_pops_labeled_testcorr_divUnl_%dsessions' % (para
 # ax.legend(frameon=False,loc='best')
 # ax.set_xlabel('PC Dimension')
 # ax.set_ylabel('Explained variance')
-# sns.despine(top=True,right=True,offset=1,trim=True)
+# sns.despine(top=True,right=True,offset=2,trim=True)
 # plt.tight_layout()
 # # my_savefig(fig,figdir,'PCA_V1PM_labeled_GRGN_%dsessions' % (nSessions),formats=['png'])
 
@@ -643,7 +643,7 @@ my_savefig(fig,figdir,'CCA_V1PM_pops_labeled_testcorr_divUnl_%dsessions' % (para
 # ax_nticks(ax,5)
 # ax.set_xticks(np.arange(0,n_components+5,5),np.arange(0,n_components+5,5)+1)
 
-# sns.despine(top=True,right=True,offset=3,trim=True)
+# sns.despine(top=True,right=True,offset=2,trim=True)
 # my_savefig(fig,figdir,'CCA_V1PM_labeled_deltaweights_%dsessions_%s_equaleigenspectrum' % (nSessions,varversion),formats=['png'])
 
 
@@ -848,7 +848,7 @@ my_savefig(fig,figdir,'CCA_V1PM_pops_labeled_testcorr_divUnl_%dsessions' % (para
 #     ax.set_title(area)
 #     # ax.axhline(y=0,color='k',linestyle='--')
 #     ax.axhline(y=1,color='k',linestyle='--')
-# sns.despine(top=True,right=True,offset=1,trim=True)
+# sns.despine(top=True,right=True,offset=2,trim=True)
 # #  ax.scatter(1,PMlabdiff,s=20,color='k')
 # plt.tight_layout()
 # # my_savefig(fig,figdir,'CCA_V1PM_labeled_sumdeltaweights_behav_%dsessions_%s' % (nSessions,varversion),formats=['png'])

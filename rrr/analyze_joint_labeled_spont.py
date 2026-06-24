@@ -179,7 +179,7 @@ for idirec,(direc,optim_rank,R2_cv,R2_ranks,alps) in enumerate(zip(['FF','FB'],[
     add_paired_ttest_results(ax,R2_cv[idxs[0]].flatten(),R2_cv[idxs[1]].flatten(),color='k',pos=[0.5,0.9])
     ax.set_title(direc)
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'RRR_joint_R2cv_%dsessions_spont' % params['nSessions'])
 
 
@@ -253,7 +253,7 @@ for idirec,(direc,optim_rank,R2_cv,R2_ranks,alps) in enumerate(zip(['FF','FB'],[
     elif diffmetric == 'difference':
         ax.axhline(y=0,color='grey',linestyle='--')
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'RRR_joint_R2_ratio_%dsessions_spont' % params['nSessions'])
 
 

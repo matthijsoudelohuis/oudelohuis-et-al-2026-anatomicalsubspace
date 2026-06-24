@@ -270,7 +270,7 @@ if df.any(axis=None):
     sns.stripplot(ax=ax,data=df,color='grey',size=3,palette=clrs_projpairs)
     ax.set_xticklabels(labels=df.columns,rotation=60,fontsize=8)
     annotator = Annotator(ax, statpairs, data=df,order=list(df.columns))
-    annotator.configure(test='Wilcoxon', text_format='star', loc='inside',line_height=0,text_offset=3,fontsize=8,	
+    annotator.configure(test='Wilcoxon', text_format='star', loc='inside',line_height=0,text_offset=2,fontsize=8,	
                         line_width=1,comparisons_correction='Benjamini-Hochberg',verbose=False,
                         correction_format='replace')
     annotator.apply_and_annotate()

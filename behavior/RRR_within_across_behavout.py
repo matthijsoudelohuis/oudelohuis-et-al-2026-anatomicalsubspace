@@ -156,7 +156,7 @@ ax.plot([0,25],[0,25],':',color='grey',linewidth=1)
 # ax.legend(['V1 (V1->V1 vs PM->V1','PM (PM->PM vs V1->PM'],frameon=False,fontsize=8)
 plt.tight_layout()
 
-sns.despine(offset=3,top=True,right=True)
+sns.despine(offset=2,top=True,right=True)
 my_savefig(fig,figdir,'RRR_R2Rank_WithinVSAcross_%dneurons_behavout' % nsampleneurons)
 
 #%% Get the ratio of within to across:
@@ -182,6 +182,6 @@ ax.axhline(y=1,color='k',linestyle='--')
 ax.set_ylabel('Ratio rank\n(Within/Across)')
 ax.set_xticks(range(2),['V1','PM' ],rotation=0,fontsize=6)
 plt.tight_layout()
-sns.despine(offset=3,top=True,right=True)
+sns.despine(offset=2,top=True,right=True)
 my_savefig(fig,figdir,'RRR_R2Rank_ratio_WithinVSAcross_%dneurons_behavout' % nsampleneurons)
 

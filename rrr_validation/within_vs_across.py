@@ -159,7 +159,7 @@ ax.plot([0,25],[0,25],':',color='grey',linewidth=1)
 # ax.legend(['V1 (V1->V1 vs PM->V1','PM (PM->PM vs V1->PM'],frameon=False,fontsize=8)
 plt.tight_layout()
 
-sns.despine(offset=3,top=True,right=True)
+sns.despine(offset=2,top=True,right=True)
 my_savefig(fig,figdir,'RRR_R2Rank_WithinVSAcross_%dneurons' % nsampleneurons)
 
 #%% Get the ratio of within to across:
@@ -184,7 +184,7 @@ ax.axhline(y=1,color='k',linestyle='--')
 ax.set_ylabel('Ratio rank\n(Within/Across)')
 ax.set_xticks(range(2),['V1','PM' ],rotation=0,fontsize=6)
 plt.tight_layout()
-sns.despine(offset=3,top=True,right=True)
+sns.despine(offset=2,top=True,right=True)
 my_savefig(fig,figdir,'RRR_R2Rank_ratio_WithinVSAcross_%dneurons' % nsampleneurons)
 
 #%% Are the within area predictive dimensions the same as the across?
@@ -437,7 +437,7 @@ axes[0, 0].set_xlim([-0.3, 1])
 axes[0, 0].set_xticks([0,0.25, 0.5, 0.75,1])
 
 plt.tight_layout()
-sns.despine(fig=fig, top=True, right=True, offset=3)
+sns.despine(fig=fig, top=True, right=True, offset=2)
 my_savefig(fig, figdir, 'RRR_Remove_Pred_Subspace_hist_%dneurons_%ddims' % (nsampleneurons, r_plot + 1))
 
 #%% Compute normalized R2 when removing predictive and non-predictive dimensions and print results:
@@ -581,7 +581,7 @@ print('Normalized R2 when removing non-predictive dimensions: %.2f +/- %.2f' % (
 # ax.plot([0,25],[0,25],':',color='grey',linewidth=1)
 # # ax.legend(['V1 (V1->V1 vs PM->V1','PM (PM->PM vs V1->PM'],frameon=False,fontsize=8)
 
-# sns.despine(offset=3,top=True,right=True)
+# sns.despine(offset=2,top=True,right=True)
 # plt.tight_layout()
 
 # my_savefig(fig,figdir,'RRR_R2Rank_WithinVSAcross_%dneurons' % nsampleneurons,formats=['png'])

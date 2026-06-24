@@ -222,7 +222,7 @@ ax.set_xlabel('Dimension')
 ax.set_ylabel('|Weight|')
 ax.set_title('Target Weights V1')
 
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 plt.tight_layout()
 my_savefig(fig,figdir,'RRR_weights_acrossranks_labeledV1PM_%dsessions' % (nSessions),formats=['png'])
 
@@ -285,7 +285,7 @@ ax.set_xlabel('Dimension')
 ax.set_ylabel('|Weight|')
 ax.set_title('Target Weights V1')
 
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 plt.tight_layout()
 my_savefig(fig,figdir,'RRR_weights_acrossranks_labeledV1PM_%dsessions' % (nSessions),formats=['png'])
 
@@ -560,7 +560,7 @@ ax.set_title('Variance regressed out by behavioral modulation')
 ax.set_ylabel('Variance Explained')
 ax.set_xlabel('Rank')
 ax.set_xticks(range(nranks+1))
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
 
 #%% Plot the number of dimensions per area pair
@@ -669,7 +669,7 @@ def plot_RRR_R2_regressout(R2data,rankdata,arealabelpairs,clrs_arealabelpairs):
     # ax.set_ylim([my_floor(np.nanmin(datatoplot),1),1])
     ax.set_ylim([0.6,1.25])
 
-    sns.despine(top=True,right=True,offset=3)
+    sns.despine(top=True,right=True,offset=2)
     # axes[1,0].set_xticklabels(arealabelpairs2,fontsize=7)
     # axes[1,1].set_xticklabels(arealabelpairs2,fontsize=7)
     axes[2,0].set_xticklabels(arealabelpairs2,fontsize=7)
@@ -841,7 +841,7 @@ ax.set_title('Variance regressed out by behavioral modulation')
 ax.set_ylabel('Variance Explained')
 ax.set_xlabel('Rank')
 ax.set_xticks(range(nranks+1))
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
 
 #%% Parameters for RRR between size-matched populations of V1 and PM labeled and unlabeled neurons
@@ -966,7 +966,7 @@ ax.set_xlabel('Population pair')
 ax.set_xticks(range(narealabelpairs))
 ax.set_ylim([0.8,1])
 # ax.set_ylim([0,0.5])
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 ax.set_xticklabels(arealabelpairs2,fontsize=7)
 
 # my_savefig(fig,figdir,'RRR_V1PM_regressoutneural_Frac_var_shared_ALRSP_%dsessions' % (nSessions))

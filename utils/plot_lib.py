@@ -609,7 +609,7 @@ def plot_RRR_R2_arealabels(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_arealab
     ax.set_xlabel('Population pair')
     ax.set_xticks(range(narealabelpairs))
 
-    sns.despine(top=True,right=True,offset=3)
+    sns.despine(top=True,right=True,offset=2)
     axes[1].set_xticklabels(arealabelpairs2,fontsize=7)
     axes[2].set_xticklabels(arealabelpairs2,fontsize=7)
     fig.tight_layout()
@@ -732,7 +732,7 @@ def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_
     ax.set_yticklabels(ticks,color=clrs_arealabelpairs[1])
     ax.set_title('rank')
 
-    sns.despine(top=True,right=True,offset=3)
+    sns.despine(top=True,right=True,offset=2)
     fig.tight_layout()
     return fig
 

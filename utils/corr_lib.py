@@ -733,7 +733,7 @@ def plot_bin_corr_distance(sessions,binmean,binedges,areapairs,corr_type):
     ax.set_ylim([0,0.04])
     ax.set_aspect('auto')
     ax.tick_params(axis='both', which='major', labelsize=8)
-    sns.despine(top=True,right=True,offset=3)
+    sns.despine(top=True,right=True,offset=2)
     plt.tight_layout()
     return fig
 
@@ -771,7 +771,7 @@ def plot_bin_corr_distance_projs(binsdRF,bin_dist,areapairs,layerpairs,projpairs
     # ax.set_ylim([0,ax.get_ylim()[1]])
         ax.set_ylim([0,0.04])
         ax.tick_params(axis='both', which='major', labelsize=8)
-    sns.despine(top=True,right=True,offset=3)
+    sns.despine(top=True,right=True,offset=2)
     plt.tight_layout()
     return fig
 

@@ -255,7 +255,7 @@ ax.set_xlabel('Time (s)')
 
 ax.legend(handles=handles,labels=list(arealabels),frameon=False)
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 # my_savefig(fig,figdir,'Tensor_avg_timetrace_GR_%dneurons' % (nCells))
 # zip(handles, arealabels)
 # handles, labels = zip(*zip(handles, arealabels))

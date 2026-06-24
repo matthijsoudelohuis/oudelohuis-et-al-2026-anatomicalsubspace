@@ -144,7 +144,7 @@ ax.set_xticks(np.arange(0,nranks_neuralout))
 ax.set_xticklabels(['orig']+['%d'%i for i in range(1,nranks_neuralout)])
 ax.set_xlabel('rank neural out')
 plt.tight_layout()
-sns.despine(offset=3,top=True,right=True)
+sns.despine(offset=2,top=True,right=True)
 my_savefig(fig,figdir,'RRR_Neuralout_AL_ranks_%dsessions' % nSessions)
 
 #%% Quantify in percentage how much RRR performance was reduced due to neural variability that was shared: 

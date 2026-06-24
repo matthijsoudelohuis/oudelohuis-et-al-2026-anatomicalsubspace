@@ -269,7 +269,7 @@ for ipair,pair in enumerate(pairs):
 
 ax.set_ylabel('Noise correlation')
 ax_nticks(ax,4)
-sns.despine(fig=fig, top=True, right=True,offset=1)
+sns.despine(fig=fig, top=True, right=True,offset=2)
 ax.set_xticks(np.arange(len(areapairs)),labels=areapairs,rotation=90)
 plt.tight_layout()
 
@@ -320,7 +320,7 @@ for iarea,area in enumerate(['V1','PM']):
     ax.set_ylabel('Noise correlation')
     ax.set_title('within %s' % area)
     ax_nticks(ax,4)
-    sns.despine(fig=fig, top=True, right=True,offset=1)
+    sns.despine(fig=fig, top=True, right=True,offset=2)
     ax.set_xticks(np.arange(3),labels=arealabelpair_to_figlabel(projpairs_areas[iarea]),rotation=90)
 
     my_savefig(fig,savedir,'Noisecorr_Area_%s_%s_%dSessions' % (area,corr_type,nSessions))
@@ -403,7 +403,7 @@ for data,title in zip([meancorr,varcorr],['Mean','SD']):
     ax.set_ylabel('%s Noise correlation' % (title))
     ax.set_title(area)
     ax_nticks(ax,4)
-    sns.despine(fig=fig, top=True, right=True,offset=1)
+    sns.despine(fig=fig, top=True, right=True,offset=2)
     ax.set_xticks(np.arange(4),labels=arealabelpair_to_figlabel(areapairs),rotation=90)
 
     my_savefig(fig,savedir,'%s_Noisecorr_Arealabeled_%dSessions' % (title,nSessions))
@@ -485,7 +485,7 @@ axes[0].set_title('Fraction sign. neg.')
 axes[1].set_title('Fraction sign. pos.')
 ax.set_xticks(np.arange(len(projpairs)),areaprojpairs)
 # ax.set_ylim([0,1])
-sns.despine(fig=fig,top=True,right=True,trim=True,offset=1)
+sns.despine(fig=fig,top=True,right=True,trim=True,offset=2)
 axes[0].set_xticklabels(areaprojpairs,rotation=45)
 axes[1].set_xticklabels(areaprojpairs,rotation=45)
 my_savefig(fig,savedir,'FracCorr_%s_%s' % (areapair,corr_type))
@@ -530,7 +530,7 @@ axes[0].set_title('Fraction sign. neg.')
 axes[1].set_title('Fraction sign. pos.')
 ax.set_xticks(np.arange(len(projpairs)),areaprojpairs)
 # ax.set_ylim([0,1])
-sns.despine(fig=fig,top=True,right=True,trim=True,offset=1)
+sns.despine(fig=fig,top=True,right=True,trim=True,offset=2)
 axes[0].set_xticklabels(areaprojpairs,rotation=45)
 axes[1].set_xticklabels(areaprojpairs,rotation=45)
 # my_savefig(fig,savedir,'FracCorr_%s_%s' % (areapair,corr_type))
@@ -598,7 +598,7 @@ for data,title in zip([meancorr,varcorr],['Mean','SD']):
     ax.set_ylabel('%s Signal correlation' % (title))
     ax.set_title(area)
     ax_nticks(ax,4)
-    sns.despine(fig=fig, top=True, right=True,offset=1)
+    sns.despine(fig=fig, top=True, right=True,offset=2)
     ax.set_xticks(np.arange(4),labels=arealabelpair_to_figlabel(areapairs),rotation=90)
 
     my_savefig(fig,savedir,'%s_Sigcorr_Arealabeled_%dSessions' % (title,nSessions))
@@ -719,7 +719,7 @@ for i,(data,modlabel) in enumerate(zip([fraccorr_mod,fraccorr_radius[0],fraccorr
     ax_nticks(ax,4)
     ax.set_title('%s' % modlabel)
     ax.set_xticks(np.arange(40,200+40,40))
-    sns.despine(fig=fig, top=True, right=True,offset=3)
+    sns.despine(fig=fig, top=True, right=True,offset=2)
     my_savefig(fig,savedir,'Frac_Sig_NC_%s_AreaLabeled_Radii_%dSessions' % (modlabel,nSessions))
 
 #%% 
@@ -773,7 +773,7 @@ for i,(data,modlabel) in enumerate(zip([fraccorr_mod,fraccorr_radius[0],fraccorr
 # ax.set_xticks(np.arange(len(projpairs)),areaprojpairs)
 # # plt.tight_layout()
 # # ax.set_ylim([0,1])
-# sns.despine(fig=fig,top=True,right=True,trim=True,offset=1)
+# sns.despine(fig=fig,top=True,right=True,trim=True,offset=2)
 # my_savefig(fig,savedir,'MeanCorr_%s_%s' % (areapair,corr_type))
 
 # #%%
@@ -804,7 +804,7 @@ for i,(data,modlabel) in enumerate(zip([fraccorr_mod,fraccorr_radius[0],fraccorr
 # ax.set_xticks(np.arange(len(projpairs)),areaprojpairs)
 # # plt.tight_layout()
 # # ax.set_ylim([0,1])
-# sns.despine(fig=fig,top=True,right=True,trim=True,offset=1)
+# sns.despine(fig=fig,top=True,right=True,trim=True,offset=2)
 
 # my_savefig(fig,savedir,'StdCorr_%s_%s' % (areapair,corr_type))
 
@@ -837,7 +837,7 @@ for i,(data,modlabel) in enumerate(zip([fraccorr_mod,fraccorr_radius[0],fraccorr
 # ax.set_xticks(np.arange(len(projpairs)),areaprojpairs)
 # # plt.tight_layout()
 # # ax.set_ylim([0,1])
-# sns.despine(fig=fig,top=True,right=True,trim=True,offset=1)
+# sns.despine(fig=fig,top=True,right=True,trim=True,offset=2)
 
 # my_savefig(fig,savedir,'StdCorr_Norm_%s_%s' % (areapair,corr_type))
 
@@ -1167,7 +1167,7 @@ if df.any(axis=None):
     sns.stripplot(ax=ax,data=df,color='grey',size=3,palette=clrs_projpairs)
     ax.set_xticklabels(labels=df.columns,rotation=60,fontsize=8)
     # annotator = Annotator(ax, statpairs, data=df,order=list(df.columns))
-    # annotator.configure(test='Wilcoxon', text_format='star', loc='inside',line_height=0,text_offset=3,fontsize=8,	
+    # annotator.configure(test='Wilcoxon', text_format='star', loc='inside',line_height=0,text_offset=2,fontsize=8,	
     #                     line_width=1,comparisons_correction='Benjamini-Hochberg',verbose=False,
     #                     correction_format='replace')
     # annotator.apply_and_annotate()
@@ -1480,7 +1480,7 @@ for ipair,pair in enumerate(pairs):
 
 ax.set_ylabel('%s Noise correlation' % (abslabel))
 ax_nticks(ax,4)
-sns.despine(fig=fig, top=True, right=True,offset=3)
+sns.despine(fig=fig, top=True, right=True,offset=2)
 ax.set_xticks(np.arange(len(arealabelpairs)),labels=arealabelpairs,rotation=90)
 plt.tight_layout()
 
@@ -1545,7 +1545,7 @@ for ipair,pair in enumerate(pairs):
 
 ax.set_ylabel('Abs. noise correlation')
 ax_nticks(ax,4)
-sns.despine(fig=fig, top=True, right=True,offset=3)
+sns.despine(fig=fig, top=True, right=True,offset=2)
 ax.set_xticks(np.arange(len(arealabelpairs)),labels=arealabelpairs,rotation=90)
 plt.tight_layout()
 
@@ -1611,7 +1611,7 @@ for ipair,pair in enumerate(pairs):
 
 ax.set_ylabel('Abs. noise correlation')
 ax_nticks(ax,4)
-sns.despine(fig=fig, top=True, right=True,offset=3)
+sns.despine(fig=fig, top=True, right=True,offset=2)
 ax.set_xticks(np.arange(len(arealabelpairs)),labels=arealabelpairs,rotation=90)
 plt.tight_layout()
 
@@ -1659,7 +1659,7 @@ ax.set_ylabel('Signal correlation')
 ax.set_ylim(np.nanpercentile(df.values,1),np.nanpercentile(df.values,98))
 ax_nticks(ax,4)
 
-sns.despine(fig=fig, top=True, right=True,offset=3)
+sns.despine(fig=fig, top=True, right=True,offset=2)
 ax.set_xticks(np.arange(len(arealabelpairs)),labels=arealabelpairs,rotation=90)
 # plt.tight_layout()
 

@@ -194,7 +194,7 @@ if diffmetric == 'ratio':
 elif diffmetric == 'difference':
     ax.axhline(y=0,color='grey',linestyle='--')
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'RRR_R2_%s_rank_noiseconstant_%s_%dsessions' % (diffmetric,version,params['nSessions']))
 # my_savefig(fig,figdir,'RRR_unique_cvR2_V1lab_V1unl_V1unl_%dneurons' % Nsub)
 
@@ -238,7 +238,7 @@ ax.pcolor(bins,bins,diffdata,cmap='bwr',vmin=vmin,vmax=vmax)
 ax.set_title('Difference')
 ax.plot([0,r2lim],[0,r2lim],color='grey',linestyle='--')
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'R2_2dhist_%s_%dsessions' % (version,params['nSessions']))
 
 #%% Are the dimensions which are enhanced in labeled cells unique or express in unlabeled cells as well?
@@ -275,5 +275,5 @@ for r in range(params['nrankstoplot']):
     ax.set_title('Dimension %d' % (r+1))
     ax.plot([0,r2lim],[0,r2lim],color='grey',linestyle='--')
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'R2_2dhist_perrank_%s_%dsessions' % (version,params['nSessions']))

@@ -313,6 +313,6 @@ ax.axhline(y=0,color='k',linestyle='--')
 ax_nticks(ax,5)
 ax.set_xticks(np.arange(0,n_components+5,5),np.arange(0,n_components+5,5)+1)
 
-sns.despine(top=True,right=True,offset=3,trim=True)
+sns.despine(top=True,right=True,offset=2,trim=True)
 my_savefig(fig,figdir,'CCA_V1PM_labeled_deltaloadings_%dsessions_%s' % (nSessions,varversion),formats=['png'])
 

@@ -134,7 +134,7 @@ else:
 
 # ax.set_ylim([0,0.3])
 plt.tight_layout()
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 my_savefig(fig,figdir,'RRR_R2_acrossranks_V1PM_SPONT_%dsessions_%dsec_%dneurons' % (nSessions,temporalbin,nsampleneurons))
 
 #%% 

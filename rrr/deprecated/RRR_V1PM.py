@@ -182,7 +182,7 @@ ax.axhline(0,linestyle='--',color='grey')
 ax.legend(frameon=False,fontsize=8)
 ax.set_xlabel('Dimension')
 ax.set_ylabel('Mean weight')
-sns.despine(right=True,top=True,offset=3,trim=True)
+sns.despine(right=True,top=True,offset=2,trim=True)
 my_savefig(fig,figdir,'RRR_Meanweights_acrossranks_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
 
 #%% 
@@ -227,7 +227,7 @@ plt.suptitle('Sign. weight overlap\nacross pairs of dimensions',fontsize=10)
 plt.tight_layout()
 print('%1.2f average overlap of significant target neurons across pairs of dimensions' % np.mean(V_overlap[np.triu_indices(nranks,k=1)]))
 
-sns.despine(right=True,top=True,offset=3,trim=True)
+sns.despine(right=True,top=True,offset=2,trim=True)
 my_savefig(fig,figdir,'RRR_SigWeightOverlap_acrossranks_V1PM_%s' % ses.sessiondata['session_id'][0],formats=['png'])
 
 #%% Perform RRR on all neurons in V1 to PM for one session and show labeled weights:
@@ -375,7 +375,7 @@ else:
     
 # ax.set_ylim([0,0.3])
 plt.tight_layout()
-sns.despine(top=True,right=True,offset=3,trim=True)
+sns.despine(top=True,right=True,offset=2,trim=True)
 my_savefig(fig,figdir,'RRR_R2_acrossranks_V1PM_%dsessions' % nSessions,formats=['png'])
 
 #%% Do RRR in FF and FB direction and compare performance:
@@ -461,7 +461,7 @@ ax_nticks(ax,3)
 add_corr_results(ax,dims.flatten(),np.flip(R2_cv,axis=1).flatten())
 
 plt.tight_layout()
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 
 # my_savefig(fig,figdir,'RRR_Perf_WithinAcross_Dimensionality_%dsessions' % nSessions)
 
@@ -788,7 +788,7 @@ for ialp, arealayerpair in enumerate(arealayerpairs):
 ax.set_ylim([0,ax.get_ylim()[1]])
 ax.set_ylabel('Rank')
 
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 axes[1].set_xticks(range(narealayerpairs),arealayerpairs,rotation=45,ha='right',fontsize=6)
 axes[2].set_xticks(range(narealayerpairs),arealayerpairs,rotation=45,ha='right',fontsize=6)
 
@@ -933,7 +933,7 @@ for iarea in range(2):
     ax.set_title(['V1-PM','PM-V1'][iarea])
     ax_nticks(ax,3)
     ax.legend(handles=handles,labels=['Original','Residual'],frameon=False,fontsize=8,loc='lower right')
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 plt.tight_layout()
 # my_savefig(fig,figdir,'RRR_V1PM_ranks_mean_vs_residual')
 
@@ -1067,7 +1067,7 @@ ax.set_xlabel('Rank')
 ax.set_xticks(np.arange(0,nranks+1,5))
 ax.set_ylim([0,1])
 plt.tight_layout()
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 my_savefig(fig,figdir,'RRR_V1PM_decomposition_%dneurons' % nsampleneurons,formats=['png'])
 
 #%% 
@@ -1145,7 +1145,7 @@ for i in range(3):
 
 ax.set_ylim([-0.05,0.8])
 ax.set_ylabel('Frac. explainable variance')
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 axes[0].set_xticks(range(narealabelpairs),arealabelpairs,rotation=45,ha='right',fontsize=7)
 axes[1].set_xticks(range(narealabelpairs),arealabelpairs,rotation=45,ha='right',fontsize=7)
 plt.tight_layout()
@@ -1376,7 +1376,7 @@ ax.set_title('Variance regressed out by behavioral modulation')
 ax.set_ylabel('Variance Explained')
 ax.set_xlabel('Rank')
 ax.set_xticks(range(nranks+1))
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
 
 #%% Plot the number of dimensions per area pair
@@ -1448,7 +1448,7 @@ def plot_RRR_R2_regressout(R2data,rankdata,arealabelpairs,clrs_arealabelpairs):
         # annotator.configure(test='t-test_paired', text_format='star', loc='inside',verbose=False)
         # annotator.apply_and_annotate()
 
-    sns.despine(top=True,right=True,offset=3,trim=True)
+    sns.despine(top=True,right=True,offset=2,trim=True)
     axes[1,0].set_xticklabels(arealabelpairs2,fontsize=7)
     axes[1,1].set_xticklabels(arealabelpairs2,fontsize=7)
     return fig
@@ -1612,7 +1612,7 @@ ax.set_title('Variance regressed out by behavioral modulation')
 ax.set_ylabel('Variance Explained')
 ax.set_xlabel('Rank')
 ax.set_xticks(range(nranks+1))
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%dsessions' % nSessions,formats=['png'])
 
 #%% Parameters for RRR between size-matched populations of V1 and PM labeled and unlabeled neurons
@@ -1725,7 +1725,7 @@ ax.set_xlabel('Population pair')
 ax.set_xticks(range(narealabelpairs))
 ax.set_ylim([0.5,1])
 # ax.set_ylim([0,0.5])
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 ax.set_xticklabels(arealabelpairs2,fontsize=7)
 
 my_savefig(fig,figdir,'RRR_V1PM_regressoutneural_Frac_var_shared_ALRSP_%dsessions' % (nSessions))

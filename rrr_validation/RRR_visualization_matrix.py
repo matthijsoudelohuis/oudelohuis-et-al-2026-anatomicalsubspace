@@ -227,7 +227,7 @@ ax.set_title('Variance regressed out by behavioral modulation')
 ax.set_ylabel('Variance Explained')
 ax.set_xlabel('Rank')
 ax.set_xticks(range(nranks+1))
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 my_savefig(fig,figdir,'BehaviorRegressedOut_V1PM_%dsessions.png' % nSessions,formats=['png'])
 
 #%% Plot the number of dimensions per area pair
@@ -301,7 +301,7 @@ def plot_RRR_R2_regressout(R2data,rankdata,arealabelpairs,clrs_arealabelpairs):
         # annotator.configure(test='t-test_paired', text_format='star', loc='inside',verbose=False)
         # annotator.apply_and_annotate()
 
-    sns.despine(top=True,right=True,offset=3,trim=True)
+    sns.despine(top=True,right=True,offset=2,trim=True)
     axes[1,0].set_xticklabels(arealabelpairs2,fontsize=7)
     axes[1,1].set_xticklabels(arealabelpairs2,fontsize=7)
     return fig

@@ -546,7 +546,7 @@ for iapl,arealabelpair in enumerate(arealabelpairs):
         ax.set_ylabel('Subspace Angle')
         ax.set_title(arealabelpair)
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 # my_savefig(fig,figdir,'SubspaceAngle_V1PMAL_%drank_%dneurons_%dsessions' % (fixed_rank,nsampleneurons,params['nSessions']))
 
 #%% 
@@ -795,7 +795,7 @@ ax.legend(handles,('Source to Target (Same neurons)','Source to Cross','Source t
 ax.set_xticks(range(0,nranks+1,10))
 ax.set_xlabel('Rank')
 ax.set_ylabel('CV R2')
-sns.despine(top=True,right=True,offset=3,trim=True)
+sns.despine(top=True,right=True,offset=2,trim=True)
 my_savefig(fig,figdir,'RRR_cvR2_CrossVsTarget_%dsessions' % nSessions,formats=['png'])
 
 #%% Cross area subspace predictions: 
@@ -868,7 +868,7 @@ ax.set_ylabel('Same neurons')
 ax.set_xlabel('Different neurons')
 ax.set_xticks([0,0.1,0.2,0.3])
 ax.set_yticks([0,0.1,0.2,0.3])
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 fig.tight_layout()
 # my_savefig(fig,figdir,'RRR_cvR2_DiffSamePopulations_AreaAverage_%dsessions' % (nSessions))
 
@@ -937,7 +937,7 @@ ax.set_xticks(range(0,nranks+1,5))
 ax.set_xlabel('Rank')
 ax.set_ylabel('CV R2')
 
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 fig.tight_layout()
 
 my_savefig(fig,figdir,'CrossSubspace_R2_diffpops_%dsessions' % (nSessions))
@@ -983,7 +983,7 @@ my_savefig(fig,figdir,'CrossSubspace_R2_diffpops_%dsessions' % (nSessions))
 #         # ax.set_xlabel('Different neurons')
 # # ax.set_xlim([0,np.nanmax(np.nanmean(subspace_R2,axis=(5,6)))*1.1])
 # # ax.set_ylim([0,np.nanmax(np.nanmean(subspace_R2,axis=(5,6)))*1.1])
-# sns.despine(top=True,right=True,offset=3)
+# sns.despine(top=True,right=True,offset=2)
 # fig.tight_layout()
 # # my_savefig(fig,figdir,'R2_cross_vs_train_diffpops_%dsessions.png' % (nSessions))
 
@@ -1102,7 +1102,7 @@ for i in range(2):
         if j==0: 
             ax.set_ylabel('R2')
 
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 fig.tight_layout()
 
 my_savefig(fig,figdir,'CrossSubspace_R2_V1PM_Labeled_%dsessions' % nSessions,formats=['png'])
@@ -1185,7 +1185,7 @@ for ipair in range(len(combpairstoplot)):
     ax.set_ylim([0,2])
     ax.axhline(1,linestyle='--',color='k',alpha=0.5)
 
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 fig.tight_layout()
 my_savefig(fig,figdir,'Generalization_V1PM_AllCross_%dsessions_%s' % (nSessions,rankversion))
 
@@ -1227,7 +1227,7 @@ ax.set_ylim([0,2])
 ax.set_yticks([0,0.5,1,1.5,2],['0','0.5','1.0','1.5','2.0'],fontsize=9)
 ax.set_xlim([-0.5,1.5])
 ax.axhline(1,linestyle='--',color='k',alpha=0.5)
-sns.despine(top=True,right=True,offset=3,trim=True)
+sns.despine(top=True,right=True,offset=2,trim=True)
 
 my_savefig(fig,figdir,'GeneralizationIndex_V1PM_Cross_%dsessions_%s' % (nSessions,rankversion))
 
@@ -1306,7 +1306,7 @@ def plot_paired_combpairs_ALRSP(ax,arealabels,data,combpairstoplot1,combpairstop
     ax_nticks(ax,5)
 
     plt.suptitle('Generalization across areas',fontsize=9)
-    sns.despine(top=True,right=True,offset=3,trim=True)
+    sns.despine(top=True,right=True,offset=2,trim=True)
     plt.tight_layout()
     return fig
 
@@ -1343,7 +1343,7 @@ ax.set_xlabel('%s->%s' % (combpairstoplot[0][0],combpairstoplot[0][1]))
 ax.set_ylabel('%s->%s' % (combpairstoplot[1][0],combpairstoplot[1][1]))
   
 plt.suptitle('Generalization within area',fontsize=9)
-sns.despine(top=True,right=True,offset=3,trim=True)
+sns.despine(top=True,right=True,offset=2,trim=True)
 plt.tight_layout()
 my_savefig(fig,figdir,'Generalization_V1PM_Labeled_Same_%dsessions_%s' % (nSessions,rankversion),formats=['png'])
 
@@ -1449,7 +1449,7 @@ for iarea,area in enumerate(arealabels):
 ax.set_xlabel('Dim 1')
 ax.set_ylabel('Dim 2')
 
-sns.despine(top=True,right=True,offset=3,trim=True)
+sns.despine(top=True,right=True,offset=2,trim=True)
 plt.tight_layout()
 
 my_savefig(fig,figdir,'CrossArea_RRR_Subspace_Clustering_%dsessions_%s' % (nSessions,rankversion))
@@ -1608,7 +1608,7 @@ ax.set_xlabel('R2 (X->Y)')
 ax.set_xticks([0,0.1,0.2])
 ax.set_yticks([0,0.1,0.2])
 ax.plot([0,0.2],[0,0.2],linestyle='--',color='k',alpha=0.5)
-sns.despine(top=True,right=True,offset=3)
+sns.despine(top=True,right=True,offset=2)
 
 my_savefig(fig,figdir,'RRR_cvR2_V1PMAL_Cross_RegressBehav_%dsessions' % (nSessions))
 # plt.savefig(os.path.join(figdir,'RRR_cvR2_V1PMAL_Cross_RegressBehav_%dsessions' % (nSessions)),

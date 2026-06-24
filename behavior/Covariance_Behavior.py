@@ -114,7 +114,7 @@ ax.set_xlim(t_start,t_stop)
 ax.legend(loc='upper left',fontsize=7,frameon=False,bbox_to_anchor=(-0.45,0.92),labelspacing=1.2)
 my_legend_strip(ax)
 ax.axis('off')
-sns.despine(fig,top=True,right=True,offset=3)
+sns.despine(fig,top=True,right=True,offset=2)
 # plt.tight_layout()
 ax.add_artist(AnchoredSizeBar(ax.transData, 10,
                 "10 Sec", loc='lower right', frameon=False))
@@ -255,8 +255,8 @@ plt.tight_layout()
 
 #%% Identify sessions to load
 areas = ['V1','PM','AL']
-sessions,nSessions   = filter_sessions(protocols = ['GR','GN'],only_all_areas=areas,filter_areas=areas,
-                                       min_lab_cells_V1=40,min_lab_cells_PM=40)
+# sessions,nSessions   = filter_sessions(protocols = ['GR','GN'],only_all_areas=areas,filter_areas=areas,
+#                                        min_lab_cells_V1=40,min_lab_cells_PM=40)
 
 sessions,nSessions   = filter_sessions(protocols = ['GR','GN'],filter_areas=areas)
 report_sessions(sessions)
@@ -358,7 +358,7 @@ ax.set_xticks(np.arange(0,nranks_behavout))
 ax.set_xticklabels(['orig']+['%d'%i for i in range(1,nranks_behavout)])
 ax.set_xlabel('rank behavior out')
 plt.tight_layout()
-sns.despine(offset=3,top=True,right=True)
+sns.despine(offset=2,top=True,right=True)
 my_savefig(fig,figdir,'RRR_Behavout_ranks_%dsessions' % nSessions)
 
 #%% Quantify in percentage how much RRR performance was reduced due to behavioral variability that was shared: 
@@ -462,7 +462,7 @@ for idata,data in enumerate([frac_pos_weights_source,frac_pos_weights_target]):
     if idata == 0:
         ax.set_ylabel('frac. pos. weights')
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'frac_pos_weights_%dsessions' % (nSessions))
 
 #%% 
@@ -484,54 +484,14 @@ my_savefig(fig,figdir,'frac_pos_weights_%dsessions' % (nSessions))
 
 #%% Get all data 
 only_all_areas = np.array(['V1','PM'])
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,filter_areas=only_all_areas,
-                                       min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
-# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],min_lab_cells_V1=20,filter_noiselevel=True)
+# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,filter_areas=only_all_areas,
+#                                        min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
+sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],filter_noiselevel=True)
 report_sessions(sessions)
 sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=True)
 
-#%% Load data:        
-## Construct tensor: 3D 'matrix' of N neurons by K trials by T time bins
-calciumversion = 'dF'
-vidfields   = np.concatenate((['videoPC_%d'%i for i in range(30)],
-                            ['pupil_area','pupil_ypos','pupil_xpos']),axis=0)
-
-behavfields = np.array(['runspeed','diffrunspeed'])
-
-for ises in tqdm(range(nSessions),total=nSessions,desc='Loading data'):
-    sessions[ises].load_data(load_behaviordata=True, load_calciumdata=True,load_videodata=True,
-                                    calciumversion=params['calciumversion'])
-    [sessions[ises].tensor,t_axis] = compute_tensor(sessions[ises].calciumdata, sessions[ises].ts_F, sessions[ises].trialdata['tOnset'], 
-                                method='nearby')
-    delattr(sessions[ises],'calciumdata')
-    [sessions[ises].tensor_vid,t_axis] = compute_tensor(sessions[ises].videodata[vidfields], sessions[ises].videodata['ts'], sessions[ises].trialdata['tOnset'], 
-                                params['t_pre'], params['t_post'], method='binmean',binsize=params['binsize'])
-    #Subsample behavioral data 10 times before binning:
-    sessions[ises].behaviordata.drop('session_id',axis=1,inplace=True)
-    sessions[ises].behaviordata = sessions[ises].behaviordata.groupby(sessions[ises].behaviordata.index // 10).mean()
-    sessions[ises].behaviordata['diffrunspeed'] = np.diff(sessions[ises].behaviordata['runspeed'],prepend=0)
-    [sessions[ises].tensor_run,t_axis] = compute_tensor(sessions[ises].behaviordata[behavfields], sessions[ises].behaviordata['ts'], sessions[ises].trialdata['tOnset'], 
-                                params['t_pre'], params['t_post'], method='binmean',binsize=params['binsize'])
-    
-    delattr(sessions[ises],'behaviordata')
-    delattr(sessions[ises],'videodata')
-
-#%% Subtracting mean response across trials for each stimulus condition
-for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Subtracting mean response across trials'):
-    N = len(sessions[ises].celldata)
-    idx_resp = t_axis>0
-    for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over stim 
-        idx_T               = sessions[ises].trialdata['stimCond']==stim
-
-        #on tensor during the response:
-        sessions[ises].tensor[np.ix_(range(N),idx_T,idx_resp)] -= np.nanmean(sessions[ises].tensor[np.ix_(range(N),idx_T,idx_resp)],axis=1,keepdims=True)
-    
-    idx_resp = t_axis<=0 #subtract mean response of previous trial
-    for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over stim 
-        idx_T               = np.concatenate([[0],sessions[ises].trialdata['stimCond'][:-1]])==stim
-
-        #on tensor during the response:
-        sessions[ises].tensor[np.ix_(range(N),idx_T,idx_resp)] -= np.nanmean(sessions[ises].tensor[np.ix_(range(N),idx_T,idx_resp)],axis=1,keepdims=True)
+#%% Load the data including behavior
+[sessions,t_axis] = load_resid_tensor(sessions,params,load_behav=True)
 
 #%% Compute the variance and covariance explained by the behavior: 
 # Variance: 
@@ -578,7 +538,6 @@ for ises,ses in enumerate(sessions):
     else:
         idx_nearby = np.ones(len(ses.celldata),dtype=bool)
 
-    # for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
     for istim,stim in tqdm(enumerate(np.unique(ses.trialdata['stimCond'])),
     # for istim,stim in tqdm(enumerate(np.unique(ses.trialdata['stimCond'])[:2]),
                            total=nStim,desc='Fitting RRR model for session %d/%d' %(ises+1,nSessions)): # loop over orientations 
@@ -666,7 +625,7 @@ ax.set_xticks(np.arange(0,nranks+5,5))
 ax.set_xticklabels(np.arange(0,nranks+5,5))
 ax.set_xlabel('Rank')
 ax.set_ylabel(r'Variance explained (R$^2$)')
-sns.despine(fig,top=True,right=True,offset=3)
+sns.despine(fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'RRR_Behavior_R2_Ranks_V1PM_%dsessions' % nSessions)
 
 #%% Plotting:
@@ -718,7 +677,7 @@ ax.set_xticklabels(np.arange(0,nranks+5,5)+1)
 ax.set_xlabel('Rank')
 ax.set_ylabel('Covariance explained')
 ax.set_title('Labeled covariance explained',fontsize=10)
-sns.despine(fig,top=True,right=True,offset=3)
+sns.despine(fig,top=True,right=True,offset=2)
 # plt.tight_layout()
 # my_savefig(fig,figdir,'CoVarianceExplained_V1PM_%dsessions' % nSessions)
 
@@ -750,7 +709,7 @@ annotator.configure(test='Wilcoxon', text_format='star', loc='inside',verbose=Fa
                     comparisons_correction="Bonferroni",line_height=0, text_offset=-3,fontsize=9)
 annotator.apply_and_annotate()
 
-sns.despine(fig,top=True,right=True,offset=3)
+sns.despine(fig,top=True,right=True,offset=2)
 # plt.tight_layout()
 my_savefig(fig,figdir,'VarianceExplained_V1PM_labeled_%dsessions' % nSessions)
 
@@ -766,6 +725,198 @@ ax.set_ylabel('Cov. explained')
 ax.set_xlim([-0.25,0.25])
 ax.set_xticks([])
 # ax.set_ylim([0,my_ceil(ax.get_ylim()[1],2)])
-sns.despine(fig,top=True,right=True,offset=3)
+sns.despine(fig,top=True,right=True,offset=2)
 plt.tight_layout()
 # my_savefig(fig,figdir,'Mean_CoVarianceExplained_V1PM_%dsessions' % nSessions)
+
+
+
+
+
+#%% 
+for ises,ses in enumerate(sessions):
+    ses.celldata['arealayerlabel'] = ses.celldata['arealabel']  + ses.celldata['layer'] 
+    
+#%% Compute the variance and covariance explained by the behavior (layer-dependent)
+arealayerlabeled         = np.array(['V1unlL2/3','V1labL2/3','PMunlL2/3','PMlabL2/3','PMunlL5','PMlabL5'])
+narealayerlabels         = len(arealayerlabeled)
+
+#Parameters:
+nranks              = 20
+nStim               = 16
+filter_nearby       = True
+
+idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
+ntimebins           = len(idx_resp)
+
+#Explained (co)variance
+EV_pops             = np.full((narealayerlabels,nranks,nStim,nSessions,params['kfold']),np.nan)
+# EC_poppairs         = np.full((narealabelpairs,nranks,nStim,nSessions,params['kfold']),np.nan)
+
+# for ises,ses in tqdm(enumerate([sessions[0]]),total=nSessions,desc='Covariance by behavior, fitting models'):
+for ises,ses in enumerate(sessions):
+
+    if filter_nearby:
+        idx_nearby  = filter_nearlabeled(ses,radius=params['radius'])
+    else:
+        idx_nearby = np.ones(len(ses.celldata),dtype=bool)
+
+    for istim,stim in tqdm(enumerate(np.unique(ses.trialdata['stimCond'])),
+    # for istim,stim in tqdm(enumerate(np.unique(ses.trialdata['stimCond'])[:2]),
+                           total=nStim,desc='Fitting RRR model for session %d/%d' %(ises+1,nSessions)): # loop over orientations 
+        idx_T               = ses.trialdata['stimCond']==stim
+
+        idx_N               = np.ones(len(ses.celldata),dtype=bool)
+
+        #on residual tensor during the response:
+        Y                   = sessions[ises].tensor[np.ix_(idx_N,idx_T,idx_resp)]
+        # Y                   -= np.mean(Y,axis=1,keepdims=True)
+        Y                   = Y.reshape(len(idx_N),-1).T
+        Y                   = zscore(Y,axis=0,nan_policy='omit')  #Z score activity for each neuron
+
+        #Get behavioral matrix: 
+        X                   = np.concatenate((sessions[ises].tensor_vid[np.ix_(range(np.shape(sessions[ises].tensor_vid)[0]),idx_T,idx_resp)],
+                                sessions[ises].tensor_run[np.ix_(range(np.shape(sessions[ises].tensor_run)[0]),idx_T,idx_resp)]),axis=0)
+        X                   = X.reshape(np.shape(X)[0],-1).T
+        X                   = zscore(X,axis=0,nan_policy='omit')
+
+        si                  = SimpleImputer()
+        Y                   = si.fit_transform(Y)
+        X                   = si.fit_transform(X)
+
+        kf = KFold(n_splits=params['kfold'],shuffle=True)
+        for ikf, (idx_train, idx_test) in enumerate(kf.split(X)):
+            X_train, X_test     = X[idx_train], X[idx_test]
+            Y_train, Y_test     = Y[idx_train], Y[idx_test]
+
+            B_hat_train         = LM(Y_train,X_train, lam=params['lam'])
+
+            Y_hat_train         = X_train @ B_hat_train
+
+            # decomposing and low rank approximation of A
+            U, s, V = svds(Y_hat_train,k=nranks,which='LM')
+            U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
+
+            Y_cov = np.cov(Y_train.T)
+
+            for r in range(nranks):
+                B_rrr           = B_hat_train @ V[:r,:].T @ V[:r,:] #project beta coeff into low rank subspace
+                #construct low rank subspace prediction
+                Y_hat_test_rr   = X_test @ B_rrr
+                #How much variance is explained for each of the populations?
+                for ial,al in enumerate(arealayerlabeled):
+                    idx_N           = np.where(np.all((
+                                            # ses.celldata['arealabel']==al,
+                                            ses.celldata['arealayerlabel']==al,
+                                            ses.celldata['noise_level']<params['maxnoiselevel'],	
+                                            idx_nearby),axis=0))[0]
+                    if len(idx_N)>=10:
+                        EV_pops[ial,r,istim,ises,ikf] = EV(Y_test[:,idx_N],Y_hat_test_rr[:,idx_N])
+                
+                # #How much covariance is explained for each of the population pairs?
+                # Y_cov_rrr       = np.cov(Y_hat_test_rr.T)
+                # for ialp,arealabelpair in enumerate(arealabelpairs):
+
+                #     alx,aly             = arealabelpair.split('-')
+
+                #     idx_areax           = np.where(np.all((ses.celldata['arealabel']==alx,
+                #                             ses.celldata['noise_level']<params['maxnoiselevel'],
+                #                             idx_nearby),axis=0))[0]
+                #     idx_areay           = np.where(np.all((ses.celldata['arealabel']==aly,
+                #                             ses.celldata['noise_level']<params['maxnoiselevel'],
+                #                             idx_nearby
+                #                             ),axis=0))[0]
+                    
+                #     EC_poppairs[ialp,r,istim,ises,ikf] = EV(Y_cov[np.ix_(idx_areax,idx_areay)],Y_cov_rrr[np.ix_(idx_areax,idx_areay)])
+
+
+#%% Plotting:
+clrs_arealabels = ['grey','red','grey','red','grey','red']
+fig,axes = plt.subplots(1,1,figsize=(4*cm,3.9*cm))
+ax = axes
+data = np.nanmean(EV_pops,axis=-1)
+optim_rank = 5
+data = np.reshape(data[:,optim_rank,:,:],(narealayerlabels,-1))
+
+for ial, arealabel in enumerate(arealayerlabeled):
+    ax.scatter(np.random.randn(nSessions*nStim)*0.1+ial,data[ial,:].flatten(),s=5,color='k',marker='.')
+    ax.plot(ial,np.nanmean(data[ial,:]),color=clrs_arealabels[ial],marker='o',markersize=5)
+
+ax.set_ylim([0,my_ceil(ax.get_ylim()[1],2)])
+ax_nticks(ax,4)
+ax.set_xticks(range(narealayerlabels),arealayerlabeled,rotation=45,fontsize=6)
+ax.set_ylabel('Variance explained (R$^2$)')
+
+si                  = SimpleImputer(keep_empty_features=True)
+data                = si.fit_transform(data)
+
+#Statistical testing:
+df = pd.DataFrame({'EV': data.flatten(),
+                  'arealayerlabel': np.repeat(arealayerlabeled,nSessions*nStim),
+                  'session': np.tile(np.arange(nSessions*nStim),narealayerlabels)})
+order = arealayerlabeled #for statistical testing purposes
+pairs = [('V1unlL2/3','V1labL2/3'),('PMunlL2/3','PMlabL2/3'),('PMunlL5','PMlabL5')]
+
+annotator = Annotator(ax, pairs, data=df, x="arealayerlabel", y='EV', order=order)
+annotator.configure(test='Wilcoxon', text_format='star', loc='inside',verbose=False,
+                    line_offset_to_group=0.2, line_width=1,
+                    comparisons_correction="Bonferroni",line_height=0, text_offset=-3,fontsize=9)
+annotator.apply_and_annotate()
+
+sns.despine(fig,top=True,right=True,offset=2)
+# plt.tight_layout()
+my_savefig(fig,figdir,'VarianceExplained_V1PM_arealayerlabeled_%ddatasets' % (nStim*nSessions))
+
+#%% Plotting:
+clrs_arealabels = ['grey','red','grey','red','grey','red']
+fig,axes = plt.subplots(1,1,figsize=(4*cm,3.9*cm))
+ax = axes
+optim_rank = 4
+data = np.nanmean(EV_pops[:,optim_rank],axis=(-3,-1))
+
+# for ial, arealabel in enumerate(arealayerlabeled):
+#     xscatter = np.random.randn(nSessions)*0.1+ial
+#     ax.scatter(xscatter,data[ial,:].flatten(),s=5,color='k',marker='.')
+#     ax.plot(ial,np.nanmean(data[ial,:]),color=clrs_arealabels[ial],marker='o',markersize=5)
+
+for ialp,[ial0,ial1] in enumerate([[0,1],[2,3],[4,5]]):
+    xscatter = np.random.randn(nSessions)*0.1
+    ax.scatter(xscatter+ial0,data[ial0,:].flatten(),s=5,color=clrs_arealabels[ial0],marker='.')
+    ax.scatter(xscatter+ial1,data[ial1,:].flatten(),s=5,color=clrs_arealabels[ial1],marker='.')
+    ax.plot([xscatter+ial0,xscatter+ial1],[data[ial0,:],data[ial1,:]],color='k',marker='',markersize=0,linewidth=0.4)
+    ax.plot(ial0,np.nanmean(data[ial0,:]),color=clrs_arealabels[ial0],marker='o',markersize=5)
+    ax.plot(ial1,np.nanmean(data[ial1,:]),color=clrs_arealabels[ial1],marker='o',markersize=5)
+
+ax.set_ylim([0,my_ceil(ax.get_ylim()[1],2)])
+ax_nticks(ax,4)
+ax.set_ylabel('Variance explained (R$^2$)')
+
+si                  = SimpleImputer()
+data                = si.fit_transform(data)
+
+#Statistical testing:
+df = pd.DataFrame({'EV': data.flatten(),
+                  'arealayerlabel': np.repeat(arealayerlabeled,nSessions),
+                  'session': np.tile(np.arange(nSessions),narealayerlabels)})
+order = arealayerlabeled #for statistical testing purposes
+pairs = [('V1unlL2/3','V1labL2/3'),('PMunlL2/3','PMlabL2/3'),('PMunlL5','PMlabL5')]
+
+annotator = Annotator(ax, pairs, data=df, x="arealayerlabel", y='EV', order=order)
+annotator.configure(test='t-test_paired', text_format='star', loc='inside',verbose=False,
+                    line_offset_to_group=0.2, line_width=1,
+                    comparisons_correction="Bonferroni",line_height=0, text_offset=-3,fontsize=9)
+                    # comparisons_correction=None,line_height=0, text_offset=-3,fontsize=9)
+annotator.apply_and_annotate()
+
+order = arealayerlabeled #for statistical testing purposes
+pairs = [('V1unlL2/3','PMunlL2/3'),('PMunlL2/3','PMunlL5')]
+
+annotator = Annotator(ax, pairs, data=df, x="arealayerlabel", y='EV', order=order)
+annotator.configure(test='t-test_paired', text_format='star', loc='inside',verbose=False,
+                    line_offset_to_group=0.2, line_width=1,
+                    comparisons_correction=None,line_height=0, text_offset=-3,fontsize=9)
+annotator.apply_and_annotate()
+
+sns.despine(fig,top=True,right=True,offset=2)
+ax.set_xticks(range(narealayerlabels),arealayerlabeled,rotation=45,fontsize=6)
+my_savefig(fig,figdir,'VarianceExplained_V1PM_arealayerlabeled_%dsessions' % nSessions)

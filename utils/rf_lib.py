@@ -285,7 +285,7 @@ def plot_delta_rf_across_sessions(sessions,areapairs,rf_type='Fsmooth',r2_thr=0.
                          alpha=0.5,fill=False,stat='percent',element='step')
         axes[iap].set_title(areapair)
             # axes[iap].hist(ses.distmat_rf[cellfilter],bins=binedges,color=clrs_areapairs[iap],alpha=0.5)
-    sns.despine(fig=fig, top=True, right=True,offset=3)
+    sns.despine(fig=fig, top=True, right=True,offset=2)
     plt.tight_layout()
     return fig
 

@@ -348,7 +348,7 @@ ax.plot([0, 10], [0, 10], ':', color='grey', lw=1)
 ax.set_xlabel('Shared rank')
 ax.set_ylabel('Within rank')
 ax_nticks(ax,4)
-sns.despine(offset=0, top=True, right=True)
+sns.despine(offset=2, top=True, right=True)
 my_savefig(fig, figdir, 'PrivateShared_rank_%dsessions' % nSessions)
 
 #%%

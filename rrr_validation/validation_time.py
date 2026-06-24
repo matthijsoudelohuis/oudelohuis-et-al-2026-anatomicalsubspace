@@ -253,7 +253,7 @@ ax.set_xlim([-.5,2])
 ax.set_xticklabels(t_ticks)
 ax.set_xlabel('time (s)')
 ax.set_ylabel('performance')
-sns.despine(fig=fig,top=True,right=True,trim=False,offset=3)
+sns.despine(fig=fig,top=True,right=True,trim=False,offset=2)
 my_savefig(fig,figdir,'RRR_perf_across_time_deconv')
 
 #%% Plotting, showing rank across time:

@@ -1028,7 +1028,7 @@ for r in range(nranks-1):
     ydatatoplot = ydatatoplot[~np.isnan(ydatatoplot)]
     print(np.corrcoef(xdatatoplot,ydatatoplot)[0,1])
 plt.tight_layout()
-sns.despine(fig=fig,trim=True,top=True,right=True,offset=3)
+sns.despine(fig=fig,trim=True,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'RRR_unique_cvR2_V1lab_V1unl_PMunl_%dneurons' % Nsub)
 
 # my_savefig(fig,figdir,'RRR_cvR2_V1unl_V
@@ -1349,5 +1349,5 @@ for r in range(nranks-1):
     ydatatoplot = ydatatoplot[~np.isnan(ydatatoplot)]
     print(np.corrcoef(xdatatoplot,ydatatoplot)[0,1])
 plt.tight_layout()
-sns.despine(fig=fig,trim=True,top=True,right=True,offset=3)
+sns.despine(fig=fig,trim=True,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'RRR_unique_cvR2_V1lab_V1unl_PMunl_%dneurons' % Nsub)

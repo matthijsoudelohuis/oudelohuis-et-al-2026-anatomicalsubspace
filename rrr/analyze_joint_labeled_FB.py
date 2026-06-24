@@ -206,7 +206,7 @@ if diffmetric == 'ratio':
 elif diffmetric == 'difference':
     ax.axhline(y=0,color='grey',linestyle='--')
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 # my_savefig(fig,figdir,'RRR_R2_%s_rank_noiseconstant_%s_%dsessions' % (diffmetric,version,params['nSessions']))
 # my_savefig(fig,figdir,'RRR_unique_cvR2_V1lab_V1unl_V1unl_%dneurons' % Nsub)
 
@@ -250,7 +250,7 @@ ax.pcolor(bins,bins,diffdata,cmap='bwr',vmin=vmin,vmax=vmax)
 ax.set_title('Difference')
 ax.plot([0,r2lim],[0,r2lim],color='grey',linestyle='--')
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 # my_savefig(fig,figdir,'R2_2dhist_%s_%dsessions' % (version,params['nSessions']))
 
 #%% Are the dimensions which are enhanced in labeled cells unique or express in unlabeled cells as well?
@@ -287,7 +287,7 @@ for r in range(params['nrankstoplot']):
     ax.set_title('Dimension %d' % (r+1))
     ax.plot([0,r2lim],[0,r2lim],color='grey',linestyle='--')
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'R2_2dhist_perrank_%s_%dsessions' % (version,params['nSessions']))
 
 #%% Which neurons are well predicted? Is this distribution Gaussian, or skewed?
@@ -360,7 +360,7 @@ for r in range(params['nrankstoplot']):
     ax.plot([0,r2lim],[0,r2lim],color='grey',linestyle='--')
     ax_nticks(ax,3)
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'R2_neuron_2dhist_perrank_%s_%dsessions' % (version,params['nSessions']))
 
 #%% Show the correlation between R2 predicted by labeled and unlabeled neurons:
@@ -403,7 +403,7 @@ for r in range(params['nrankstoplot']-1):
     print(np.corrcoef(xdatatoplot,ydatatoplot)[0,1])
 
 plt.tight_layout()
-sns.despine(fig=fig,trim=True,top=True,right=True,offset=3)
+sns.despine(fig=fig,trim=True,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'RRR_unique_cvR2_%dneurons_%dsessions' % (Nsub,params['nSessions']))
 
 #%%
@@ -424,7 +424,7 @@ ax.set_xticks(np.arange(params['nranks'])[::3]+1)
 ax.set_xlabel('dimension')
 ax.set_ylabel('Frac. pos. projection')
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'Frac_pos_weightsout_%s_%dsessions' % (version,params['nSessions']))
 
 #%% Are those dimensions that are enhanced in V1lab, dimensions that are leading to positive projections?
@@ -451,7 +451,7 @@ sns.regplot(x=xdata.flatten(),y=ydata.flatten(),marker="o",color='blue',ax=ax,sc
 ax.text(0.7,0.1,'r=%1.2f' % np.corrcoef(xdata.flatten(),ydata.flatten())[0,1],color='blue',transform=ax.transAxes)
 ax.set_title('Unl-unl')
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'Corr_pos_weight_%s_%dsessions' % (version,params['nSessions']))
 
 ##
@@ -485,7 +485,7 @@ for i in range(narealabelpairs):
 ax.axhline(y=0.5,color='grey',linestyle='--')
 ax.legend(handles,sourcearealabelpairs,frameon=False)
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'Frac_pos_weightsin_%s_%dsessions' % (version,params['nSessions']))
 
 #%% Are those dimensions that are enhanced in V1lab, dimensions that are resulting from positive weights of labeled cells?
@@ -525,7 +525,7 @@ for r in range(params['nrankstoplot']):
     # ax.hist(histdata,bins=bins,color='blue',alpha=0.25,density=True,cumulative=True,fill=False)
 
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'hist_weight_in_%s_%dsessions' % (version,params['nSessions']))
 
 # #%% Are those dimensions that are enhanced in V1lab, dimensions that are associated with positive source weights?
@@ -552,7 +552,7 @@ my_savefig(fig,figdir,'hist_weight_in_%s_%dsessions' % (version,params['nSession
 # ax.text(0.7,0.1,'r=%1.2f' % np.corrcoef(xdata.flatten(),ydata.flatten())[0,1],color='blue',transform=ax.transAxes)
 # ax.set_title('Unl-unl')
 # plt.tight_layout()
-# sns.despine(fig=fig,top=True,right=True,offset=3)
+# sns.despine(fig=fig,top=True,right=True,offset=2)
 # # my_savefig(fig,figdir,'Corr_pos_weight_%s_%dsessions' % (version,params['nSessions']))
 
 #%% 
@@ -577,7 +577,7 @@ ax.set_xlabel('Rank')
 ax.set_title('Source variance along\npredictive dimensions')
 ax.set_xticks(np.arange(params['nranks'])[::3]+1)
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'RRR_source_aligned_R2_%sversion_%dsessions' % (version,params['nSessions']))
 
 #%% Are subpopulations that are more predictive lower dimensional?
@@ -592,7 +592,7 @@ ax.set_xlabel(dim_method)
 ax.set_ylabel('R2')
 ax.text(0.1,0.05,'r=%1.2f' % np.corrcoef(xdata.flatten(),ydata.flatten())[0,1],color='blue',transform=ax.transAxes)
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'RRR_dimensionality_%s_targetprediction_%s_%dsessions' % (dim_method,version,params['nSessions']))
 
 #%% Are subpopulations that are more predictive lower dimensional?
@@ -606,7 +606,7 @@ ax.set_xticks([0,1,2],labels=sourcearealabelpairs)
 ax.set_xlabel('Source area')
 ax.set_ylabel(dim_method)
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'RRR_dimensionality_%s_%s_subpopulations_%dsessions' % (dim_method,version,params['nSessions']))
 
 #%% Is the lower dimensionality of labeled population responsible for the increased predictive accuracy?
@@ -623,7 +623,7 @@ ax.set_xlabel(dim_method)
 ax.set_ylabel('R2')
 ax_nticks(ax,3)
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'RRR_dimensionality_%s_subpopulations_PMprediction_%dsessions' % (dim_method,params['nSessions']))
 
 numobs = len(source_dim[1].flatten())
@@ -748,7 +748,7 @@ ax.set_ylabel('Fraction of variance')
 ax_nticks(ax,4)
 # ax.set_yscale('log')
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'PCA_Spectrum_V1unl_V1lab_%d_sessions' % (params['nSessions']))
 
 #%% Is the lower dimensionality of labeled population responsible for the increased predictive accuracy?
@@ -768,7 +768,7 @@ ax.set_ylabel('Fraction of variance')
 ax_nticks(ax,4)
 # ax.set_yscale('log')
 plt.tight_layout()
-sns.despine(fig=fig,top=True,right=True,offset=3)
+sns.despine(fig=fig,top=True,right=True,offset=2)
 # my_savefig(fig,figdir,'PCA_Spectrum_V1unl_V1lab_shuffle_%d_sessions' % (params['nSessions']))
 
 #%% 
