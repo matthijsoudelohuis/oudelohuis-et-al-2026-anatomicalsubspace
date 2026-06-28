@@ -484,9 +484,9 @@ my_savefig(fig,figdir,'frac_pos_weights_%dsessions' % (nSessions))
 
 #%% Get all data 
 only_all_areas = np.array(['V1','PM'])
-# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,filter_areas=only_all_areas,
-#                                        min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],filter_noiselevel=True)
+sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,filter_areas=only_all_areas,
+                                       min_lab_cells_V1=10,min_lab_cells_PM=10,filter_noiselevel=False)
+# sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],filter_noiselevel=True)
 report_sessions(sessions)
 sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=True)
 
@@ -711,7 +711,47 @@ annotator.apply_and_annotate()
 
 sns.despine(fig,top=True,right=True,offset=2)
 # plt.tight_layout()
-my_savefig(fig,figdir,'VarianceExplained_V1PM_labeled_%dsessions' % nSessions)
+# my_savefig(fig,figdir,'VarianceExplained_V1PM_labeled_%dsessions' % nSessions)
+
+#%% Plotting:
+clrs_arealabels = ['grey','red','grey','red','grey','red']
+fig,axes = plt.subplots(1,1,figsize=(4*cm,3.9*cm))
+ax = axes
+optim_rank = 5
+data = np.nanmean(EV_pops[:,optim_rank],axis=(-3,-1))
+
+for ialp,[ial0,ial1] in enumerate([[0,1],[2,3]]):
+    xscatter = np.random.randn(nSessions)*0.1
+    ax.scatter(xscatter+ial0,data[ial0,:].flatten(),s=5,color=clrs_arealabels[ial0],marker='.')
+    ax.scatter(xscatter+ial1,data[ial1,:].flatten(),s=5,color=clrs_arealabels[ial1],marker='.')
+    ax.plot([xscatter+ial0,xscatter+ial1],[data[ial0,:],data[ial1,:]],color='k',marker='',markersize=0,linewidth=0.4)
+    ax.plot(ial0,np.nanmean(data[ial0,:]),color=clrs_arealabels[ial0],marker='o',markersize=5)
+    ax.plot(ial1,np.nanmean(data[ial1,:]),color=clrs_arealabels[ial1],marker='o',markersize=5)
+
+ax.set_ylim([0,my_ceil(ax.get_ylim()[1],2)])
+ax_nticks(ax,4)
+ax.set_ylabel('Variance explained (R$^2$)')
+
+si                  = SimpleImputer()
+data                = si.fit_transform(data)
+
+#Statistical testing:
+df = pd.DataFrame({'EV': data.flatten(),
+                  'arealabel': np.repeat(arealabeled,nSessions),
+                  'session': np.tile(np.arange(nSessions),narealabels)})
+order = arealabeled #for statistical testing purposes
+pairs = [('V1unl','V1lab'),('PMunl','PMlab')]
+
+annotator = Annotator(ax, pairs, data=df, x="arealabel", y='EV', order=order)
+annotator.configure(test='Wilcoxon', text_format='star', loc='inside',verbose=False,
+                    line_offset_to_group=0.2, line_width=1,
+                    comparisons_correction="Bonferroni",line_height=0, text_offset=-3,fontsize=9)
+annotator.apply_and_annotate()
+
+sns.despine(fig,top=True,right=True,offset=2)
+ax.set_xticks(range(narealabels),arealabeled,rotation=45,fontsize=6)
+my_savefig(fig,figdir,'VarianceExplained_V1PM_arealabeled_%dsessions' % nSessions)
+
 
 #%% Plotting:
 fig,axes = plt.subplots(1,1,figsize=(4*cm,3.5*cm))
@@ -731,12 +771,67 @@ plt.tight_layout()
 
 
 
+#%%  #assign arealayerlabel
 
+def reset_layer(sessions):
+    for ses in sessions:
+    # ses.reset_layer(splitdepth=250)
+
+        layers = {
+                'V1': {
+                    'L2/3': (0, 250),
+                    # 'L4': (250, 300),
+                    # 'L5': (300, np.inf)
+                    'L5': (250, np.inf)
+                },
+                'PM': {
+                    'L2/3': (0, 250),
+                    # 'L4': (250, 300),
+                    # 'L5': (300, np.inf)
+                    'L5': (250, np.inf)
+                },
+                'AL': {
+                    'L2/3': (0, 250),
+                    'L4': (250, 300),
+                    'L5': (300, np.inf)
+                },
+                'RSP': {
+                    'L2/3': (0, 300),
+                    'L5': (300, np.inf)
+                }
+            }
+        for roi, layerdict in layers.items():
+            for layer, (mindepth, maxdepth) in layerdict.items():
+                idx = ses.celldata[(ses.celldata['roi_name'] == roi) & (mindepth <= ses.celldata['depth']) & (ses.celldata['depth'] < maxdepth)].index
+                ses.celldata.loc[idx, 'layer'] = layer
+    
+#%%
+
+reset_layer(sessions)
 
 #%% 
 for ises,ses in enumerate(sessions):
     ses.celldata['arealayerlabel'] = ses.celldata['arealabel']  + ses.celldata['layer'] 
-    
+celldata = pd.concat([ses.celldata for ses in sessions])
+
+#%% 
+plt.figure()
+plt.hist(celldata['depth'][celldata['arealayerlabel']=='V1unlL2/3'],bins=np.arange(0,600,10),color='blue')
+plt.hist(celldata['depth'][celldata['arealayerlabel']=='V1unlL4'],bins=np.arange(0,600,10),color='red')
+plt.hist(celldata['depth'][celldata['arealayerlabel']=='V1unlL5'],bins=np.arange(0,600,10),color='green')
+
+#%%
+plt.figure()
+plt.hist(celldata['depth'][celldata['arealayerlabel']=='V1labL2/3'],bins=np.arange(0,600,10),color='blue')
+plt.hist(celldata['depth'][celldata['arealayerlabel']=='V1labL4'],bins=np.arange(0,600,10),color='red')
+plt.hist(celldata['depth'][celldata['arealayerlabel']=='V1labL5'],bins=np.arange(0,600,10),color='green')
+
+#%%
+plt.figure()
+plt.hist(celldata['depth'][celldata['arealayerlabel']=='PMlabL2/3'],bins=np.arange(0,600,10),color='blue')
+plt.hist(celldata['depth'][celldata['arealayerlabel']=='PMlabL4'],bins=np.arange(0,600,10),color='red')
+plt.hist(celldata['depth'][celldata['arealayerlabel']=='PMlabL5'],bins=np.arange(0,600,10),color='green')
+
 #%% Compute the variance and covariance explained by the behavior (layer-dependent)
 arealayerlabeled         = np.array(['V1unlL2/3','V1labL2/3','PMunlL2/3','PMlabL2/3','PMunlL5','PMlabL5'])
 narealayerlabels         = len(arealayerlabeled)
@@ -797,7 +892,7 @@ for ises,ses in enumerate(sessions):
             U, s, V = svds(Y_hat_train,k=nranks,which='LM')
             U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
 
-            Y_cov = np.cov(Y_train.T)
+            # Y_cov = np.cov(Y_train.T)
 
             for r in range(nranks):
                 B_rrr           = B_hat_train @ V[:r,:].T @ V[:r,:] #project beta coeff into low rank subspace
@@ -829,7 +924,6 @@ for ises,ses in enumerate(sessions):
                     
                 #     EC_poppairs[ialp,r,istim,ises,ikf] = EV(Y_cov[np.ix_(idx_areax,idx_areay)],Y_cov_rrr[np.ix_(idx_areax,idx_areay)])
 
-
 #%% Plotting:
 clrs_arealabels = ['grey','red','grey','red','grey','red']
 fig,axes = plt.subplots(1,1,figsize=(4*cm,3.9*cm))
@@ -847,9 +941,6 @@ ax_nticks(ax,4)
 ax.set_xticks(range(narealayerlabels),arealayerlabeled,rotation=45,fontsize=6)
 ax.set_ylabel('Variance explained (R$^2$)')
 
-si                  = SimpleImputer(keep_empty_features=True)
-data                = si.fit_transform(data)
-
 #Statistical testing:
 df = pd.DataFrame({'EV': data.flatten(),
                   'arealayerlabel': np.repeat(arealayerlabeled,nSessions*nStim),
@@ -857,15 +948,24 @@ df = pd.DataFrame({'EV': data.flatten(),
 order = arealayerlabeled #for statistical testing purposes
 pairs = [('V1unlL2/3','V1labL2/3'),('PMunlL2/3','PMlabL2/3'),('PMunlL5','PMlabL5')]
 
+# For paired t-test: null out sessions where only one of the two conditions has data
+df_pivot = df.pivot(index='session', columns='arealayerlabel', values='EV')
+for lbl0, lbl1 in pairs:
+    if lbl0 in df_pivot.columns and lbl1 in df_pivot.columns:
+        mask = df_pivot[lbl0].isna() | df_pivot[lbl1].isna()
+        df_pivot.loc[mask, [lbl0, lbl1]] = np.nan
+df = df_pivot.reset_index().melt(id_vars='session', value_name='EV', var_name='arealayerlabel')
+
 annotator = Annotator(ax, pairs, data=df, x="arealayerlabel", y='EV', order=order)
 annotator.configure(test='Wilcoxon', text_format='star', loc='inside',verbose=False,
                     line_offset_to_group=0.2, line_width=1,
                     comparisons_correction="Bonferroni",line_height=0, text_offset=-3,fontsize=9)
+                    # comparisons_correction=None,line_height=0, text_offset=-3,fontsize=9)
 annotator.apply_and_annotate()
 
 sns.despine(fig,top=True,right=True,offset=2)
 # plt.tight_layout()
-my_savefig(fig,figdir,'VarianceExplained_V1PM_arealayerlabeled_%ddatasets' % (nStim*nSessions))
+# my_savefig(fig,figdir,'VarianceExplained_V1PM_arealayerlabeled_%ddatasets' % (nStim*nSessions))
 
 #%% Plotting:
 clrs_arealabels = ['grey','red','grey','red','grey','red']
@@ -873,11 +973,6 @@ fig,axes = plt.subplots(1,1,figsize=(4*cm,3.9*cm))
 ax = axes
 optim_rank = 4
 data = np.nanmean(EV_pops[:,optim_rank],axis=(-3,-1))
-
-# for ial, arealabel in enumerate(arealayerlabeled):
-#     xscatter = np.random.randn(nSessions)*0.1+ial
-#     ax.scatter(xscatter,data[ial,:].flatten(),s=5,color='k',marker='.')
-#     ax.plot(ial,np.nanmean(data[ial,:]),color=clrs_arealabels[ial],marker='o',markersize=5)
 
 for ialp,[ial0,ial1] in enumerate([[0,1],[2,3],[4,5]]):
     xscatter = np.random.randn(nSessions)*0.1
@@ -891,9 +986,6 @@ ax.set_ylim([0,my_ceil(ax.get_ylim()[1],2)])
 ax_nticks(ax,4)
 ax.set_ylabel('Variance explained (R$^2$)')
 
-si                  = SimpleImputer()
-data                = si.fit_transform(data)
-
 #Statistical testing:
 df = pd.DataFrame({'EV': data.flatten(),
                   'arealayerlabel': np.repeat(arealayerlabeled,nSessions),
@@ -901,15 +993,34 @@ df = pd.DataFrame({'EV': data.flatten(),
 order = arealayerlabeled #for statistical testing purposes
 pairs = [('V1unlL2/3','V1labL2/3'),('PMunlL2/3','PMlabL2/3'),('PMunlL5','PMlabL5')]
 
+# For paired t-test: null out sessions where only one of the two conditions has data
+df_pivot = df.pivot(index='session', columns='arealayerlabel', values='EV')
+for lbl0, lbl1 in pairs:
+    if lbl0 in df_pivot.columns and lbl1 in df_pivot.columns:
+        mask = df_pivot[lbl0].isna() | df_pivot[lbl1].isna()
+        df_pivot.loc[mask, [lbl0, lbl1]] = np.nan
+df = df_pivot.reset_index().melt(id_vars='session', value_name='EV', var_name='arealayerlabel')
+
 annotator = Annotator(ax, pairs, data=df, x="arealayerlabel", y='EV', order=order)
 annotator.configure(test='t-test_paired', text_format='star', loc='inside',verbose=False,
+# annotator.configure(test='Wilcoxon', text_format='star', loc='inside',verbose=False,
                     line_offset_to_group=0.2, line_width=1,
-                    comparisons_correction="Bonferroni",line_height=0, text_offset=-3,fontsize=9)
-                    # comparisons_correction=None,line_height=0, text_offset=-3,fontsize=9)
+                    comparisons_correction=None,line_height=0, text_offset=-3,fontsize=9)
 annotator.apply_and_annotate()
 
-order = arealayerlabeled #for statistical testing purposes
+#Statistical testing:
+df = pd.DataFrame({'EV': data.flatten(),
+                  'arealayerlabel': np.repeat(arealayerlabeled,nSessions),
+                  'session': np.tile(np.arange(nSessions),narealayerlabels)})
 pairs = [('V1unlL2/3','PMunlL2/3'),('PMunlL2/3','PMunlL5')]
+
+# For paired test: null out sessions where only one of the unl labels has data
+df_pivot = df.pivot(index='session', columns='arealayerlabel', values='EV')
+for lbl0, lbl1 in pairs:
+    if lbl0 in df_pivot.columns and lbl1 in df_pivot.columns:
+        mask = df_pivot[lbl0].isna() | df_pivot[lbl1].isna()
+        df_pivot.loc[mask, :] = np.nan #set session to NaN
+df = df_pivot.reset_index().melt(id_vars='session', value_name='EV', var_name='arealayerlabel')
 
 annotator = Annotator(ax, pairs, data=df, x="arealayerlabel", y='EV', order=order)
 annotator.configure(test='t-test_paired', text_format='star', loc='inside',verbose=False,
