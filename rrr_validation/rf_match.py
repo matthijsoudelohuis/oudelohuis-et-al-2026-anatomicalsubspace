@@ -59,13 +59,93 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],session_rf=True)
 report_sessions(sessions)
 sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=True)
 
-#%% Wrapper function to load the tensor data, 
-[sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'])
+#%%
+def compute_pairwise_delta_rf(sessions,rf_type='F'):
+    for ises in range(len(sessions)):
+    # for ises in tqdm(range(len(sessions)),total=len(sessions),desc= 'Computing pairwise delta receptive field for each session: '):
+        N           = len(sessions[ises].celldata) #get dimensions of response matrix
+
+        ## Compute euclidean distance matrix based on receptive field:
+        sessions[ises].distmat_rf      = np.full((N,N),np.NaN)
+
+        if 'rf_az_' + rf_type in sessions[ises].celldata:
+            rfaz = sessions[ises].celldata['rf_az_' + rf_type].to_numpy()
+            rfel = sessions[ises].celldata['rf_el_' + rf_type].to_numpy()
+
+            d = np.array((rfaz,rfel))
+
+            for i in range(N):
+                c = np.array((rfaz[i],rfel[i]))
+                sessions[ises].distmat_rf[i,:] = np.linalg.norm(c[:,np.newaxis]-d,axis=0)
+
+    return sessions
 
 #%%
 params['rf_field'] = 'Fneu'
+# params['rf_field'] = 'Fsmooth'
 # params['rf_field'] = 'F'
 params['minrfR2']     = 0.2 #minimum R2 of receptive field fit to be included in analysis
+
+#%% Get delta receptive fields between neurons
+# sessions = compute_pairwise_delta_rf(sessions,rf_type='Fsmooth')
+sessions = compute_pairwise_delta_rf(sessions,rf_type=params['rf_field'])
+
+#%%
+params['minnneurons'] = 10
+filter_nearby = True #now only neurons 
+# filter_nearby = False #if set to false then neurons across the entire visual field are included, 
+# also those far from the labeled cells that have very different RFs
+deltaRF = np.full((nSessions,2),np.nan)
+for ises,ses in enumerate(sessions):
+    
+    if filter_nearby:
+        idx_nearby  = filter_nearlabeled(ses,radius=params['radius'])
+    else:
+        idx_nearby = np.ones(len(ses.celldata),dtype=bool)
+
+    idx_S       = np.where(np.all((ses.celldata['arealabel']=='V1unl',
+                                    ses.celldata['rf_r2_' + params['rf_field']]>params['minrfR2'],
+                                    idx_nearby,
+                                    ),axis=0))[0]
+    idx_T       = np.where(np.all((ses.celldata['arealabel']=='PMunl',
+                                    ses.celldata['rf_r2_' + params['rf_field']]>params['minrfR2'],
+                                    idx_nearby,
+                                    ),axis=0))[0]
+    if len(idx_S)>params['minnneurons'] and len(idx_T)>params['minnneurons']:
+        deltaRF[ises,0] = np.nanmedian(ses.distmat_rf[np.ix_(idx_S,idx_T)])
+
+    idx_S       = np.where(np.all((ses.celldata['arealabel']=='V1lab',
+                                    ses.celldata['rf_r2_' + params['rf_field']]>params['minrfR2'],
+                                    idx_nearby,
+                                    ),axis=0))[0]
+    idx_T       = np.where(np.all((ses.celldata['arealabel']=='PMlab',
+                                    ses.celldata['rf_r2_' + params['rf_field']]>params['minrfR2'],
+                                    idx_nearby,
+                                    ),axis=0))[0]
+    if len(idx_S)>params['minnneurons'] and len(idx_T)>params['minnneurons']:
+        deltaRF[ises,1] = np.nanmedian(ses.distmat_rf[np.ix_(idx_S,idx_T)])
+
+deltaRF = deltaRF[~np.any(np.isnan(deltaRF),axis=1)]
+ndRFsessions = np.shape(deltaRF)[0]
+fig,axes = plt.subplots(1,1,figsize=(3*cm,3.7*cm))
+ax = axes
+x_jitter = np.random.normal(1, 0.05, size=ndRFsessions)
+ax.scatter(x_jitter, deltaRF[:,0],s=20, alpha=0.6, color='grey', edgecolor='black', zorder=3)
+ax.scatter(x_jitter+1, deltaRF[:,1],s=20, alpha=0.6, color='red', edgecolor='black', zorder=3)
+ax.plot([np.zeros(ndRFsessions),np.ones(ndRFsessions)]+x_jitter,deltaRF.T,'-',color='black',lw=0.5)
+ax.set_xlim([0.7,2.3])
+ax.set_ylim([0,75])
+ax.set_ylabel('delta RF (deg)')
+ax.set_xticks([1,2],['V1$_{ND}$-PM$_{ND}$','V1$_{PM}$-PM$_{V1}$'])
+
+add_paired_ttest_results(ax,deltaRF[:,0],deltaRF[:,1],pos=[0.5,0.9],fontsize=8,color='k')
+print('t=%1.3f, p=%1.2f' % stats.ttest_rel(deltaRF[:,0],deltaRF[:,1]))
+sns.despine(fig=fig,top=True,right=True,offset=2)
+my_savefig(fig,figdir,'deltaRF_%s_%s_%dsessions' % (params['rf_field'],'nearby' if filter_nearby else '',nSessions))
+
+
+#%% Wrapper function to load the tensor data, 
+[sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'])
 
 #%%
 for ses in sessions:
