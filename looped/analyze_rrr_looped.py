@@ -24,10 +24,6 @@ params = load_params()
 figdir = os.path.join(params['figdir'],'RRR','Labeling','Looped')
 resultdir = params['resultdir']
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%% Load the data:
 version = 'FF_original'
 filename = 'RRR_Joint_looped_FF_original_2026-02-23_23-26-57'

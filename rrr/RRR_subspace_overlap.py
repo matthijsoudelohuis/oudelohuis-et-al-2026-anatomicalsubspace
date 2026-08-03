@@ -33,10 +33,6 @@ from utils.RRRlib import *
 params = load_params()
 figdir = os.path.join(params['figdir'],'RRR','SubspaceOverlap')
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%% 
 # %pdb on
 # import pdb

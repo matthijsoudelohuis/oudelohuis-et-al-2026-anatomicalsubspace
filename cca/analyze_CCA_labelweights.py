@@ -23,10 +23,6 @@ params = load_params()
 figdir = os.path.join(params['figdir'],'CCA')
 resultdir = os.path.join(params['resultdir'])
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%% 
 # areas       = ['V1','PM']
 # nareas      = len(areas)

@@ -28,10 +28,6 @@ params = load_params()
 figdir = os.path.join(params['figdir'],'RRR','Labeling','Time')
 resultdir = params['resultdir']
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%%  
 version = 'FF_original'
 FF_filename = 'RRR_time_Joint_labeled_FF_original_2026-03-31_16-17-42'

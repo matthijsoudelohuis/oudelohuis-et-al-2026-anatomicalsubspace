@@ -27,10 +27,6 @@ figdir = os.path.join(params['figdir'],'RRR','Labeling','FeedForward')
 # figdir = os.path.join(params['figdir'],'RRR','Labeling','Feedback')
 resultdir = params['resultdir']
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%% Load the data:
 version = 'FF_original'
 # filename = 'RRR_Joint_labeled_FF_original_2026-02-19_18-05-04'
@@ -242,6 +238,36 @@ sns.despine(fig=fig,top=True,right=True,offset=2)
 # my_savefig(fig,figdir,'RRR_R2_%s_rank_noiseconstant_%s_%dsessions' % (diffmetric,version,params['nSessions']))
 # my_savefig(fig,figdir,'RRR_unique_cvR2_V1lab_V1unl_V1unl_%dneurons' % Nsub)
 
+#%% Are single dimensions amplified or multiple in each session? 
+data = np.nanmean(R2_ranks,axis=(5)) #average across kfolds
+data = np.diff(data,axis=3) #take the difference between rank r and r+1 (uniquely explained variance by rank r)
+nrankstoplot = 5
+
+diffmetric = 'ratio' #'difference'
+noise_constant = 1e-3
+
+fig,axes = plt.subplots(1,1,figsize=(4*cm,4*cm),sharey=True,sharex=True)
+ax = axes
+ratiodata = (np.nanmean(data[3],axis=(3))+noise_constant) / (np.nanmean(data[1],axis=(3))+noise_constant)
+ratiodata = ratiodata[:,:,:nrankstoplot].reshape(params['nSessions']*params['nStim'],nrankstoplot)
+ratiodata = np.flip(np.sort(ratiodata,axis=1),axis=1) #sort the ratios across ranks for each session/stimulus
+
+ax.plot(np.arange(nrankstoplot)+1,np.nanmean(ratiodata,axis=0),color='red',linewidth=2)
+
+ratiodata = (np.nanmean(data[2],axis=(3))+noise_constant) / (np.nanmean(data[1],axis=(3))+noise_constant)
+ratiodata = ratiodata[:,:,:nrankstoplot].reshape(params['nSessions']*params['nStim'],nrankstoplot)
+ratiodata = np.flip(np.sort(ratiodata,axis=1),axis=1) #sort the ratios across ranks for each session/stimulus
+
+ax.plot(np.arange(nrankstoplot)+1,np.nanmean(ratiodata,axis=0),color='grey',linewidth=2)
+
+ax.axhline(y=1,color='grey',linestyle='--')
+ax.set_xlabel('dimension')
+ax.set_ylabel('R$^{2}$ ratio')
+ax.set_xticks(np.arange(nrankstoplot)[::2]+1)
+ax.legend(['V1$_{PM}$/V1$_{ND}$','V1$_{ND}$/V1$_{ND}$'],frameon=False)
+sns.despine(fig=fig,top=True,right=True,offset=2)
+my_savefig(fig,figdir,'perf_ratio_sorteddims_%dsessions' % (params['nSessions']))
+
 #%% Are the dimensions which are enhanced in labeled cells unique or express in unlabeled cells as well?
 params['nrankstoplot'] = 4
 r2data = np.nanmean(R2_ranks,axis=(5)) #average across kfolds
@@ -283,7 +309,7 @@ ax.set_title('Difference')
 ax.plot([0,r2lim],[0,r2lim],color='grey',linestyle='--')
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=2)
-my_savefig(fig,figdir,'R2_2dhist_%s_%dsessions' % (version,params['nSessions']))
+# my_savefig(fig,figdir,'R2_2dhist_%s_%dsessions' % (version,params['nSessions']))
 
 #%% Are the dimensions which are enhanced in labeled cells unique or express in unlabeled cells as well?
 r2data = np.nanmean(R2_ranks,axis=(5)) #average across kfolds
@@ -815,10 +841,6 @@ sns.despine(fig=fig,top=True,right=True,offset=2)
 ######  ####### #     # #     #    #    #######  #####     #    
 
 #%% Comparison original and behavout:
-
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
 
 #%% Load the data:
 version = 'FF_original'

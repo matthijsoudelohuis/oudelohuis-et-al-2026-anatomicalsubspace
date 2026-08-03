@@ -17,12 +17,11 @@ from scipy.stats import pearsonr,ttest_rel,wilcoxon
 import copy
 from statannotations.Annotator import Annotator
 from itertools import product
-
 from utils.corr_lib import filter_sharednan
 
-def set_plot_basic_config():
-    plt.rcParams.update({'font.size': 7, 'xtick.labelsize': 6, 'ytick.labelsize': 6, 'axes.titlesize': 8,
-                     'axes.labelsize': 7,'axes.labelpad': 1, 'ytick.major.pad': 1, 'xtick.major.pad': 1})
+cm = 1/2.54 #cm in inches
+plt.rcParams.update({'font.size': 7, 'xtick.labelsize': 6, 'ytick.labelsize': 6, 'axes.titlesize': 8,
+                    'axes.labelsize': 7,'axes.labelpad': 1, 'ytick.major.pad': 1, 'xtick.major.pad': 1})
 
 def my_savefig(fig,figdir,filename,formats=['pdf','png']):
     for fmt in formats:
@@ -618,7 +617,6 @@ def plot_RRR_R2_arealabels(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_arealab
 
 # Plot the performance across sessions as a function of rank:
 def plot_RRR_R2_arealabels_paired(R2_cv,optim_rank,R2_ranks,arealabelpairs,clrs_arealabelpairs,normalize=False,xyerror=False):
-    cm = 1/2.54
     nrankstoplot       = 10
     nranks              = R2_ranks.shape[2]
     nSessions           = R2_cv.shape[1]
@@ -991,6 +989,15 @@ def get_clr_gratingnoise_stimuli(oris,speeds):
     # clrs = clrs / np.max(clrs)
     
     return clrs,labels
+clrs_subspaces = ['black','blue','orange']
+subspacelabels = np.array(['Full','Behav','Non-behav'])
+
+def get_clr_subspaces(subspaces):
+    palette       = {'Full': '#000000',
+                'Behav' : '#2e17c4',
+                'Non-behav'   : '#7a070b',
+                }
+    return itemgetter(*subspaces)(palette)
 
 
 def get_clr_GN_svars(labels):

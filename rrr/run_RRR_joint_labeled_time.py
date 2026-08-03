@@ -90,9 +90,6 @@ report_sessions(sessions)
 #%% Wrapper function to load the tensor data, 
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'],compute_respmat=True)
 
-#%%
-sessions = compute_tuning_wrapper(sessions)
-
 #%% 
 narealabelpairs     = len(sourcearealabelpairs)
 
@@ -101,7 +98,6 @@ nranks              = 20 #number of ranks of RRR to be evaluated
 nmodelfits          = 100
 
 params['nStim']     = 16
-params['mintuningvar'] = 0.0
 
 # idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
 idx_resp            = np.where((t_axis>=-99) & (t_axis<=99))[0]
@@ -124,19 +120,15 @@ for ises,ses in enumerate(sessions):
 
     idx_areax1      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpairs[0],
                                 ses.celldata['noise_level']<params['maxnoiselevel'],
-                                ses.celldata['tuning_var']>params['mintuningvar'],
                                 idx_nearby),axis=0))[0]
     idx_areax2      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpairs[1],
                                 ses.celldata['noise_level']<params['maxnoiselevel'],
-                                ses.celldata['tuning_var']>params['mintuningvar'],
                                 idx_nearby),axis=0))[0]
     idx_areax3      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpairs[2],
                                 ses.celldata['noise_level']<params['maxnoiselevel'],
-                                ses.celldata['tuning_var']>params['mintuningvar'],
                                 idx_nearby),axis=0))[0]
     idx_areay       = np.where(np.all((ses.celldata['arealabel']==targetarealabelpair,
                                 ses.celldata['noise_level']<params['maxnoiselevel'],
-                                ses.celldata['tuning_var']>params['mintuningvar'],
                                 idx_nearby),axis=0))[0]
     
     if len(idx_areax1)<Nsub*2 or len(idx_areax2)<Nsub*2 or len(idx_areax3)<Nsub or len(idx_areay)<narealabelpairs*Nsub: #skip exec if not enough neurons in one of the populations

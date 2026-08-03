@@ -31,10 +31,6 @@ params = load_params()
 figdir = os.path.join(params['figdir'],'RRR','Labeling','AL')
 resultdir = params['resultdir']
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%% Load the data:
 version = 'FF_AL_original'
 filename = 'RRR_Joint_labeled_FF_AL_original_2026-02-20_14-50-51'

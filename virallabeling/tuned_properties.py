@@ -22,10 +22,6 @@ params = load_params()
 figdir = os.path.join(params['figdir'],'ResponseProperties')
 areas = ['V1','PM','AL']
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%% 
 session_list        = np.array([
                                 # ['LPE09830_2023_04_10'], #

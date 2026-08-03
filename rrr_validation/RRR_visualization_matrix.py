@@ -32,11 +32,6 @@ from utils.params import load_params
 params = load_params()
 figdir = os.path.join(params['figdir'],'RRR','LabeledSubspace')
 
-#%% Plotting and parameters:
-params  = load_params()
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%% 
 session_list        = np.array([['LPE12223','2024_06_10'], #GR
                                 ['LPE10919','2023_11_06']]) #GR

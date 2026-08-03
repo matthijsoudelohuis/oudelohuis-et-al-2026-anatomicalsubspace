@@ -269,8 +269,6 @@ beta_lab_ses  = np.nanmean(beta_lab,  axis=(0, 2, 3))
 
 #%% Plot: session-level scatter (labeled vs unlabeled), one dot per session
 figdir = os.path.join(params['figdir'],'RRR','PrivateShared')
-cm = 1/2.54
-set_plot_basic_config()
 
 #%%
 metrics   = [alpha_unl_ses, beta_unl_ses,  s_unl_ses]

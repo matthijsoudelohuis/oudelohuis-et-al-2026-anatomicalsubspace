@@ -34,10 +34,6 @@ sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=
 
 print('Sessions with recordings in AL: %s' ,sessiondata['session_id'])
 
-#%% Plotting and parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%% 
 def show_labeling_plane(iplane,plane_folder,saveoverlay=False,showcells=True,overlap_threshold=0.5,gcamp_proj='meanImg'):
     stats       = np.load(os.path.join(plane_folder,'stat.npy'), allow_pickle=True)

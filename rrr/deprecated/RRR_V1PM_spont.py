@@ -33,10 +33,6 @@ areas           = ['V1','PM','AL']
 nareas          = len(areas)
 figdir          = os.path.join(params['figdir'],'RRR','Spontaneous')
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%% Load example session data:
 session_list        = np.array([['LPE12223_2024_06_10'], #GR
                                 ['LPE10919_2023_11_06']]) #GR

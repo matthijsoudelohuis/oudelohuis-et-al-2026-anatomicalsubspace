@@ -27,10 +27,6 @@ params = load_params()
 figdir = os.path.join(params['figdir'],'RRR','Labeling','Behavior')
 resultdir = params['resultdir']
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%% Load the data:
 version = 'FF'
 filename_FF = 'RRR_Joint_labeled_FF_movesplit_2026-04-21_23-07-50'

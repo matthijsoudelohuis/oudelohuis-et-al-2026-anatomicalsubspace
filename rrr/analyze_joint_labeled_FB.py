@@ -29,10 +29,6 @@ params = load_params()
 figdir = os.path.join(params['figdir'],'RRR','Labeling','Feedback')
 resultdir = params['resultdir']
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%% Load the data:
 version = 'FF_original'
 filename = 'RRR_Joint_labeled_FF_original_2026-02-19_18-05-04'
@@ -781,10 +777,6 @@ sns.despine(fig=fig,top=True,right=True,offset=2)
 ######  ####### #     # #     #    #    #######  #####     #    
 
 #%% Comparison original and behavout:
-
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
 
 #%% Load the data:
 version = 'FB_original'

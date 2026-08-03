@@ -25,10 +25,6 @@ figdir = os.path.join(params['figdir'],'RRR','Labeling','FeedForward')
 # figdir = os.path.join(params['figdir'],'RRR','Labeling','Feedback')
 resultdir = params['resultdir']
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%% Load the data:
 version = 'FF_original'
 filename = 'RRR_Joint_labeled_Controls_FF_original_2026-03-05_22-40-25'

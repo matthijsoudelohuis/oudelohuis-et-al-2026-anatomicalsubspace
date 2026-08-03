@@ -29,10 +29,6 @@ params['regress_behavout'] = False
 
 figdir = os.path.join(params['figdir'],'RRR','RF')
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%% 
 session_list        = np.array([
                                 ['LPE12223_2024_06_10'], 

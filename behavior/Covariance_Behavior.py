@@ -28,10 +28,6 @@ from utils.params import load_params
 params = load_params()
 figdir = os.path.join(params['figdir'],'Behavior')
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%% 
 session_list        = np.array(['LPE12223_2024_06_10']) #GR
 sessions,nSessions   = filter_sessions(protocols = 'GR',only_session_id=session_list)

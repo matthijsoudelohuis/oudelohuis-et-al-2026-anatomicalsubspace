@@ -19,10 +19,6 @@ from utils.params import load_params
 params = load_params()
 resultdir = params['resultdir']
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  #centimeters in inches
-
 #%% Run block for FF 
 version = 'FF_original'
 filename = 'RRR_Separate_labeled_FF_original_2026-05-21_17-17-36'

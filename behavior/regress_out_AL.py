@@ -22,11 +22,6 @@ from utils.params import load_params
 
 params = load_params()
 figdir = os.path.join(params['figdir'],'Behavior')
-
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 only_all_areas = np.array(['V1','PM','AL'])
 
 #%% Only one session

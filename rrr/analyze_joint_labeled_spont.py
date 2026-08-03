@@ -19,8 +19,6 @@ from utils.params import load_params
 params = load_params()
 resultdir = params['resultdir']
 figdir = os.path.join(params['figdir'],'RRR','Spontaneous','Labeling')
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
 
 #%%  
 version = 'FF_original'

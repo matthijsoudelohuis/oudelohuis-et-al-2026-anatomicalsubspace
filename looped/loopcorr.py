@@ -16,7 +16,7 @@ from statsmodels.stats.multitest import multipletests
 
 os.chdir('e:\\Python\\vasile-oude-lohuis-et-al-2026-affinemodulation')
 
-from params import load_params
+from utils.params import load_params
 from loaddata.session_info import *
 from loaddata.get_data_folder import get_local_drive
 from utils.pair_lib import *
@@ -33,8 +33,6 @@ savedir =  os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Affine_FF
 
 #%% Plotting and parameters:
 params  = load_params()
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
 params['method_multcomp'] = 'bonferroni'
 
 #%% #############################################################################

@@ -17,15 +17,12 @@ from utils.regress_lib import *
 from utils.params import load_params
 from datetime import datetime
 from utils.tuning import compute_tuning_wrapper
+from utils.plot_lib import *
 
 #%% Load parameters and settings:
 params = load_params()
 figdir = os.path.join(params['figdir'],'RRR','DOC')
 resultdir = params['resultdir']
-
-#%% Plotting:
-cm = 1/2.54
-set_plot_basic_config()
 
 #%% Load the data (Feedforward):
 filename = 'RRR_doc_labeled_FF_2026-06-17_21-49-57'

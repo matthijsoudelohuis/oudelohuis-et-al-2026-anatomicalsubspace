@@ -24,10 +24,6 @@ from utils.RRRlib import *
 params = load_params()
 figdir = os.path.join(params['figdir'],'RRR','Validation')
 
-#%% Plotting parameters:
-set_plot_basic_config()
-cm      = 1/2.54  # centimeters in inches
-
 #%% Get all data 
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'])
 report_sessions(sessions)
