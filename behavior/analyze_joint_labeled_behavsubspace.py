@@ -27,11 +27,13 @@ resultdir = params['resultdir']
 
 #%% Load the data:
 version = 'FF'
-filename_FF = 'RRR_Joint_labeled_behavsubspace_FF_2026-08-03_15-15-45'
 # filename_FF = 'RRR_Joint_labeled_behavsubspace_FF_2026-08-03_15-15-45'
-filename_FF = 'RRR_Joint_labeled_behavsubspace_FF_2026-08-03_16-11-31'
+# filename_FF = 'RRR_Joint_labeled_behavsubspace_FF_2026-08-03_16-11-31'
+filename_FF = 'RRR_Joint_labeled_behavsubspace_FF_2026-08-03_19-36-23'
+
 version = 'FB'
-filename_FB = 'RRR_Joint_labeled_behavsubspace_FB_2026-08-03_17-20-57'
+# filename_FB = 'RRR_Joint_labeled_behavsubspace_FB_2026-08-03_17-20-57'
+filename_FB = 'RRR_Joint_labeled_behavsubspace_FB_2026-08-04_01-45-04'
 
 #%% Load the FF data:
 data = np.load(os.path.join(resultdir,filename_FF + '.npz'),allow_pickle=True)
@@ -63,7 +65,7 @@ Nsub = params['Nsub']
 subspacelabels = np.array(['Full','Behav','Non-behav'])
 clrs_subspaces = get_clr_subspaces(subspacelabels)
 lines_subspaces = ['-','--',':']
-ises = 0
+ises = 4
 nrankstoplot = 6
 fig, axes = plt.subplots(1,1,figsize=(4.5*cm,3.6*cm),sharex=True,sharey=True)
 ax = axes
@@ -83,12 +85,13 @@ ax.set_xlabel('rank')
 ax.set_ylabel(r'performance (R$^{2}$)')
 ax.set_xticks(np.arange(1,20)[::2])
 ax.set_xlim([0,nrankstoplot])
-ax.set_ylim([0,ax.get_ylim()[1]])
+# ax.set_ylim([0,ax.get_ylim()[1]])
+ax.axhline(y=0,color='k',linestyle='--',linewidth=0.8)
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
-my_savefig(fig,figdir,'perf_behavsubspace_rank_FF_exampleSession_%s' % sessions[ises].session_id)
+my_savefig(fig,figdir,'perf_behavsubspace_rank_FF_exampleSession%d' % ises)
 
 #%% Show an example FB session:
-ises = 2
+ises = 4
 fig, axes = plt.subplots(1,1,figsize=(4.5*cm,3.6*cm),sharex=True,sharey=True)
 ax = axes
 handles = []
@@ -108,6 +111,7 @@ ax.set_xticks(np.arange(1,20)[::2])
 ax.set_xlim([0,nrankstoplot])
 ax.set_ylim([0,ax.get_ylim()[1]])
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
+my_savefig(fig,figdir,'perf_behavsubspace_rank_FB_exampleSession%d' % ises)
 
 #%% 
 R2_ranks_FF_all = np.nanmean(R2_ranks_FF[0][0], axis=(0,1,3,4))
@@ -118,6 +122,8 @@ ax = axes[0]
 ax.plot(np.arange(params['nranks'])+1,R2_ranks_FF_all,color='k')
 ax.plot(np.arange(params['nranks'])+1,R2_ranks_FF_sum,color='blue',linestyle='--')
 ax.set_xlabel('Rank')
+ax.set_title('FF')
+ax.legend(['Full','Behav+Non-behav'],frameon=False)
 
 R2_ranks_FB_all = np.nanmean(R2_ranks_FB[0][0], axis=(0,1,3,4))
 R2_ranks_FB_sum = np.nanmean(R2_ranks_FB[0][1], axis=(0,1,3,4)) + np.nanmean(R2_ranks_FB[0][2], axis=(0,1,3,4))
@@ -125,12 +131,15 @@ R2_ranks_FB_sum = np.nanmean(R2_ranks_FB[0][1], axis=(0,1,3,4)) + np.nanmean(R2_
 ax = axes[1]
 ax.plot(np.arange(params['nranks'])+1,R2_ranks_FB_all,color='k')
 ax.plot(np.arange(params['nranks'])+1,R2_ranks_FB_sum,color='blue',linestyle='--')
+ax.set_title('FB')
 
 # leg = ax.legend(handles,subspacelabels[1:],frameon=False)
 # my_legend_strip(ax)
 ax.set_ylabel(r'R$^{2}$')
 ax.set_xlim([1,nrankstoplot])
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
+my_savefig(fig,figdir,'perf_full_sum_rank_subspaces')
+
 
 #%% 
 nrankstoplot = 6
@@ -144,8 +153,8 @@ fracdata_nobeh = fracdata_nobeh[:,:nrankstoplot]
 fig, axes = plt.subplots(1,1,figsize=(4.5*cm,3.6*cm),sharex=True,sharey=True)
 handles = []
 ax = axes
-handles.append(shaded_error(np.arange(nrankstoplot)+1,y=fracdata_behav,ax=ax,color=clrs_subspaces[1],alpha=0.2,linewidth=1))
-handles.append(shaded_error(np.arange(nrankstoplot)+1,y=fracdata_nobeh,ax=ax,color=clrs_subspaces[2],alpha=0.2,linewidth=1))
+handles.append(shaded_error(np.arange(nrankstoplot)+1,y=fracdata_behav,ax=ax,error='ci95',color=clrs_subspaces[1],alpha=0.2,linewidth=1))
+handles.append(shaded_error(np.arange(nrankstoplot)+1,y=fracdata_nobeh,ax=ax,error='ci95',color=clrs_subspaces[2],alpha=0.2,linewidth=1))
 
 tempdata = np.diff(np.nanmean(R2_ranks_FB[0],(-1,-2)), axis=-1)
 tempdata[tempdata<0] = np.nan
@@ -154,8 +163,8 @@ fracdata_nobeh = (tempdata[2] / (tempdata[1] + tempdata[2])).reshape(np.shape(R2
 fracdata_behav = fracdata_behav[:,:nrankstoplot]
 fracdata_nobeh = fracdata_nobeh[:,:nrankstoplot]
 
-handles.append(shaded_error(np.arange(nrankstoplot)+1,y=fracdata_behav,ax=ax,color=clrs_subspaces[1],alpha=0.2,linestyle='--',linewidth=1))
-handles.append(shaded_error(np.arange(nrankstoplot)+1,y=fracdata_nobeh,ax=ax,color=clrs_subspaces[2],alpha=0.2,linestyle='--',linewidth=1))
+handles.append(shaded_error(np.arange(nrankstoplot)+1,y=fracdata_behav,ax=ax,error='ci95',color=clrs_subspaces[1],alpha=0.2,linestyle='--',linewidth=1))
+handles.append(shaded_error(np.arange(nrankstoplot)+1,y=fracdata_nobeh,ax=ax,error='ci95',color=clrs_subspaces[2],alpha=0.2,linestyle='--',linewidth=1))
 ax.axhline(y=1,color='k',linestyle='--',linewidth=1)
 ax.set_xlabel('dimension')
 leg = ax.legend(handles,subspacelabels[1:],frameon=False)
@@ -195,19 +204,27 @@ sns.despine(fig=fig,trim=False,top=True,right=True)
 
 
 #%% 
-fig, axes = plt.subplots(1,2,figsize=(7.1*cm,3.9*cm),sharex=True,sharey=False)
+fig, axes = plt.subplots(1,2,figsize=(6.1*cm,3.9*cm),sharex=True,sharey=True)
 contrasts   = np.array([[3,1],[2,1]])
 # contrasts   = np.array([[3,2],[1,2]])
 clrs        = ['red','grey']
-
+ntests = len(contrasts) * 2 * 2 #number of tests for bonferroni correction (FF/FB, 2 subspaces, 2 contrasts)
 ax = axes[0]
 handles = []
 for icontrast,contrast in enumerate(contrasts):
     for isubspace in range(1,3):
         ratiodata = (R2_cv_FF[contrast[0]][isubspace] / R2_cv_FF[contrast[1]][isubspace]).flatten()
-        handle = ax.errorbar(x=isubspace-1,y=np.nanmean(ratiodata),yerr=np.nanstd(ratiodata)/np.sqrt(len(ratiodata)),
-                             color=clrs[icontrast],capsize=2,elinewidth=1,marker='o',markersize=4)[0]
-        if isubspace == 0:
+        ratiodata = np.nan_to_num(ratiodata,nan=np.nan,posinf=np.nan,neginf=np.nan)
+        handle = ax.errorbar(x=isubspace-1,y=np.nanmean(ratiodata),yerr=2*np.nanstd(ratiodata)/np.sqrt(len(ratiodata)),
+                             color=clrs[icontrast],capsize=3,elinewidth=1,marker='o',markersize=5)[0]
+        h,p = stats.wilcoxon(ratiodata-1,nan_policy='omit')
+        p = np.clip(p * ntests, 0, 1)
+        print('%s vs %s, %s: p = %.4f' % (sourcearealabelpairs_FF[contrast[0]-1],
+                                          sourcearealabelpairs_FF[contrast[1]-1],
+                                          subspacelabels[isubspace],p))
+        if p < 0.05:
+            ax.annotate(get_sig_asterisks(p),xy=(isubspace-1,np.nanmean(ratiodata)+0.06),fontsize=8,ha='center',color='red')
+        if isubspace == 1:
             handles.append(handle)
 ax.axhline(y=1,color='k',linestyle='--',linewidth=1)
 ax.legend(handles,['V1$_{PM}$/V1$_{ND}$','V1$_{ND}$/V1$_{ND}$'],frameon=False)
@@ -222,14 +239,23 @@ handles = []
 for icontrast,contrast in enumerate(contrasts):
     for isubspace in range(1,3):
         ratiodata = (R2_cv_FB[contrast[0]][isubspace] / R2_cv_FB[contrast[1]][isubspace]).flatten() 
-        handle = ax.errorbar(x=isubspace-1,y=np.nanmean(ratiodata),yerr=np.nanstd(ratiodata)/np.sqrt(len(ratiodata)),
-                             color=clrs[icontrast],capsize=2,elinewidth=1,marker='o',markersize=4)[0]
-        if isubspace == 0:
+        ratiodata = np.nan_to_num(ratiodata,nan=np.nan,posinf=np.nan,neginf=np.nan)
+        handle = ax.errorbar(x=isubspace-1,y=np.nanmean(ratiodata),yerr=2*np.nanstd(ratiodata)/np.sqrt(len(ratiodata)),
+                             color=clrs[icontrast],capsize=3,elinewidth=1,marker='o',markersize=5)[0]
+        h,p = stats.wilcoxon(ratiodata-1,nan_policy='omit')
+        p = np.clip(p * ntests, 0, 1)
+        print('%s vs %s, %s: p = %.4f' % (sourcearealabelpairs_FB[contrast[0]-1],
+                                                  sourcearealabelpairs_FB[contrast[1]-1],
+                                                  subspacelabels[isubspace],p))
+        if p < 0.05:
+            ax.annotate(get_sig_asterisks(p),xy=(isubspace-1,np.nanmean(ratiodata)+0.06),fontsize=8,ha='center',color='red')
+        if isubspace == 1:
             handles.append(handle)
 ax.axhline(y=1,color='k',linestyle='--',linewidth=1)
 ax.legend(handles,['PM$_{V1}$/PM$_{ND}$','PM$_{ND}$/PM$_{ND}$'],frameon=False)
 my_legend_strip(ax)
 ax_nticks(ax,4)
+ax.yaxis.set_tick_params(labelleft=True)
 ax.set_xlim([-0.3,1.3])
 ax.set_title('FB')
 ax.set_ylabel(r'performance ratio')

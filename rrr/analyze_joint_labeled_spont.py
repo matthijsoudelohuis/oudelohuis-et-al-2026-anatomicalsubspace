@@ -51,27 +51,50 @@ narealabelpairs = 3
 #%% Show an example session:
 clrs_arealabelpairs = ['grey','grey','red']
 narealabelpairs = 3
-fig, axes = plt.subplots(1,1,figsize=(6*cm,5*cm))
-ax = axes
-ises = 2
+nrankstoplot = 10
+fig, ax = plt.subplots(1,1,figsize=(3.8*cm,3.7*cm))
+ises = 4
 handles = []
-# ax.plot(range(params['nranks']),np.nanmean(R2_ranks[0],axis=(0,1,3,4)),label='All neurons',color='grey')
-# ax.plot(np.nanmean(R2_ranks[1][ises],axis=(0,2,3)),label=sourcearealabelpairs[0],color=clrs_arealabelpairs[0])
-# ax.plot(np.nanmean(R2_ranks[2][ises],axis=(0,2,3)),label=sourcearealabelpairs[1],color=clrs_arealabelpairs[1])
-# ax.plot(np.nanmean(R2_ranks[3][ises],axis=(0,2,3)),label=sourcearealabelpairs[2],color=clrs_arealabelpairs[2])
-for iapl,apl in enumerate(sourcearealabelpairs_FF):
-    ymeantoplot = np.nanmean(R2_ranks_FF[iapl+1][ises],axis=(0,2,3))
-    yerrortoplot = np.nanstd(R2_ranks_FF[iapl+1][ises],axis=(0,2,3)) / np.sqrt(nmodelfits)
-    handles.append(shaded_error(np.arange(params['nranks'])+1,ymeantoplot,yerrortoplot,ax=ax,color=clrs_arealabelpairs[iapl],alpha=0.3))
+for iapl,apl in enumerate(sourcearealabelpairs_FF[1:]):
+    ymeantoplot = np.nanmean(R2_ranks_FF[iapl+2][ises],axis=(0,2,3))
+    yerrortoplot = np.nanstd(R2_ranks_FF[iapl+2][ises],axis=(0,2,3)) / np.sqrt(nmodelfits*params['nStim'])
+    handles.append(shaded_error(np.arange(params['nranks']),ymeantoplot,yerrortoplot,ax=ax,
+                                color=clrs_arealabelpairs[iapl+1],linewidth=1,alpha=0.3))
 
-leg = ax.legend(handles,arealabeled_to_figlabels(sourcearealabelpairs_FF),frameon=False)
+leg = ax.legend(handles,arealabeled_to_figlabels(sourcearealabelpairs_FF[1:]),frameon=False)
 my_legend_strip(ax)
-ax.set_xlabel('Rank')
-ax.set_ylabel('Cross-validated R2')
+ax.set_xlabel('rank')
+ax.set_ylabel(r'performance (R$^2$)')
+ax.set_title('FF')
+ax.set_xticks(np.arange(params['nranks'])[::3]+1)
+ax.set_xlim([0,nrankstoplot])
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
-# my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_ExampleSesion' % (version))
+my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_FF_ExampleSession%d' % (ises))
+
+#%% Show an example session:
+fig, ax = plt.subplots(1,1,figsize=(3.8*cm,3.7*cm))
+ises = 10
+handles = []
+for iapl,apl in enumerate(sourcearealabelpairs_FB[1:]):
+    ymeantoplot = np.nanmean(R2_ranks_FB[iapl+2][ises],axis=(0,2,3))
+    yerrortoplot = np.nanstd(R2_ranks_FB[iapl+2][ises],axis=(0,2,3)) / np.sqrt(nmodelfits*params['nStim'])
+    handles.append(shaded_error(np.arange(params['nranks']),ymeantoplot,yerrortoplot,ax=ax,
+                                color=clrs_arealabelpairs[iapl+1],linewidth=1,alpha=0.3))
+
+leg = ax.legend(handles,arealabeled_to_figlabels(sourcearealabelpairs_FB[1:]),frameon=False)
+my_legend_strip(ax)
+ax.set_xlabel('rank')
+ax.set_ylabel(r'performance (R$^2$)')
+ax.set_title('FB')
+ax.set_xticks(np.arange(params['nranks'])[::3]+1)
+ax.set_xlim([0,nrankstoplot])
+
+plt.tight_layout()
+sns.despine(fig=fig,trim=False,top=True,right=True)
+my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_FB_ExampleSession%d' % (ises))
+
 
 #%% Show the mean across sessions:
 clrs_arealabelpairs = ['grey','grey','red']
@@ -128,7 +151,52 @@ for idirec,(direc,optim_rank,R2_cv,R2_ranks,alps) in enumerate(zip(['FF','FB'],[
     ax.set_title(direc)
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
-my_savefig(fig,figdir,'RRR_joint_R2_labunl_%dsessions_spont' % params['nSessions'])
+# my_savefig(fig,figdir,'RRR_joint_R2_labunl_%dsessions_spont' % params['nSessions'])
+
+#%%
+
+
+#%% 
+fig, axes = plt.subplots(1,1,figsize=(3.1*cm,3.9*cm))
+contrasts   = np.array([[3,1],[2,1]])
+contrasts   = np.array([[3,2],[1,2]])
+clrs        = ['red','grey']
+ntests = len(contrasts) * 2 #number of tests for bonferroni correction (FF/FB, 2 contrasts)
+ax = axes
+handles = []
+noise_constant = 0
+for idirec,(direc,optim_rank,R2_cv,R2_ranks,alps) in enumerate(zip(['FF','FB'],[optim_rank_FF,optim_rank_FB],[R2_cv_FF,R2_cv_FB],
+                                                                 [R2_ranks_FF,R2_ranks_FB],[sourcearealabelpairs_FF,sourcearealabelpairs_FB])):
+    # R2_cv[optim_rank==0] = np.nan
+    # R2_cv[optim_rank<=1] = np.nan
+    for icontrast,contrast in enumerate(contrasts):
+        ratiodata = ((R2_cv[contrast[0]]+noise_constant) / (R2_cv[contrast[1]]+noise_constant)).flatten()
+        ratiodata = np.nan_to_num(ratiodata,nan=np.nan,posinf=np.nan,neginf=np.nan)
+        handle = ax.errorbar(x=idirec,y=np.nanmedian(ratiodata),yerr=2*np.nanstd(ratiodata)/np.sqrt(len(ratiodata)),
+                                color=clrs[icontrast],capsize=3,elinewidth=1,marker='o',markersize=5)[0]
+        h,p = stats.wilcoxon(ratiodata-1,nan_policy='omit')
+        p = np.clip(p * ntests, 0, 1)
+        print('%s vs %s: p = %.4f' % (alps[contrast[0]-1],
+                                            alps[contrast[1]-1],
+                                            p))
+        if p < 0.05:
+            ax.annotate(get_sig_asterisks(p),xy=(idirec,np.nanmean(ratiodata)+0.06),fontsize=8,ha='center',color='red')
+        if idirec == 0:
+            handles.append(handle)
+ax.axhline(y=1,color='k',linestyle='--',linewidth=1)
+# ax.legend(handles,['V1$_{PM}$/V1$_{ND}$','V1$_{ND}$/V1$_{ND}$'],frameon=False)
+ax.set_xlim([-0.3,1.3])
+ax.legend(handles,['XX/ND','ND/ND'],frameon=False)
+my_legend_strip(ax)
+# ax_nticks(ax,6)
+ax.set_xticks([0,1],['FF','FB'])
+ax.set_yticks([1,1.2,1.4])
+ax.set_ylabel(r'performance ratio')
+
+plt.tight_layout()
+sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
+my_savefig(fig,figdir,'perf_ratio_labunl_spont_%dsessions' % params['nSessions'])
+
 
 #%% Show the mean R2_cv across sessions:
 clrs_arealabelpairs = ['grey','grey','red']
@@ -178,7 +246,7 @@ for idirec,(direc,optim_rank,R2_cv,R2_ranks,alps) in enumerate(zip(['FF','FB'],[
     ax.set_title(direc)
 plt.tight_layout()
 sns.despine(fig=fig,top=True,right=True,offset=2)
-my_savefig(fig,figdir,'RRR_joint_R2cv_%dsessions_spont' % params['nSessions'])
+# my_savefig(fig,figdir,'RRR_joint_R2cv_%dsessions_spont' % params['nSessions'])
 
 
 #%% Identify which dimensions are particularly enhanced in labeled cells:

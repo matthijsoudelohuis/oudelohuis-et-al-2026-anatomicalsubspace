@@ -6,22 +6,17 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 """
 
 #%% ###################################################
-import math, os
-
-# from rrr.deprecated.RRR_V1PM import R2_cv_folds
-
+import os
 import numpy as np
 from scipy.stats import zscore
 import pickle
 from sklearn.model_selection import KFold
 from datetime import datetime
 
-from loaddata.get_data_folder import get_local_drive
 from loaddata.session_info import *
 from utils.RRRlib import *
 from utils.regress_lib import *
 from utils.params import load_params
-from utils.tuning import compute_tuning_wrapper
 
 #%% Load parameters and settings:
 params = load_params()
@@ -78,8 +73,8 @@ session_list        = np.array([
                                 # ['LPE11086_2023_12_15'], #Same
                                 ]) 
 
-sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list,
-                                       min_lab_cells_V1=20,filter_noiselevel=False)
+sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=session_list,filter_noiselevel=False)
+report_sessions(sessions)
 
 #%% Get all data 
 sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_all_areas=only_all_areas,min_lab_cells_V1=20,min_lab_cells_PM=20,filter_noiselevel=False)
@@ -88,29 +83,32 @@ report_sessions(sessions)
 # sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=True)
 
 #%% Wrapper function to load the tensor data, 
-[sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'],compute_respmat=True)
+[sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'],
+                                      load_behav=True)
 
 #%% 
 narealabelpairs     = len(sourcearealabelpairs)
 
 Nsub                = 20
-nranks              = 20 #number of ranks of RRR to be evaluated
-nmodelfits          = 100
-
-params['nStim']     = 16
+nmodelfits          = 20
+rankbehavout        = 3
 
 # idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
 idx_resp            = np.where((t_axis>=-99) & (t_axis<=99))[0]
 nT                  = len(idx_resp)
 
-R2_cv               = np.full((narealabelpairs+1,nSessions,params['nStim'],nT),np.nan) #dim1: 3 = allneurons, V1unl, V1lab separately
-optim_rank          = np.full((narealabelpairs+1,nSessions,params['nStim'],nT),np.nan)
-R2_ranks            = np.full((narealabelpairs+1,nSessions,params['nStim'],nT,nranks,nmodelfits,params['kfold']),np.nan)
-# R2_ranks_neurons    = np.full((narealabelpairs+1,Nsub*narealabelpairs,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
+# R2_cv               = np.full((narealabelpairs+1,nSessions,params['nStim'],nT),np.nan) #dim1: 3 = allneurons, V1unl, V1lab separately
+# optim_rank          = np.full((narealabelpairs+1,nSessions,params['nStim'],nT),np.nan)
+# R2_ranks            = np.full((narealabelpairs+1,nSessions,params['nStim'],nT,params['nranks'],nmodelfits,params['kfold']),np.nan)
 
-kf          = KFold(n_splits=params['kfold'],shuffle=True)
-nNsource    = Nsub*3
-nNtarget    = Nsub*3
+nsubspaces          = 3 #orig, behav, non-behav
+R2_cv               = np.full((narealabelpairs+1,nsubspaces,nSessions,params['nStim'],nT),np.nan) #dim1: 3 = allneurons, V1unl, V1lab separately
+optim_rank          = np.full((narealabelpairs+1,nsubspaces,nSessions,params['nStim'],nT),np.nan)
+R2_ranks            = np.full((narealabelpairs+1,nsubspaces,nSessions,params['nStim'],nT,params['nranks'],nmodelfits,params['kfold']),np.nan)
+
+kf                  = KFold(n_splits=params['kfold'],shuffle=True)
+nNsource            = Nsub*3
+nNtarget            = Nsub*3
 
 for ises,ses in enumerate(sessions):
     if params['filter_nearby']:
@@ -136,14 +134,17 @@ for ises,ses in enumerate(sessions):
                                                 len(idx_areay),targetarealabelpair))
         continue
 
+    S                 = np.concatenate((sessions[ises].tensor_vid,
+                        sessions[ises].tensor_run),axis=0)
+    
     for imf in tqdm(range(nmodelfits),total=nmodelfits,desc='Fitting RRR model for session %d/%d' % (ises+1,nSessions)):
         idx_areax1_sub       = np.random.choice(idx_areax1,Nsub,replace=False)
         idx_areax2_sub       = np.random.choice(np.setdiff1d(idx_areax2,idx_areax1_sub),Nsub,replace=False)
         idx_areax3_sub       = np.random.choice(idx_areax3,Nsub,replace=False)
         idx_areay_sub        = np.random.choice(idx_areay,Nsub*narealabelpairs,replace=False)
         
-        for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
-        # for istim,stim in enumerate([ses.trialdata['stimCond'][0]]): # loop over orientations 
+        # for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
+        for istim,stim in enumerate([ses.trialdata['stimCond'][0]]): # loop over orientations 
             idx_T               = ses.trialdata['stimCond']==stim
        
             X1                  = sessions[ises].tensor[np.ix_(idx_areax1_sub,idx_T,idx_resp)]
@@ -167,6 +168,17 @@ for ises,ses in enumerate(sessions):
             X                       = np.concatenate((X1,X2,X3),axis=0) #use this as source to predict the activity in Y with RRR
             R2_kfold                = np.zeros((params['kfold']))
 
+            #Get the behavioraldata in the same shape as the neural data:
+            Sstim                   = S[np.ix_(range(np.shape(S)[0]),idx_T,idx_resp)].reshape(np.shape(S)[0],-1).T
+            Sstim                   = zscore(Sstim,axis=0,nan_policy='omit')
+            Sstim                   = Sstim[:,~np.all(np.isnan(Sstim),axis=0)]
+
+            # X_r = np.reshape(X,(nNsource*np.sum(idx_T),nT))
+            X_r = np.reshape(X,(nNsource,np.sum(idx_T)*nT)).T
+            X_orig,X_hat,X_out      = regress_out_cv(X=Sstim,Y=X_r,rank=rankbehavout,lam=0,kfold=5)
+            X_hat = X_hat.T.reshape(nNsource,np.sum(idx_T),nT)
+            X_out = X_out.T.reshape(nNsource,np.sum(idx_T),nT)
+
             for ikf, (idx_train, idx_test) in enumerate(kf.split(np.arange(nK))): #Get indices of train and test trials
                 
                 X_train, X_test     = X[:,idx_train,:], X[:,idx_test,:]
@@ -175,81 +187,85 @@ for ises,ses in enumerate(sessions):
                 # reshape to neurons x time points
                 X_train_r               = X_train.reshape(np.shape(X)[0],-1).T
                 Y_train_r               = Y_train.reshape(np.shape(Y)[0],-1).T
-                X_test_r                = X_test.reshape(np.shape(X)[0],-1).T
-                Y_test_r                = Y_test.reshape(np.shape(Y)[0],-1).T
 
                 B_hat_train             = LM(Y_train_r,X_train_r, lam=params['lam']) #fit RRR model on training data
 
                 Y_hat_train             = X_train_r @ B_hat_train
 
                 # decomposing and low rank approximation of A
-                U, s, V = svds(Y_hat_train,k=nranks,which='LM')
+                U, s, V = svds(Y_hat_train,k=params['nranks'],which='LM')
                 U, s, V = U[:, ::-1], s[::-1], V[::-1, :] #sort by singular values
 
-                X_test_1 = copy.deepcopy(X_test_r)
-                X_test_1[:,Nsub:] = 0
+                for isubspace,X_test in enumerate([X[:,idx_test,:],X_hat[:,idx_test,:],X_out[:,idx_test,:]]):
+                    X_test_r                = X_test.reshape(np.shape(X)[0],-1).T
+                    Y_test_r                = Y_test.reshape(np.shape(Y)[0],-1).T
 
-                X_test_2 = copy.deepcopy(X_test_r)
-                X_test_2[:,:Nsub] = 0
-                X_test_2[:,2*Nsub:] = 0
-                
-                X_test_3 = copy.deepcopy(X_test_r)
-                X_test_3[:,:2*Nsub] = 0
+                    X_test_1 = copy.deepcopy(X_test_r)
+                    X_test_1[:,Nsub:] = 0
 
-                for r in range(nranks):
-                    B_rrr           = B_hat_train @ V[:r,:].T @ V[:r,:] #project beta coeff into low rank subspace
-                    Y_hat_test_rr   = X_test_r @ B_rrr
-                    Y_hat_test_rr   = np.reshape(Y_hat_test_rr.T,(nNtarget,len(idx_test),nT),order='C')
+                    X_test_2 = copy.deepcopy(X_test_r)
+                    X_test_2[:,:Nsub] = 0
+                    X_test_2[:,2*Nsub:] = 0
                     
-                    for t in range(nT):
-                        R2_ranks[0,ises,istim,t,r,imf,ikf] = EV(Y_test[:,:,t],Y_hat_test_rr[:,:,t])
-                    
-                    Y_hat_test_rr_1     = X_test_1 @ B_rrr
-                    Y_hat_test_rr       = np.reshape(Y_hat_test_rr_1.T,(nNtarget,len(idx_test),nT),order='C')
+                    X_test_3 = copy.deepcopy(X_test_r)
+                    X_test_3[:,:2*Nsub] = 0
 
-                    for t in range(nT):
-                        R2_ranks[1,ises,istim,t,r,imf,ikf] = EV(Y_test[:,:,t],Y_hat_test_rr[:,:,t])
-                    
-                    Y_hat_test_rr_2     = X_test_2 @ B_rrr
-                    Y_hat_test_rr       = np.reshape(Y_hat_test_rr_2.T,(nNtarget,len(idx_test),nT),order='C')
+                    for r in range(params['nranks']):
+                        B_rrr           = B_hat_train @ V[:r,:].T @ V[:r,:] #project beta coeff into low rank subspace
+                        Y_hat_test_rr   = X_test_r @ B_rrr
+                        Y_hat_test_rr   = np.reshape(Y_hat_test_rr.T,(nNtarget,len(idx_test),nT),order='C')
+                        
+                        for t in range(nT):
+                            R2_ranks[0,isubspace,ises,istim,t,r,imf,ikf] = EV(Y_test[:,:,t],Y_hat_test_rr[:,:,t])
+                        
+                        Y_hat_test_rr_1     = X_test_1 @ B_rrr
+                        Y_hat_test_rr       = np.reshape(Y_hat_test_rr_1.T,(nNtarget,len(idx_test),nT),order='C')
 
-                    for t in range(nT):
-                        R2_ranks[2,ises,istim,t,r,imf,ikf] = EV(Y_test[:,:,t],Y_hat_test_rr[:,:,t])
+                        for t in range(nT):
+                            R2_ranks[1,isubspace,ises,istim,t,r,imf,ikf] = EV(Y_test[:,:,t],Y_hat_test_rr[:,:,t])
+                        
+                        Y_hat_test_rr_2     = X_test_2 @ B_rrr
+                        Y_hat_test_rr       = np.reshape(Y_hat_test_rr_2.T,(nNtarget,len(idx_test),nT),order='C')
 
-                    Y_hat_test_rr_3     = X_test_3 @ B_rrr
-                    Y_hat_test_rr       = np.reshape(Y_hat_test_rr_3.T,(nNtarget,len(idx_test),nT),order='C')
+                        for t in range(nT):
+                            R2_ranks[2,isubspace,ises,istim,t,r,imf,ikf] = EV(Y_test[:,:,t],Y_hat_test_rr[:,:,t])
 
-                    for t in range(nT):
-                        R2_ranks[3,ises,istim,t,r,imf,ikf] = EV(Y_test[:,:,t],Y_hat_test_rr[:,:,t])
-               
+                        Y_hat_test_rr_3     = X_test_3 @ B_rrr
+                        Y_hat_test_rr       = np.reshape(Y_hat_test_rr_3.T,(nNtarget,len(idx_test),nT),order='C')
+
+                        for t in range(nT):
+                            R2_ranks[3,isubspace,ises,istim,t,r,imf,ikf] = EV(Y_test[:,:,t],Y_hat_test_rr[:,:,t])
+
 #%% Find best rank and cvR2 at this rank:
 fixed_rank = None
 fixed_rank = 3
-for ises in range(nSessions):
-    if np.any(~np.isnan(R2_ranks[0][ises])):
-        for istim in range(params['nStim']):
-            for t in range(nT):
-                if fixed_rank is not None:
-                    rank = fixed_rank
-                    R2_cv[0,ises,istim,t] = np.nanmean(R2_ranks[0,ises,istim,t,rank,:,:])
-                    R2_cv[1,ises,istim,t] = np.nanmean(R2_ranks[1,ises,istim,t,rank,:,:])
-                    R2_cv[2,ises,istim,t] = np.nanmean(R2_ranks[2,ises,istim,t,rank,:,:])
-                    R2_cv[3,ises,istim,t] = np.nanmean(R2_ranks[3,ises,istim,t,rank,:,:])
-                else:
-                    if not np.isnan(R2_ranks[0][ises][istim]).all():
-                        R2_cv[0,ises,istim,t],optim_rank[0,ises,istim] = rank_from_R2(R2_ranks[0,ises,istim,t,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-                        R2_cv[1,ises,istim,t],optim_rank[1,ises,istim] = rank_from_R2(R2_ranks[1,ises,istim,t,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-                        R2_cv[2,ises,istim,t],optim_rank[2,ises,istim] = rank_from_R2(R2_ranks[2,ises,istim,t,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-                        R2_cv[3,ises,istim,t],optim_rank[3,ises,istim] = rank_from_R2(R2_ranks[3,ises,istim,t,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
+for isubspace in range(nsubspaces):
+    for ises in range(nSessions):
+        if np.any(~np.isnan(R2_ranks[0,isubspace,ises])):
+            for istim in range(params['nStim']):
+                for t in range(nT):
+                    if fixed_rank is not None:
+                        # rank = fixed_rank
+                        R2_cv[0,isubspace,ises,istim,t] = np.nanmean(R2_ranks[0,isubspace,ises,istim,t,fixed_rank,:,:])
+                        R2_cv[1,isubspace,ises,istim,t] = np.nanmean(R2_ranks[1,isubspace,ises,istim,t,fixed_rank,:,:])
+                        R2_cv[2,isubspace,ises,istim,t] = np.nanmean(R2_ranks[2,isubspace,ises,istim,t,fixed_rank,:,:])
+                        R2_cv[3,isubspace,ises,istim,t] = np.nanmean(R2_ranks[3,isubspace,ises,istim,t,fixed_rank,:,:])
+                    else:
+                        if not np.isnan(R2_ranks[0,isubspace,ises,istim]).all():
+                            R2_cv[0,isubspace,ises,istim,t],optim_rank[0,isubspace,ises,istim] = rank_from_R2(R2_ranks[0,isubspace,ises,istim,t,:,:,:].reshape([params['nranks'],nmodelfits*params['kfold']]),params['nranks'],nmodelfits*params['kfold'])
+                            R2_cv[1,isubspace,ises,istim,t],optim_rank[1,isubspace,ises,istim] = rank_from_R2(R2_ranks[1,isubspace,ises,istim,t,:,:,:].reshape([params['nranks'],nmodelfits*params['kfold']]),params['nranks'],nmodelfits*params['kfold'])
+                            R2_cv[2,isubspace,ises,istim,t],optim_rank[2,isubspace,ises,istim] = rank_from_R2(R2_ranks[2,isubspace,ises,istim,t,:,:,:].reshape([params['nranks'],nmodelfits*params['kfold']]),params['nranks'],nmodelfits*params['kfold'])
+                            R2_cv[3,isubspace,ises,istim,t],optim_rank[3,isubspace,ises,istim] = rank_from_R2(R2_ranks[3,isubspace,ises,istim,t,:,:,:].reshape([params['nranks'],nmodelfits*params['kfold']]),params['nranks'],nmodelfits*params['kfold'])
+plt.hist(R2_cv.flatten())
 
 #%%
 params['Nsub']     = Nsub
-params['nranks']    = nranks
 params['nmodelfits'] = nmodelfits
 params['nSessions'] = nSessions
 params['idx_resp'] = idx_resp
 params['nT'] = nT
 params['t_axis'] = t_axis
+params['nsubspaces'] = nsubspaces
 
 #%% Save the data:
 np.savez(savefilename + '.npz',R2_cv=R2_cv,R2_ranks=R2_ranks,optim_rank=optim_rank,

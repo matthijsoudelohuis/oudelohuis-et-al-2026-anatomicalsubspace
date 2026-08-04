@@ -76,8 +76,8 @@ narealabelpairs     = len(sourcearealabelpairs)
 
 Nsub                = 20
 nranks              = 20 #number of ranks of RRR to be evaluated
-# nmodelfits          = 100
-nmodelfits          = 5
+nmodelfits          = 100
+# nmodelfits          = 5
 rankbehavout        = 3
 
 idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
@@ -115,7 +115,6 @@ for ises,ses in enumerate(sessions):
 
     S                 = np.concatenate((sessions[ises].tensor_vid,
                         sessions[ises].tensor_run),axis=0)
-    # print(np.shape(S))
 
     for imf in tqdm(range(nmodelfits),total=nmodelfits,desc='Fitting RRR model for session %d/%d' % (ises+1,nSessions)):
         idx_areax1_sub       = np.random.choice(idx_areax1,Nsub,replace=False)
