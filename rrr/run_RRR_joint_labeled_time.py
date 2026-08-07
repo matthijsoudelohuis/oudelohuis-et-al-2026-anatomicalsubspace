@@ -23,8 +23,8 @@ params = load_params()
 
 # params['regress_behavout'] = True
 params['regress_behavout'] = False
-params['direction'] = 'FF'
-# params['direction'] = 'FB'
+# params['direction'] = 'FF'
+params['direction'] = 'FB'
 # params['direction'] = 'FF_AL'
 # params['direction'] = 'FB_AL'
 params['calciumversion'] = 'deconv'
@@ -90,7 +90,8 @@ report_sessions(sessions)
 narealabelpairs     = len(sourcearealabelpairs)
 
 Nsub                = 20
-nmodelfits          = 20
+nmodelfits          = 50
+# nmodelfits          = 5
 rankbehavout        = 3
 
 # idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
@@ -143,8 +144,8 @@ for ises,ses in enumerate(sessions):
         idx_areax3_sub       = np.random.choice(idx_areax3,Nsub,replace=False)
         idx_areay_sub        = np.random.choice(idx_areay,Nsub*narealabelpairs,replace=False)
         
-        # for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
-        for istim,stim in enumerate([ses.trialdata['stimCond'][0]]): # loop over orientations 
+        for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
+        # for istim,stim in enumerate([ses.trialdata['stimCond'][0]]): # loop over orientations 
             idx_T               = ses.trialdata['stimCond']==stim
        
             X1                  = sessions[ises].tensor[np.ix_(idx_areax1_sub,idx_T,idx_resp)]
@@ -256,7 +257,7 @@ for isubspace in range(nsubspaces):
                             R2_cv[1,isubspace,ises,istim,t],optim_rank[1,isubspace,ises,istim] = rank_from_R2(R2_ranks[1,isubspace,ises,istim,t,:,:,:].reshape([params['nranks'],nmodelfits*params['kfold']]),params['nranks'],nmodelfits*params['kfold'])
                             R2_cv[2,isubspace,ises,istim,t],optim_rank[2,isubspace,ises,istim] = rank_from_R2(R2_ranks[2,isubspace,ises,istim,t,:,:,:].reshape([params['nranks'],nmodelfits*params['kfold']]),params['nranks'],nmodelfits*params['kfold'])
                             R2_cv[3,isubspace,ises,istim,t],optim_rank[3,isubspace,ises,istim] = rank_from_R2(R2_ranks[3,isubspace,ises,istim,t,:,:,:].reshape([params['nranks'],nmodelfits*params['kfold']]),params['nranks'],nmodelfits*params['kfold'])
-plt.hist(R2_cv.flatten())
+# plt.hist(R2_cv.flatten())
 
 #%%
 params['Nsub']     = Nsub

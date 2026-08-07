@@ -7,6 +7,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 DEBUG = False
+# DEBUG = True
 
 import os
 import numpy as np
@@ -36,7 +37,7 @@ if DEBUG:
     sessions = sessions[:2]
     nSessions = len(sessions)
 report_sessions(sessions)
-[sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=False)
+[sessions,t_axis] = load_resid_tensor(sessions,params)
 
 #%% 
 #     # ### ####### #     # ### #     #    #     #  #####        #     #####  ######  #######  #####   #####  
@@ -57,7 +58,6 @@ arealabelpairs  = ['V1-V1',
 clrs_arealabelpairs = get_clr_area_pairs(arealabelpairs)
 narealabelpairs     = len(arealabelpairs)
 
-# nsampleneurons      = 50
 nsampleneurons      = 100
 nranks              = 25
 # nmodelfits          = 15 #number of times new neurons are resampled 
@@ -114,49 +114,150 @@ rank_toplot = np.reshape(optim_rank,(narealabelpairs,nSessions*nStim))
 # R2_toplot = np.nanmean(R2_cv,axis=2)
 # rank_toplot = np.nanmean(optim_rank,axis=2)
 
-fig,axes = plt.subplots(1,2,figsize=(6.5*cm,3.5*cm))
+fig,axes = plt.subplots(1,2,figsize=(6.5*cm,3.8*cm))
 markersize=30
 clrs = get_clr_areas(['V1','PM'])
-ax = axes[0]
 comps = [[0,3],[1,2]]
-for icomp,comp in enumerate(comps):
-    ax.scatter(R2_toplot[comp[0],:],R2_toplot[comp[1],:],s=markersize,edgecolor='w',marker='.',color=clrs[icomp],
-               linewidth=0.5)
-    # ax.scatter(R2_cv[comp[0],:],R2_cv[comp[1],:],s=80,alpha=0.8,marker='.',color=clrs[icomp])
-    ax_nticks(ax,3)
-    _,pval = ttest_rel(R2_toplot[comp[0],:],R2_toplot[comp[1],:],nan_policy='omit')
-    ax.text(0.6,0.1*(1+icomp),'%sp=%1.2e' % (get_sig_asterisks(pval),pval),transform=ax.transAxes,fontsize=5,color=clrs[icomp])
-ax.set_xlabel('Within')
-ax.set_ylabel('Across')
-ax.set_title(r'$R^2$')
-    # ax.legend(['V1 (V1->V1 vs PM->V1)','PM (V1->PM vs PM->PM)'],frameon=False,loc='upper left')
-ax.legend(['V1','PM'],frameon=False,fontsize=7,loc='upper left')
-my_legend_strip(ax)
-ax.set_xlim([0,0.22])
-ax.set_ylim([0,0.22])
-ax.plot([0,0.2],[0,0.2],':',color='grey',linewidth=1)
+# comps = [[1,2],[0,3]]
+alphaval = .5
 
-ax = axes[1]
+ax = axes[0]
 for icomp,comp in enumerate(comps):
     ax.scatter(rank_toplot[comp[0],:],rank_toplot[comp[1],:],s=markersize,edgecolor='w',marker='.',
-               linewidth=0.5,color=clrs[icomp])
-    _,pval = ttest_rel(rank_toplot[comp[0],:],rank_toplot[comp[1],:],nan_policy='omit')
-    ax.text(0.6,0.1*(1+icomp),'%sp=%1.2e' % (get_sig_asterisks(pval),pval),transform=ax.transAxes,fontsize=5,color=clrs[icomp])
-# ax.legend(['V1','PM'],frameon=False,fontsize=10)ax.set_xlabel('Within')
-ax.set_ylabel('Across')
-ax.set_title('Rank')
-
-# ax.legend(['V1 (V1->V1 vs PM->V1)','PM (V1->PM vs PM->PM)'],frameon=False,loc='upper left')
-# my_legend_strip(ax)
-ax.set_xlim([0,20])
-ax.set_ylim([0,20])
+               linewidth=0,color=clrs[icomp],alpha=alphaval)
+    # _,pval = ttest_rel(rank_toplot[comp[0],:],rank_toplot[comp[1],:],nan_policy='omit')
+    _,pval = stats.wilcoxon(rank_toplot[comp[0],:],rank_toplot[comp[1],:],nan_policy='omit')
+    ax.text(0.6,0.1*(1+icomp),'%s' % (get_sig_asterisks(pval)),transform=ax.transAxes,fontsize=5,color=clrs[icomp])
+    print('p=%1.2e' % (pval))
+ax.set_xlabel('within')
+ax.set_ylabel('across')
+ax.set_title('rank')
+ax.legend(['V1','PM'],frameon=False,fontsize=7,loc='upper left')
+my_legend_strip(ax)
+ax.set_xlim([0,25])
+ax.set_ylim([0,25])
 ax_nticks(ax,4)
 ax.plot([0,25],[0,25],':',color='grey',linewidth=1)
 # ax.legend(['V1 (V1->V1 vs PM->V1','PM (PM->PM vs V1->PM'],frameon=False,fontsize=8)
-plt.tight_layout()
 
+ax = axes[1]
+axlim = 0.31
+for icomp,comp in enumerate(comps):
+    ax.scatter(R2_toplot[comp[0],:],R2_toplot[comp[1],:],s=markersize,edgecolor='w',marker='.',color=clrs[icomp],
+               linewidth=0,alpha=alphaval)
+    # ax.scatter(R2_cv[comp[0],:],R2_cv[comp[1],:],s=80,alpha=0.8,marker='.',color=clrs[icomp])
+    ax_nticks(ax,3)
+    # _,pval = ttest_rel(R2_toplot[comp[0],:],R2_toplot[comp[1],:],nan_policy='omit')
+    _,pval = stats.wilcoxon(R2_toplot[comp[0],:],R2_toplot[comp[1],:],nan_policy='omit')
+    ax.text(0.6,0.1*(1+icomp),'%s' % (get_sig_asterisks(pval)),transform=ax.transAxes,fontsize=5,color=clrs[icomp])
+    print('p=%1.2e' % (pval))
+    # ax.text(0.6,0.1*(1+icomp),'%sp=%1.2e' % (get_sig_asterisks(pval),pval),transform=ax.transAxes,fontsize=5,color=clrs[icomp])
+ax.set_xlabel('within')
+ax.set_ylabel('across')
+ax.set_title(r'performance ($R^2$)')
+# ax.legend(['V1','PM'],frameon=False,fontsize=7,loc='upper left')
+# my_legend_strip(ax)
+ax.set_xlim([0,axlim])
+ax.set_ylim([0,axlim])
+ax.plot([0,axlim],[0,axlim],':',color='grey',linewidth=1)
+
+plt.tight_layout()
 sns.despine(offset=2,top=True,right=True)
-my_savefig(fig,figdir,'RRR_R2Rank_WithinVSAcross_%dneurons' % nsampleneurons)
+my_savefig(fig,figdir,'perf_rank_WithinVSAcross_%dneurons' % nsampleneurons)
+
+#%% Plotting:
+clr = clrs_arealabelpairs[0]
+R2_toplot = np.reshape(R2_cv,(narealabelpairs,nSessions*nStim))
+rank_toplot = np.reshape(optim_rank,(narealabelpairs,nSessions*nStim))
+# R2_toplot = np.nanmean(R2_cv,axis=2)
+# rank_toplot = np.nanmean(optim_rank,axis=2)
+
+fig,axes = plt.subplots(1,2,figsize=(4.1*cm,2.2*cm))
+markersize=30
+clrs = get_clr_areas(['V1','PM'])
+comps = [[0,3],[1,2]]
+alphaval = .5
+
+ax = axes[0]
+binedges = np.arange(-3,10)+0.5
+bincenters = binedges+1
+for icomp,comp in enumerate(comps):
+    counts = np.histogram(rank_toplot[comp[0],:]-rank_toplot[comp[1],:],bins=binedges)[0]
+    ax.stairs(counts, bincenters, linewidth=1,color=clrs[icomp],alpha=alphaval,fill=True)
+    # ax.hist(rank_toplot[comp[0],:]-rank_toplot[comp[1],:],bins=np.arange(-3,10)+0.5,
+            #    linewidth=0,color=clrs[icomp],alpha=alphaval)
+ax.set_xlabel('rank diff.\n(within-across)',fontsize=4)
+ax.set_ylabel('# datasets',fontsize=4)
+ax.axvline(0,linestyle=':',color='grey',linewidth=0.8)
+ax_nticks(ax,4)
+ax.tick_params(axis='both', which='major', labelsize=4)
+# ax.tick_params(axis='both', which='minor', labelsize=10)
+
+ax = axes[1]
+binedges = np.arange(-0.03,0.1,0.01)
+bincenters = binedges+0.01
+for icomp,comp in enumerate(comps):
+    counts = np.histogram(R2_toplot[comp[0],:]-R2_toplot[comp[1],:],bins=binedges)[0]
+    ax.stairs(counts, bincenters, linewidth=1,color=clrs[icomp],alpha=alphaval,fill=True)
+    ax_nticks(ax,3)
+ax.axvline(0,linestyle=':',color='grey',linewidth=0.8)
+ax.set_xlabel('perf. diff.\n(within-across)',fontsize=4)
+ax.set_ylabel('# datasets',fontsize=4)
+ax.tick_params(axis='both', which='major', labelsize=4)
+plt.tight_layout()
+sns.despine(offset=2,top=True,right=True)
+my_savefig(fig,figdir,'perf_rank_diff_hist_withinacross_%dneurons' % nsampleneurons)
+
+# #%% Plotting:
+# clr = clrs_arealabelpairs[0]
+# R2_toplot = np.reshape(R2_cv,(narealabelpairs,nSessions*nStim))
+# rank_toplot = np.reshape(optim_rank,(narealabelpairs,nSessions*nStim))
+# # R2_toplot = np.nanmean(R2_cv,axis=2)
+# # rank_toplot = np.nanmean(optim_rank,axis=2)
+
+# fig,axes = plt.subplots(1,2,figsize=(6.5*cm,3.5*cm))
+# markersize=30
+# clrs = get_clr_areas(['V1','PM'])
+# ax = axes[0]
+# comps = [[0,3],[1,2]]
+# for icomp,comp in enumerate(comps):
+#     ax.scatter(R2_toplot[comp[0],:],R2_toplot[comp[1],:],s=markersize,edgecolor='w',marker='.',color=clrs[icomp],
+#                linewidth=0.5)
+#     # ax.scatter(R2_cv[comp[0],:],R2_cv[comp[1],:],s=80,alpha=0.8,marker='.',color=clrs[icomp])
+#     ax_nticks(ax,3)
+#     _,pval = ttest_rel(R2_toplot[comp[0],:],R2_toplot[comp[1],:],nan_policy='omit')
+#     ax.text(0.6,0.1*(1+icomp),'%sp=%1.2e' % (get_sig_asterisks(pval),pval),transform=ax.transAxes,fontsize=5,color=clrs[icomp])
+# ax.set_xlabel('Within')
+# ax.set_ylabel('Across')
+# ax.set_title(r'$R^2$')
+#     # ax.legend(['V1 (V1->V1 vs PM->V1)','PM (V1->PM vs PM->PM)'],frameon=False,loc='upper left')
+# ax.legend(['V1','PM'],frameon=False,fontsize=7,loc='upper left')
+# my_legend_strip(ax)
+# ax.set_xlim([0,0.22])
+# ax.set_ylim([0,0.22])
+# ax.plot([0,0.2],[0,0.2],':',color='grey',linewidth=1)
+
+# ax = axes[1]
+# for icomp,comp in enumerate(comps):
+#     ax.scatter(rank_toplot[comp[0],:],rank_toplot[comp[1],:],s=markersize,edgecolor='w',marker='.',
+#                linewidth=0.5,color=clrs[icomp])
+#     _,pval = ttest_rel(rank_toplot[comp[0],:],rank_toplot[comp[1],:],nan_policy='omit')
+#     ax.text(0.6,0.1*(1+icomp),'%sp=%1.2e' % (get_sig_asterisks(pval),pval),transform=ax.transAxes,fontsize=5,color=clrs[icomp])
+# # ax.legend(['V1','PM'],frameon=False,fontsize=10)ax.set_xlabel('Within')
+# ax.set_ylabel('Across')
+# ax.set_title('Rank')
+
+# # ax.legend(['V1 (V1->V1 vs PM->V1)','PM (V1->PM vs PM->PM)'],frameon=False,loc='upper left')
+# # my_legend_strip(ax)
+# ax.set_xlim([0,20])
+# ax.set_ylim([0,20])
+# ax_nticks(ax,4)
+# ax.plot([0,25],[0,25],':',color='grey',linewidth=1)
+# # ax.legend(['V1 (V1->V1 vs PM->V1','PM (PM->PM vs V1->PM'],frameon=False,fontsize=8)
+# plt.tight_layout()
+
+# sns.despine(offset=2,top=True,right=True)
+# my_savefig(fig,figdir,'RRR_R2Rank_WithinVSAcross_%dneurons' % nsampleneurons)
 
 #%% Get the ratio of within to across:
 R2_toplot = np.reshape(R2_cv,(narealabelpairs,nSessions*nStim))
@@ -181,7 +282,7 @@ ax.set_ylabel('Ratio rank\n(Within/Across)')
 ax.set_xticks(range(2),['V1','PM' ],rotation=0,fontsize=6)
 plt.tight_layout()
 sns.despine(offset=2,top=True,right=True)
-my_savefig(fig,figdir,'RRR_R2Rank_ratio_WithinVSAcross_%dneurons' % nsampleneurons)
+# my_savefig(fig,figdir,'RRR_R2Rank_ratio_WithinVSAcross_%dneurons' % nsampleneurons)
 
 #%% Are the within area predictive dimensions the same as the across?
 # in the Semedo et al. 2019 paper they asked how the V1 and V2 predictive dimensions are related?

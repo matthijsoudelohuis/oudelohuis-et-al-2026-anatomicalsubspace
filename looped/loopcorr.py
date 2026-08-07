@@ -14,20 +14,13 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from statsmodels.stats.multitest import multipletests
 
-os.chdir('e:\\Python\\vasile-oude-lohuis-et-al-2026-affinemodulation')
-
 from utils.params import load_params
 from loaddata.session_info import *
 from loaddata.get_data_folder import get_local_drive
 from utils.pair_lib import *
 from utils.plot_lib import * #get all the fixed color schemes
-
-# savedir =  os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Affine_FF_vs_FB\\Looping\\')
-
 from utils.corr_lib import *
 from utils.tuning import compute_tuning_wrapper
-# from utils.shuffle_lib import my_shuffle, corr_shuffle
-# from utils.gain_lib import * 
 # 
 savedir =  os.path.join(get_local_drive(),'OneDrive\\PostDoc\\Figures\\Affine_FF_vs_FB\\Looping\\NoiseCorrelations')
 
@@ -315,7 +308,7 @@ for iarea,area in enumerate(['V1','PM']):
             ax.text(np.mean([idx_1,idx_2]),df.iloc[:,idx_1].mean()+offset+0.0025,
                     get_sig_asterisks(pvals[ipair],return_ns=True),color='k',ha='center',va='center',fontsize=5)
 
-    ax.set_ylabel('Noise correlation')
+    ax.set_ylabel('NC')
     ax.set_title('within %s' % area)
     ax_nticks(ax,4)
     sns.despine(fig=fig, top=True, right=True,offset=2)
@@ -351,7 +344,7 @@ for ipp,projpair in enumerate(projpairs):
 ax.set_xlim([-0.2,0.4])
 ax.legend(['shuffle']  + areaprojpairs,fontsize=5)
 my_legend_strip(ax)
-ax.set_xlabel('Noise Correlation')
+ax.set_xlabel('NC')
 ax.set_ylabel('Density (a.u)')
 sns.despine(fig=fig,top=True,right=True)
 plt.tight_layout()
@@ -398,7 +391,7 @@ for data,title in zip([meancorr,varcorr],['Mean','SD']):
             ax.text(np.mean([idx_1,idx_2]),df.iloc[:,idx_1].mean()+offset+0.0025,
                     get_sig_asterisks(pvals[ipair],return_ns=True),color='k',ha='center',va='center',fontsize=5)
 
-    ax.set_ylabel('%s Noise correlation' % (title))
+    ax.set_ylabel('%s NC' % (title))
     ax.set_title(area)
     ax_nticks(ax,4)
     sns.despine(fig=fig, top=True, right=True,offset=2)

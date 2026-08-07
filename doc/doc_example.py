@@ -127,7 +127,7 @@ U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
 B_rrr           = B_hat @ V[:rank,:].T @ V[:rank,:] #project beta coeff into low rank subspace
 Y_hat_test_rr   = X @ B_rrr
 
-# # Project latents into predictive subspace: Predictive X-directions scaled by their predictive power (eigenvalues)
+# Project latents into predictive subspace: Predictive X-directions
 Z = X @ B_hat @ V.T 
 
 X_1 = copy.deepcopy(X)

@@ -185,3 +185,16 @@ for r in range(rank):
                         "10 Sec", loc=4, frameon=False))
 plt.tight_layout()
 # my_savefig(fig,figdir,'Example_Latents_Joint_%s_%dneurons_%s' % (params['direction'],Nsub,sessions[ises].session_id))
+
+#%%
+if np.allclose(V[:rank,:] @ V[:rank,:].T,np.eye(rank)):
+    print('Orthogonal')
+else: 
+    print('not orthgoonal')
+
+# Project latents into predictive subspace:
+Z     = X @ B_hat @ V.T @ np.diag(s)
+if np.allclose(Z[:,:rank].T @ Z[:,:rank],np.eye(rank)):
+    print('Orthogonal')
+else: 
+    print('Not orthgoonal')

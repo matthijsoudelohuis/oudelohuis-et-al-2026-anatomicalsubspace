@@ -31,10 +31,13 @@ resultdir = params['resultdir']
 #%%  
 version = 'FF_original'
 FF_filename = 'RRR_time_Joint_labeled_FF_original_2026-08-04_15-42-10'
+FF_filename = 'RRR_time_Joint_labeled_FF_original_2026-08-04_18-30-56'
+FF_filename = 'RRR_time_Joint_labeled_FB_original_2026-08-04_23-40-52'
 
 version = 'FB_original'
 # FB_filename = 'RRR_time_Joint_labeled_FB_original_2026-04-02_22-50-15'
 FB_filename = 'RRR_time_Joint_labeled_FF_original_2026-08-04_15-42-10'
+FB_filename = 'RRR_time_Joint_labeled_FB_original_2026-08-04_19-19-22'
 
 #%% Load the data:
 data = np.load(os.path.join(resultdir,FF_filename + '.npz'),allow_pickle=True)
@@ -61,7 +64,7 @@ narealabelpairs = 3
 #%% Show an example session:
 ises = 0
 # ises = 13
-# ises = 1
+# ises = 0
 plotcontrast = np.array([1,3])
 clrs = ['grey','red']
 
@@ -86,7 +89,7 @@ ax.set_xticklabels(t_ticks)
 ax.set_xlabel('Time (s)')
 ax.set_ylabel('R$^{2}$')
 sns.despine(fig=fig, top=True, right=True, offset = 3)
-my_savefig(fig,figdir,'RRR_joint_time_fullsubspace_%s_example_session_%d' % (version, ises))
+# my_savefig(fig,figdir,'RRR_joint_time_fullsubspace_%s_example_session_%d' % (version, ises))
 
 #%% Plotting the mean across time across sessions: 
 t_ticks = np.array([-1,0,1,2])
@@ -170,8 +173,9 @@ plotcontrasts   = np.array([[2,1],[1,2],[2,3],[1,3]])
 # plotcontrasts   = np.array([[1,2],[1,2],[2,3],[1,3]])
 # noise_constant  = 1e-4
 noise_constant  = 0
-# clipval         = 1e-4
-clipval         = -np.inf
+clipval         = 1e-4
+# clipval         = -np.inf
+# clipval         = 0
 
 R2_ratiodata    = np.full((2,2,len(plotcontrasts),params['nSessions']*params['nStim'],params['nT']),np.nan)
 
@@ -193,9 +197,13 @@ for idirec,[direc,data,alps] in enumerate(zip(['FF','FB'],[R2_cv_FF,R2_cv_FB],[s
         # R2_toplot[R2_toplot < 0] = np.nan
 
         for iplotcontrast,plotcontrast in enumerate(plotcontrasts):
-            R2_ratiodata[idirec,isubspace,iplotcontrast,:,:] = (R2_toplot[plotcontrast[1],isubspace+1,:,:]+noise_constant) / (R2_toplot[plotcontrast[0],isubspace,:,:]+noise_constant) #add a small constant to avoid division by zero
+            R2_ratiodata[idirec,isubspace,iplotcontrast,:,:] = (R2_toplot[plotcontrast[1],isubspace,:,:]+noise_constant) / (R2_toplot[plotcontrast[0],isubspace,:,:]+noise_constant) #add a small constant to avoid division by zero
             # R2_ratiodata[idirec,iranks,iplotcontrast,:,:] = (R2_toplot[plotcontrast[1],:,:]+noise_constant) - (R2_toplot[plotcontrast[0],:,:]+noise_constant) #add a small constant to avoid division by zero
             # R2_ratio[R2_ratio<0.5] = np.nan
+
+
+# R2_ratiodata = np.concatenate((np.nanmean(R2_ratiodata[:,:,:2],axis=2,keepdims=True),
+                            #    np.nanmean(R2_ratiodata[:,:,2:],axis=2,keepdims=True)),axis=2)
 
 R2_ratiodata = np.concatenate((np.nanmean(R2_ratiodata[:,:,:2],axis=2,keepdims=True),
                                np.nanmean(R2_ratiodata[:,:,2:],axis=2,keepdims=True)),axis=2)
@@ -230,7 +238,9 @@ for idirec,[direc,data,alps] in enumerate(zip(['FF','FB'],[R2_ranks_FF,R2_ranks_
         handles = []
         for iplotcontrast,plotcontrast in enumerate(plotcontrasts):
             # tracedata[idirec,iranks,iplotcontrast,:,:] = R2_ratio
-            handles.append(shaded_error(params['t_axis'],R2_ratiodata[idirec,isubspace,iplotcontrast,:,:],error='ci95',color=clrs[iplotcontrast],alpha=0.3,ax=ax))
+            # handles.append(shaded_error(params['t_axis'],R2_ratiodata[idirec,isubspace,iplotcontrast,:,:],error='ci95',color=clrs[iplotcontrast],alpha=0.3,ax=ax))
+            handles.append(shaded_error(params['t_axis'],R2_ratiodata[idirec,isubspace,iplotcontrast,:,:],center='median',
+                                        error='ci95',color=clrs[iplotcontrast],alpha=0.3,ax=ax))
         
         # add_paired_ttest_results(ax,np.nanmean(R2_ratio[:,idx_iti],axis=1),np.nanmean(R2_ratio[:,idx_resp],axis=1),pos=[0.4,0.95])
         add_paired_ttest_results(ax,np.nanmean(R2_ratiodata[idirec,isubspace,0,:,idx_iti],axis=0),
