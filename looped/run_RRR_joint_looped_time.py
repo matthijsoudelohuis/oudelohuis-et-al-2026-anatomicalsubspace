@@ -7,9 +7,7 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-
 import numpy as np
-from sklearn.decomposition import PCA
 from scipy.stats import zscore
 import pickle
 
@@ -23,13 +21,11 @@ from datetime import datetime
 #%% Load parameters and settings:
 params = load_params()
 
-# params['regress_behavout'] = True
-params['regress_behavout'] = False
-# params['direction'] = 'FF'
-params['direction'] = 'FB'
+params['direction'] = 'FF'
+# params['direction'] = 'FB'
 params['calciumversion'] = 'deconv'
 
-version = 'Joint_looped_%s_%s' % (params['direction'],'behavout' if params['regress_behavout'] else 'original')
+version = 'Joint_looped_%s' % (params['direction'])
 
 resultdir = os.path.join(params['resultdir'])
 if not os.path.exists(resultdir):
@@ -75,27 +71,32 @@ report_sessions(sessions)
 sessiondata = pd.concat([ses.sessiondata for ses in sessions]).reset_index(drop=True)
 
 #%% Wrapper function to load the tensor data, 
-[sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'])
+[sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=False,
+                                      load_behav=True)
 
 #%% 
 nsourcearealabelpairs     = len(sourcearealabelpairs)
 ntargetarealabelpairs     = len(targetarealabelpairs)
 
 Nsub                = 20 #number of neurons to subsample from each population (labeled and unlabeled in each area) for RRR model fitting, set to 0 to use all neurons that pass the noise level filter
-nranks              = 20 #number of ranks of RRR to be evaluated
-nmodelfits          = 100
-
-params['nStim']     = 16
+# nranks              = 20 #number of ranks of RRR to be evaluated
+# nmodelfits          = 100
+rankbehavout        = 3
 
 # idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
 idx_resp            = np.where((t_axis>=-99) & (t_axis<=99))[0]
 nT                  = len(idx_resp)
 
-R2_cv               = np.full((nsourcearealabelpairs,ntargetarealabelpairs,nSessions,params['nStim'],nT),np.nan) #dim1: 3 = allneurons, V1unl, V1lab separately
-optim_rank          = np.full((nsourcearealabelpairs,ntargetarealabelpairs,nSessions,params['nStim'],nT),np.nan)
-R2_ranks            = np.full((nsourcearealabelpairs,ntargetarealabelpairs,nSessions,params['nStim'],nT,nranks,nmodelfits,params['kfold']),np.nan)
-# R2_ranks_neurons    = np.full((nsourcearealabelpairs,ntargetarealabelpairs,Nsub,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
-kf          = KFold(n_splits=params['kfold'],shuffle=True)
+# R2_cv               = np.full((nsourcearealabelpairs,ntargetarealabelpairs,nSessions,params['nStim'],nT),np.nan) #dim1: 3 = allneurons, V1unl, V1lab separately
+# optim_rank          = np.full((nsourcearealabelpairs,ntargetarealabelpairs,nSessions,params['nStim'],nT),np.nan)
+# R2_ranks            = np.full((nsourcearealabelpairs,ntargetarealabelpairs,nSessions,params['nStim'],nT,nranks,nmodelfits,params['kfold']),np.nan)
+
+nsubspaces          = 3 #orig, behav, non-behav
+R2_cv               = np.full((nsourcearealabelpairs,ntargetarealabelpairs,nsubspaces,nSessions,params['nStim'],nT),np.nan) #dim1: 3 = allneurons, V1unl, V1lab separately
+optim_rank          = np.full((nsourcearealabelpairs,ntargetarealabelpairs,nsubspaces,nSessions,params['nStim'],nT),np.nan)
+R2_ranks            = np.full((nsourcearealabelpairs,ntargetarealabelpairs,nsubspaces,nSessions,params['nStim'],nT,params['nranks'],params['nmodelfits'],params['kfold']),np.nan)
+
+kf                  = KFold(n_splits=params['kfold'],shuffle=True)
 
 for ises,ses in enumerate(sessions):
     if params['filter_nearby']:
@@ -120,7 +121,10 @@ for ises,ses in enumerate(sessions):
         # print('Not enough neurons in one of the populations for session %s, skipping...' % ses.sessiondata['session_id'])
         continue
 
-    for imf in tqdm(range(nmodelfits),total=nmodelfits,desc='Fitting RRR model for session %d/%d' % (ises+1,nSessions)):
+    S                 = np.concatenate((sessions[ises].tensor_vid,
+                        sessions[ises].tensor_run),axis=0)
+    
+    for imf in tqdm(range(params['nmodelfits']),total=params['nmodelfits'],desc='Fitting RRR model for session %d/%d' % (ises+1,nSessions)):
         idx_areax1_sub       = np.random.choice(idx_areax1,Nsub,replace=False)
         idx_areax2_sub       = np.random.choice(idx_areax2,Nsub,replace=False)
         idx_areay1_sub       = np.random.choice(idx_areay1,Nsub,replace=False)
@@ -146,9 +150,20 @@ for ises,ses in enumerate(sessions):
             Y1 /= np.nanstd(Y1, axis=(1,2), keepdims=True)
             Y2 /= np.nanstd(Y2, axis=(1,2), keepdims=True)
             
-            X                   = np.concatenate((X1,X2),axis=0) #use this as source to predict the activity in Y with RRR
+            X                  = np.concatenate((X1,X2),axis=0) #use this as source to predict the activity in Y with RRR
             Y                  = np.concatenate((Y1,Y2),axis=0) #use this as source to predict the activity in Y with RRR
-            
+
+            #Get the behavioraldata in the same shape as the neural data:
+            Sstim                   = S[np.ix_(range(np.shape(S)[0]),idx_T,idx_resp)].reshape(np.shape(S)[0],-1).T
+            Sstim                   = zscore(Sstim,axis=0,nan_policy='omit')
+            Sstim                   = Sstim[:,~np.all(np.isnan(Sstim),axis=0)]
+
+            # X_r = np.reshape(X,(nNsource*np.sum(idx_T),nT))
+            X_r = np.reshape(X,(Nsub*2,np.sum(idx_T)*nT)).T
+            X_orig,X_hat,X_out      = regress_out_cv(X=Sstim,Y=X_r,rank=rankbehavout,lam=0,kfold=5)
+            X_hat = X_hat.T.reshape(Nsub*2,np.sum(idx_T),nT)
+            X_out = X_out.T.reshape(Nsub*2,np.sum(idx_T),nT)
+
             for ikf, (idx_train, idx_test) in enumerate(kf.split(np.arange(nK))): #Get indices of train and test trials
                 
                 X_train, X_test     = X[:,idx_train,:], X[:,idx_test,:]
@@ -157,80 +172,67 @@ for ises,ses in enumerate(sessions):
                 # reshape to neurons x time points
                 X_train_r               = X_train.reshape(np.shape(X)[0],-1).T
                 Y_train_r               = Y_train.reshape(np.shape(Y)[0],-1).T
-                X_test_r                = X_test.reshape(np.shape(X)[0],-1).T
-                Y_test_r                = Y_test.reshape(np.shape(Y)[0],-1).T
+                # X_test_r                = X_test.reshape(np.shape(X)[0],-1).T
+                # Y_test_r                = Y_test.reshape(np.shape(Y)[0],-1).T
 
                 B_hat_train             = LM(Y_train_r,X_train_r, lam=params['lam']) #fit RRR model on training data
 
                 Y_hat_train             = X_train_r @ B_hat_train
 
-            # # OUTPUT: MAX PERF, OPTIM RANK, PERF FOR EACH RANK ACROSS FOLDS AND MODELFITS    
-            # R2_kfold    = np.zeros((params['kfold']))
-            # kf          = KFold(n_splits=params['kfold'],shuffle=True)
-            # for ikf, (idx_train, idx_test) in enumerate(kf.split(X)):
-            #     X_train, X_test     = X[idx_train], X[idx_test]
-            #     Y_train, Y_test     = Y[idx_train], Y[idx_test]
-
-            #     #RRR X to Y
-            #     B_hat_train         = LM(Y_train,X_train, lam=params['lam'])
-            #     Y_hat_train         = X_train @ B_hat_train
-
                 # decomposing and low rank approximation of Y_hat
-                U, s, V = svds(Y_hat_train,k=nranks,which='LM')
+                U, s, V = svds(Y_hat_train,k=params['nranks'],which='LM')
                 U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
 
-                # for r in range(nranks):
-                    # B_rrr           = B_hat_train @ V[:r,:].T @ V[:r,:] #project beta coeff into low rank subspace
-                    # Y_hat_test_rr   = X_test_r @ B_rrr
-                    # Y_hat_test_rr   = np.reshape(Y_hat_test_rr.T,(nNtarget,len(idx_test),nT),order='C')
-                    
-                for r in range(nranks):
-                    B_rrr           = B_hat_train @ V[:r,:].T @ V[:r,:] #project beta coeff into low rank subspace
-                    # Y_hat_test_rr   = X_test @ B_rrr
+                for isubspace,X_test in enumerate([X[:,idx_test,:],X_hat[:,idx_test,:],X_out[:,idx_test,:]]):
 
-                    for isource in range(nsourcearealabelpairs):
-                        for itarget in range(ntargetarealabelpairs):
+                    for r in range(params['nranks']):
+                        B_rrr           = B_hat_train @ V[:r,:].T @ V[:r,:] #project beta coeff into low rank subspace
+                        # Y_hat_test_rr   = X_test @ B_rrr
 
-                            idx_X = np.repeat([True,False],Nsub) if isource==0 else np.repeat([False,True],Nsub)
-                            idx_Y = np.repeat([True,False],Nsub) if itarget==0 else np.repeat([False,True],Nsub)
-                            X_test_1 = copy.deepcopy(X_test)
-                            X_test_1[~idx_X,:,:] = 0
-                            X_test_1r = X_test_1.reshape(np.shape(X_test_1)[0],-1).T
-                            Y_hat_test_rr   = X_test_1r @ B_rrr
+                        for isource in range(nsourcearealabelpairs):
+                            for itarget in range(ntargetarealabelpairs):
 
-                            # Y_hat_test_rr   = X_test_r @ B_rrr
-                            Y_hat_test_rr   = np.reshape(Y_hat_test_rr.T,(np.shape(Y_test)[0],len(idx_test),nT),order='C')
-                    
-                            for t in range(nT):
-                                # R2_ranks[0,ises,istim,t,r,imf,ikf] = EV(Y_test[:,:,t],Y_hat_test_rr[:,:,t])
-                    
-                                R2_ranks[isource,itarget,ises,istim,t,r,imf,ikf] = EV(Y_test[idx_Y,:,t],Y_hat_test_rr[idx_Y,:,t])
-                                # R2_ranks_neurons[isource,itarget,:,ises,istim,r,imf,ikf] = r2_score(Y_test[:,idx_Y],Y_hat_test_rr[:,idx_Y], multioutput='raw_values')
+                                idx_X = np.repeat([True,False],Nsub) if isource==0 else np.repeat([False,True],Nsub)
+                                idx_Y = np.repeat([True,False],Nsub) if itarget==0 else np.repeat([False,True],Nsub)
+                                X_test_1 = copy.deepcopy(X_test)
+                                X_test_1[~idx_X,:,:] = 0
+                                X_test_1r = X_test_1.reshape(np.shape(X_test_1)[0],-1).T
+                                Y_hat_test_rr   = X_test_1r @ B_rrr
 
-#%% Find best rank and cvR2 at this rank:
-fixed_rank = None
-for ises in range(nSessions):
-    if np.any(~np.isnan(R2_ranks[0][0][ises])):
-        for istim in range(params['nStim']):
-            for t in range(nT):
-                for isource in range(nsourcearealabelpairs):
-                    for itarget in range(ntargetarealabelpairs):
-                        if fixed_rank is not None:
-                            rank = fixed_rank
-                            R2_cv[isource,itarget,ises,istim,t] = np.nanmean(R2_ranks[isource,itarget,ises,istim,t,rank,:,:])
-                            optim_rank[isource,itarget,ises,istim,t] = rank
-                        else:
-                            if not np.isnan(R2_ranks[isource,itarget,ises,istim,t]).all():
-                                R2_cv[isource,itarget,ises,istim,t],optim_rank[isource,itarget,ises,istim,t] = rank_from_R2(R2_ranks[isource,itarget,ises,istim,t,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
+                                # Y_hat_test_rr   = X_test_r @ B_rrr
+                                Y_hat_test_rr   = np.reshape(Y_hat_test_rr.T,(np.shape(Y_test)[0],len(idx_test),nT),order='C')
+                        
+                                for t in range(nT):
+                                    # R2_ranks[0,ises,istim,t,r,imf,ikf] = EV(Y_test[:,:,t],Y_hat_test_rr[:,:,t])
+                        
+                                    R2_ranks[isource,itarget,isubspace,ises,istim,t,r,imf,ikf] = EV(Y_test[idx_Y,:,t],Y_hat_test_rr[idx_Y,:,t])
+                                    # R2_ranks_neurons[isource,itarget,:,ises,istim,r,imf,ikf] = r2_score(Y_test[:,idx_Y],Y_hat_test_rr[:,idx_Y], multioutput='raw_values')
 
 #%%
 params['Nsub']     = Nsub
-params['nranks']    = nranks
-params['nmodelfits'] = nmodelfits
 params['nSessions'] = nSessions
 params['idx_resp'] = idx_resp
 params['nT'] = nT
 params['t_axis'] = t_axis
+params['nsubspaces'] = nsubspaces
+
+#%% Find best rank and cvR2 at this optimal rank:
+fixed_rank = None
+for ises in tqdm(range(params['nSessions'])):
+    for istim in range(params['nStim']):
+        for isubspace in range(params['nsubspaces']):
+            for isource in range(nsourcearealabelpairs):
+                for itarget in range(ntargetarealabelpairs):
+                    for t in range(params['nT']):
+                        if not np.isnan(R2_ranks[isource,itarget,isubspace,ises,istim]).all():
+                            # R2_cv[isubpop,isubspace,ises,istim,t],optim_rank[isubpop,isubspace,ises,istim,t] = rank_from_R2(R2_ranks[isubpop,isubspace,ises,istim,t,:,:,:].reshape([params['nranks'],params['nmodelfits']*params['kfold']]),params['nranks'],params['nmodelfits']*params['kfold'])
+                            R2_cv[isource,itarget,isubspace,ises,istim,t],optim_rank[isource,itarget,isubspace,ises,istim,t] = rank_from_R2(R2_ranks[isource,itarget,isubspace,ises,istim,t,:,:].reshape([params['nranks'],params['nmodelfits']*params['kfold']]),params['nranks'],params['nmodelfits']*params['kfold'])
+
+# plt.hist(optim_rank.flatten(),bins=np.arange(0,16))
+
+#%%
+# fixed_rank = 4
+# R2_cv = np.nanmean(R2_ranks[:,:,:,:,:,fixed_rank,:,:],axis=(-1,-2))
 
 #%% Save the data:
 np.savez(savefilename + '.npz',R2_cv=R2_cv,R2_ranks=R2_ranks,optim_rank=optim_rank,

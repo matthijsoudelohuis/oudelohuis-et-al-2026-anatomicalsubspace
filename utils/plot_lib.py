@@ -99,6 +99,9 @@ def shaded_error(x,y,yerror=None,ax=None,center='mean',error='std',color='black'
         elif error == 'ci95':
             N = np.sum(~np.isnan(y),axis=0)
             yerror = 1.96 * np.nanstd(y,axis=0) / np.sqrt(N)
+        elif error == 'ci99':
+            N = np.sum(~np.isnan(y),axis=0)
+            yerror = 2.58 * np.nanstd(y,axis=0) / np.sqrt(N)
         elif error=='mad':
             yerror = np.nanmedian(np.abs(y - np.nanmedian(y,axis=0)),axis=0)
         else:
