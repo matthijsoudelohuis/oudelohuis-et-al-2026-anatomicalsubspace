@@ -8,9 +8,6 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 
 #%% ###################################################
 import os
-
-from loaddata.get_data_folder import get_local_drive
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -21,11 +18,9 @@ from datetime import datetime
 import pickle
 
 from loaddata.session_info import *
-from utils.tuning import compute_tuning
 from utils.plot_lib import * #get all the fixed color schemes
 from utils.CCAlib import *
 from utils.corr_lib import *
-from utils.tuning import compute_tuning_wrapper
 from utils.regress_lib import *
 from utils.params import load_params
 from utils.RRRlib import *

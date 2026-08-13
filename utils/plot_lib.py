@@ -159,7 +159,7 @@ def ax_nticks(ax, n):
     ax.locator_params(axis='x', nbins=n)
     ax.locator_params(axis='y', nbins=n)
 
-def add_stat_annotation(ax, x1, x2, y, p, h=None,**kwargs):
+def add_stat_annotation(ax, x1, x2, y, p, h=None,lw=1,**kwargs):
     """
     Add statistical annotation to plot.
 
@@ -185,7 +185,7 @@ def add_stat_annotation(ax, x1, x2, y, p, h=None,**kwargs):
     """
     if h is None:
         h = y / 10
-    ax.plot([x1, x1, x2, x2], [y, y + h, y + h, y], lw=1.5, c='k')
+    ax.plot([x1, x1, x2, x2], [y, y + h, y + h, y], lw=lw, c='k')
     ax.text((x1 + x2) * .5, y + h, get_sig_asterisks(p, return_ns=True),
             ha='center', va='bottom', **kwargs)
 

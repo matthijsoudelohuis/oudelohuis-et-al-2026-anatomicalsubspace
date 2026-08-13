@@ -8,18 +8,12 @@ Matthijs Oude Lohuis, 2023, Champalimaud Center
 #%% ###################################################
 import os
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.stats import zscore
 from scipy import stats
 import pickle
 
-from loaddata.session_info import *
 from utils.plot_lib import * #get all the fixed color schemes
-from utils.RRRlib import *
-from utils.regress_lib import *
 from utils.params import load_params
-from utils.corr_lib import filter_sharednan
 
 params = load_params()
 figdir = os.path.join(params['figdir'],'RRR','Labeling','Behavior')
@@ -47,7 +41,7 @@ with open(os.path.join(resultdir,filename_FF + '_params' + '.txt'), "rb") as myF
 nmodelfits = params['nmodelfits']
 Nsub = params['Nsub']
 
-#%% Load the FF data:
+#%% Load the FB data:
 data = np.load(os.path.join(resultdir,filename_FB + '.npz'),allow_pickle=True)
 
 for key in data.keys():
@@ -99,7 +93,7 @@ for isubspace in range(3):
     ymeantoplot = np.nanmean(R2_ranks_FB[0][isubspace][ises],axis=(0,2,3))
     yerrortoplot = np.nanstd(R2_ranks_FB[0][isubspace][ises],axis=(0,2,3)) / np.sqrt(nmodelfits)
     handles.append(shaded_error(np.arange(params['nranks']),ymeantoplot,yerrortoplot,ax=ax,
-                                color=clrs_subspaces[isubspace],alpha=0.3))
+                                color=clrs_subspaces[isubspace],alpha=0.3,linewidth=1))
     # handles.append(shaded_error(np.arange(params['nranks']),ymeantoplot,yerrortoplot,ax=ax,
     #                             color='k',linestyle=lines_subspaces[isubspace],alpha=0.3))
 
@@ -169,12 +163,15 @@ ax.axhline(y=1,color='k',linestyle='--',linewidth=1)
 ax.set_xlabel('dimension')
 leg = ax.legend(handles,subspacelabels[1:],frameon=False)
 # my_legend_strip(ax)
-ax.set_ylabel(r'relative R$^{2}$')
+ax.set_ylabel(r'contribution to performance',fontsize=5.5)
 ax.set_xticks(np.arange(1,20)[::2])
 ax.set_xlim([0.75,nrankstoplot])
 ax.set_ylim([0,1])
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'frac_perf_behavsubspace')
+
+
+#%% LABELED VS UNLABELED
 
 #%% Show an example session per population:
 clrs_arealabelpairs = ['grey','grey','red']
@@ -219,9 +216,14 @@ for icontrast,contrast in enumerate(contrasts):
                              color=clrs[icontrast],capsize=3,elinewidth=1,marker='o',markersize=5)[0]
         h,p = stats.wilcoxon(ratiodata-1,nan_policy='omit')
         p = np.clip(p * ntests, 0, 1)
-        print('%s vs %s, %s: p = %.4f' % (sourcearealabelpairs_FF[contrast[0]-1],
-                                          sourcearealabelpairs_FF[contrast[1]-1],
-                                          subspacelabels[isubspace],p))
+        if p<0.0001:
+            print('%s vs %s, %s: p = %1.1e' % (sourcearealabelpairs_FF[contrast[0]-1],
+                                                        sourcearealabelpairs_FF[contrast[1]-1],
+                                                        subspacelabels[isubspace],p))
+        else:
+            print('%s vs %s, %s: p = %1.2f' % (sourcearealabelpairs_FF[contrast[0]-1],
+                                            sourcearealabelpairs_FF[contrast[1]-1],
+                                            subspacelabels[isubspace],p))
         if p < 0.05:
             ax.annotate(get_sig_asterisks(p),xy=(isubspace-1,np.nanmean(ratiodata)+0.06),fontsize=8,ha='center',color='red')
         if isubspace == 1:
@@ -244,13 +246,20 @@ for icontrast,contrast in enumerate(contrasts):
                              color=clrs[icontrast],capsize=3,elinewidth=1,marker='o',markersize=5)[0]
         h,p = stats.wilcoxon(ratiodata-1,nan_policy='omit')
         p = np.clip(p * ntests, 0, 1)
-        print('%s vs %s, %s: p = %.4f' % (sourcearealabelpairs_FB[contrast[0]-1],
-                                                  sourcearealabelpairs_FB[contrast[1]-1],
-                                                  subspacelabels[isubspace],p))
+        if p<0.0001:
+            print('%s vs %s, %s: p = %1.1e' % (sourcearealabelpairs_FB[contrast[0]-1],
+                                                sourcearealabelpairs_FB[contrast[1]-1],
+                                                subspacelabels[isubspace],p))
+        else:
+            print('%s vs %s, %s: p = %1.2f' % (sourcearealabelpairs_FB[contrast[0]-1],
+                                                sourcearealabelpairs_FB[contrast[1]-1],
+                                                subspacelabels[isubspace],p))
+
         if p < 0.05:
             ax.annotate(get_sig_asterisks(p),xy=(isubspace-1,np.nanmean(ratiodata)+0.06),fontsize=8,ha='center',color='red')
         if isubspace == 1:
             handles.append(handle)
+print(', Wilcoxon signed rank test higher than 1, Bonferroni-corrected)')
 ax.axhline(y=1,color='k',linestyle='--',linewidth=1)
 ax.legend(handles,['PM$_{V1}$/PM$_{ND}$','PM$_{ND}$/PM$_{ND}$'],frameon=False)
 my_legend_strip(ax)

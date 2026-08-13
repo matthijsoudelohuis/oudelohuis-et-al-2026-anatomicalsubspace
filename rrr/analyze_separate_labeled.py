@@ -402,6 +402,7 @@ ax.errorbar(x=range(params['nvaluefields']),y=np.nanmean(R2_ratio,axis=(1,2)),ye
             color='red',marker='o',linestyle='',capsize=0)
 for ivaluematching in range(params['nvaluefields']):
     h,p = stats.ttest_1samp(R2_ratio[ivaluematching].flatten(),1,nan_policy='omit')
+    # p = stats.wilcoxon(R2_ratio[ivaluematching].flatten()-1,nan_policy='omit')[1]
     ax.text(ivaluematching,np.nanmean(R2_ratio[ivaluematching])+0.05,get_sig_asterisks(p),rotation=0,ha='center',fontsize=9)
 ax_nticks(ax,4)
 ax.set_ylabel("performance ratio\n%s/%s" % (alx2,alx1))
@@ -410,7 +411,7 @@ ax.set_xticks(range(params['nvaluefields']))
 ax.set_xticklabels(valuematch_labels,rotation=45,ha='right')
 ax.set_xlim([-0.5,params['nvaluefields']-1+.25])
 sns.despine(fig=fig,trim=False)
-my_savefig(fig,figdir,'perf_ratio_separate_%s_controls_%dsessions' % (version,params['nSessions']))
+# my_savefig(fig,figdir,'perf_ratio_separate_%s_controls_%dsessions' % (version,params['nSessions']))
 
 #%% Define the ratio of R2 between V1PM and V1ND
 rank_ratio = optim_rank[:,1,:,:] / optim_rank[:,0,:,:]
@@ -422,6 +423,8 @@ ax.errorbar(x=range(params['nvaluefields']),y=np.nanmean(rank_ratio,axis=(1,2)),
             color='red',marker='o',linestyle='',capsize=0)
 for ivaluematching in range(params['nvaluefields']):
     h,p = stats.ttest_1samp(rank_ratio[ivaluematching].flatten(),1,nan_policy='omit')
+    # h,p = stats.wilcoxon(rank_ratio[ivaluematching].flatten()-1,nan_policy='omit')
+    # print('%1.3e' % p)
     ax.text(ivaluematching,np.nanmean(rank_ratio[ivaluematching])+0.01,get_sig_asterisks(p),rotation=0,ha='center',fontsize=9)
 ax.set_ylim([0.98,my_ceil(ax.get_ylim()[1],2)])
 ax_nticks(ax,4)
@@ -431,5 +434,5 @@ ax.set_xticks(range(params['nvaluefields']))
 ax.set_xticklabels(valuematch_labels,rotation=45,ha='right')
 ax.set_xlim([-0.5,params['nvaluefields']-1+.25])
 sns.despine(fig=fig,trim=False)
-my_savefig(fig,figdir,'rank_ratio_separate_%s_controls_%dsessions' % (version,params['nSessions']))
+# my_savefig(fig,figdir,'rank_ratio_separate_%s_controls_%dsessions' % (version,params['nSessions']))
 

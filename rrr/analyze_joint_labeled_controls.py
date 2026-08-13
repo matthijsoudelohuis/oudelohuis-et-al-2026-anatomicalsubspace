@@ -27,8 +27,8 @@ resultdir = params['resultdir']
 
 #%% Load the data:
 version = 'FF_original'
-filename = 'RRR_Joint_labeled_Controls_FF_original_2026-03-05_22-40-25'
-filename = 'RRR_Joint_labeled_Controls_FF_original_2026-03-06_17-28-38'
+# filename = 'RRR_Joint_labeled_Controls_FF_original_2026-03-05_22-40-25'
+# filename = 'RRR_Joint_labeled_Controls_FF_original_2026-03-06_17-28-38'
 # filename = 'RRR_Joint_labeled_Controls_FF_original_2026-03-06_23-31-25'
 filename  = 'RRR_Joint_labeled_Controls_FF_original_2026-03-07_20-47-00'
 # version = 'FB_original'
@@ -77,14 +77,15 @@ R2_ratio = np.nansum(R2_ratio[:,:,:,:,np.arange(1,5)],axis=-1)
 R2_ratio = R2_ratio[:,2,:,:] / R2_ratio[:,1,:,:]
 
 #%% Make the figure of the ratio:
-fig,axes = plt.subplots(1,1,sharex=True,sharey=True,figsize=(3*cm,3.6*cm))
+fig,axes = plt.subplots(1,1,sharex=True,sharey=True,figsize=(3.3*cm,3.8*cm))
 ax = axes
 ax.errorbar(x=range(params['nvaluefields']),y=np.nanmean(R2_ratio,axis=(1,2)),yerr=np.nanstd(R2_ratio,axis=(1,2))/np.sqrt(params['nSessions']*params['nStim']),
             color='red',marker='o',linestyle='',capsize=0)
 # ax.errorbar(x=range(params['nvaluefields']),y=np.nanmean(ratiodata_FF_unlunl,axis=1),yerr=np.nanstd(ratiodata_FF_unlunl,axis=1)/np.sqrt(np.shape(ratiodata_FF_unlunl)[1]),
 #             color='grey',marker='o',linestyle='-',capsize=0)
 for ivaluematching in range(params['nvaluefields']):
-    h,p = stats.ttest_1samp(R2_ratio[ivaluematching].flatten(),1,nan_policy='omit')
+    # h,p = stats.ttest_1samp(R2_ratio[ivaluematching].flatten(),1,nan_policy='omit')
+    h,p = stats.wilcoxon(R2_ratio[ivaluematching].flatten()-1,nan_policy='omit')
     ax.text(ivaluematching,np.nanmean(R2_ratio[ivaluematching])+0.05,get_sig_asterisks(p),rotation=0,ha='center',fontsize=9)
 # ax.legend(['$V1_{PM}$ vs. $V1_{ND1}$'],
 #           frameon=False,bbox_to_anchor=(1.08,0.8),fontsize=6)
@@ -98,7 +99,7 @@ ax.set_xticklabels(valuematch_labels,rotation=45,ha='right')
 ax.set_xlim([-0.5,params['nvaluefields']-1+.25])
 # plt.tight_layout()
 sns.despine(fig=fig,trim=True)
-my_savefig(fig,figdir,'RRR_cvR2_ratio_%s_controls_%dsessions' % (version,params['nSessions']))
+# my_savefig(fig,figdir,'RRR_cvR2_ratio_%s_controls_%dsessions' % (version,params['nSessions']))
 
 #%% Define the ratio of R2 between V1PM and V1ND
 Rank_ratio = optim_rank[:,2,:,:] / optim_rank[:,1,:,:]

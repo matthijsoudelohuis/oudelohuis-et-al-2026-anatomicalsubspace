@@ -48,7 +48,7 @@ Nsub = params['Nsub']
 clrs_arealabelpairs = ['grey','grey','red']
 narealabelpairs = 3
 
-#%% Show an example session:
+#%% Show an example session (FF)
 clrs_arealabelpairs = ['grey','grey','red']
 narealabelpairs = 3
 nrankstoplot = 10
@@ -73,7 +73,7 @@ plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_FF_ExampleSession%d' % (ises))
 
-#%% Show an example session:
+#%% Show an example session (FB)
 fig, ax = plt.subplots(1,1,figsize=(3.8*cm,3.7*cm))
 ises = 10
 handles = []
@@ -96,64 +96,62 @@ sns.despine(fig=fig,trim=False,top=True,right=True)
 my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_FB_ExampleSession%d' % (ises))
 
 
-#%% Show the mean across sessions:
-clrs_arealabelpairs = ['grey','grey','red']
+# #%% Show the mean across sessions:
+# clrs_arealabelpairs = ['grey','grey','red']
 
-nrankstoplot = 10
-xposrank = 8
-idxs = np.array([1,3])
+# nrankstoplot = 10
+# xposrank = 8
+# idxs = np.array([1,3])
 
-fig,axes = plt.subplots(1,2,figsize=(7*cm,3.5*cm),sharex=True,sharey=True)
-for idirec,(direc,optim_rank,R2_cv,R2_ranks,alps) in enumerate(zip(['FF','FB'],[optim_rank_FF,optim_rank_FB],[R2_cv_FF,R2_cv_FB],
-                                                                 [R2_ranks_FF,R2_ranks_FB],[sourcearealabelpairs_FF,sourcearealabelpairs_FB])):
-    # R2_toplot = np.reshape(data,(narealabelpairs+1,params['nSessions']*params['nStim'],params['nT']))
+# fig,axes = plt.subplots(1,2,figsize=(7*cm,3.5*cm),sharex=True,sharey=True)
+# for idirec,(direc,optim_rank,R2_cv,R2_ranks,alps) in enumerate(zip(['FF','FB'],[optim_rank_FF,optim_rank_FB],[R2_cv_FF,R2_cv_FB],
+#                                                                  [R2_ranks_FF,R2_ranks_FB],[sourcearealabelpairs_FF,sourcearealabelpairs_FB])):
+#     # R2_toplot = np.reshape(data,(narealabelpairs+1,params['nSessions']*params['nStim'],params['nT']))
 
-    meanranks = np.nanmean(optim_rank,axis=(-1,-2))
-    meanR2 = np.nanmean(R2_cv,axis=(-1,-2))
-    alps = np.array(alps)
-    ax = axes[idirec]
-    handles = []
-    ydata = np.nanmean(R2_ranks[idxs[0]],axis=(3,4))
-    ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
-    handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
-                                color=clrs_arealabelpairs[idxs[0]-1],alpha=0.3))
-    ydata = np.nanmean(R2_ranks[idxs[1]],axis=(3,4))
-    ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
-    handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
-                                color=clrs_arealabelpairs[idxs[1]-1],alpha=0.3))
-    for idx in idxs:
-        ax.plot(meanranks[idx],meanR2[idx]+0.005,color=clrs_arealabelpairs[idx-1],marker='v',markersize=5)
+#     meanranks = np.nanmean(optim_rank,axis=(-1,-2))
+#     meanR2 = np.nanmean(R2_cv,axis=(-1,-2))
+#     alps = np.array(alps)
+#     ax = axes[idirec]
+#     handles = []
+#     ydata = np.nanmean(R2_ranks[idxs[0]],axis=(3,4))
+#     ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
+#     handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
+#                                 color=clrs_arealabelpairs[idxs[0]-1],alpha=0.3))
+#     ydata = np.nanmean(R2_ranks[idxs[1]],axis=(3,4))
+#     ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
+#     handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
+#                                 color=clrs_arealabelpairs[idxs[1]-1],alpha=0.3))
+#     for idx in idxs:
+#         ax.plot(meanranks[idx],meanR2[idx]+0.005,color=clrs_arealabelpairs[idx-1],marker='v',markersize=5)
 
-    leg = ax.legend(handles,arealabeled_to_figlabels(alps[idxs-1]),frameon=False)
-    my_legend_strip(ax)
-    ax.set_xlabel('Rank')
-    if idirec == 0:
-        ax.set_ylabel(r'Cross-validated R$^2$')
+#     leg = ax.legend(handles,arealabeled_to_figlabels(alps[idxs-1]),frameon=False)
+#     my_legend_strip(ax)
+#     ax.set_xlabel('Rank')
+#     if idirec == 0:
+#         ax.set_ylabel(r'Cross-validated R$^2$')
 
-    x = optim_rank[idxs[0],:]
-    y = optim_rank[idxs[1],:]
-    nas = np.logical_or(np.isnan(x), np.isnan(y))
-    t,p = ttest_rel(x[~nas], y[~nas])
-    print('Paired t-test (Rank): p=%.3f' % (p))
-    ax.plot(meanranks[idxs],np.repeat(np.nanmean(meanR2[idxs]),2)+0.007,linestyle='-',color='k',linewidth=2)
-    ax.text(np.nanmean(meanranks),np.nanmean(meanR2[idxs])+0.009,'%s' % get_sig_asterisks(p,return_ns=True),ha='center',va='center',color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
+#     x = optim_rank[idxs[0],:]
+#     y = optim_rank[idxs[1],:]
+#     nas = np.logical_or(np.isnan(x), np.isnan(y))
+#     t,p = ttest_rel(x[~nas], y[~nas])
+#     print('Paired t-test (rank): p=%.3f' % (p))
+#     ax.plot(meanranks[idxs],np.repeat(np.nanmean(meanR2[idxs]),2)+0.007,linestyle='-',color='k',linewidth=2)
+#     ax.text(np.nanmean(meanranks),np.nanmean(meanR2[idxs])+0.009,'%s' % get_sig_asterisks(p,return_ns=True),ha='center',va='center',color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
 
-    x = R2_cv[idxs[0],:]
-    y = R2_cv[idxs[1],:]
-    nas = np.logical_or(np.isnan(x), np.isnan(y))
-    t,p = ttest_rel(x[~nas], y[~nas])
-    print('Paired t-test (R2): p=%.3f' % (p))
-    ax.plot([xposrank,xposrank],meanR2[idxs],linestyle='-',color='k',linewidth=2)
-    ax.text(xposrank+0.5,np.nanmean(meanR2[idxs])+0.005,'%s' % get_sig_asterisks(p,return_ns=True),ha='center',va='center',color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
+#     x = R2_cv[idxs[0],:]
+#     y = R2_cv[idxs[1],:]
+#     nas = np.logical_or(np.isnan(x), np.isnan(y))
+#     t,p = ttest_rel(x[~nas], y[~nas])
+#     print('Paired t-test (performance): p=%.3f' % (p))
+#     ax.plot([xposrank,xposrank],meanR2[idxs],linestyle='-',color='k',linewidth=2)
+#     ax.text(xposrank+0.5,np.nanmean(meanR2[idxs])+0.005,'%s' % get_sig_asterisks(p,return_ns=True),ha='center',va='center',color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
 
-    ax.set_xticks(np.arange(params['nranks'])[::3]+1)
-    ax.set_xlim([0,nrankstoplot])
-    ax.set_title(direc)
-plt.tight_layout()
-sns.despine(fig=fig,trim=False,top=True,right=True)
+#     ax.set_xticks(np.arange(params['nranks'])[::3]+1)
+#     ax.set_xlim([0,nrankstoplot])
+#     ax.set_title(direc)
+# plt.tight_layout()
+# sns.despine(fig=fig,trim=False,top=True,right=True)
 # my_savefig(fig,figdir,'RRR_joint_R2_labunl_%dsessions_spont' % params['nSessions'])
-
-#%%
 
 
 #%% 
@@ -176,11 +174,15 @@ for idirec,(direc,optim_rank,R2_cv,R2_ranks,alps) in enumerate(zip(['FF','FB'],[
                                 color=clrs[icontrast],capsize=3,elinewidth=1,marker='o',markersize=5)[0]
         h,p = stats.wilcoxon(ratiodata-1,nan_policy='omit')
         p = np.clip(p * ntests, 0, 1)
-        print('%s vs %s: p = %.4f' % (alps[contrast[0]-1],
-                                            alps[contrast[1]-1],
-                                            p))
+        if p>0.0001:
+            print('%s vs %s: p = %.2f (Wilcoxon signed rank test, Bonferroni-corrected)' % (alps[contrast[0]-1],
+                                            alps[contrast[1]-1],p))
+        else:
+            print('%s vs %s: p = %1.1e (Wilcoxon signed rank test, Bonferroni-corrected)' % (alps[contrast[0]-1],
+                        alps[contrast[1]-1],p))
+
         if p < 0.05:
-            ax.annotate(get_sig_asterisks(p),xy=(idirec,np.nanmean(ratiodata)+0.06),fontsize=8,ha='center',color='red')
+            ax.annotate(get_sig_asterisks(p),xy=(idirec,np.nanmean(ratiodata)+0.02),fontsize=8,ha='center',color='red')
         if idirec == 0:
             handles.append(handle)
 ax.axhline(y=1,color='k',linestyle='--',linewidth=1)
@@ -195,7 +197,7 @@ ax.set_ylabel(r'performance ratio')
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
-my_savefig(fig,figdir,'perf_ratio_labunl_spont_%dsessions' % params['nSessions'])
+# my_savefig(fig,figdir,'perf_ratio_labunl_spont_%dsessions' % params['nSessions'])
 
 
 #%% Show the mean R2_cv across sessions:
