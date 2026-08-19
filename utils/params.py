@@ -38,6 +38,6 @@ def load_params():
                 maxrunspeed = 0.5, #maximum run speed in cm/s
 
                 # Default parameters for statistical testing:  
-                multcomp_method = 'holm', #method for multiple comparisons correction in statistical tests, e.g. 'holm', 'fdr_bh', 'bonferroni'
+                multcomp_method = 'bonferroni', #method for multiple comparisons correction in statistical tests, e.g. 'holm', 'fdr_bh', 'bonferroni'
                 )
     return params

@@ -123,7 +123,7 @@ def compute_signal_noise_correlation(sessions,uppertriangular=True,filter_statio
         elif sessions[ises].sessiondata['protocol'][0]=='GR':
             [N,K]                           = np.shape(sessions[ises].respmat) #get dimensions of response matrix
             oris                            = np.sort(sessions[ises].trialdata['Orientation'].unique())
-            trialfilter                     = sessions[ises].respmat_runspeed<2 if filter_stationary else np.ones(K,bool)
+            trialfilter                     = sessions[ises].respmat_runspeed<.5 if filter_stationary else np.ones(K,bool)
             resp_meanori,respmat_res        = mean_resp_gr(sessions[ises],trialfilter=trialfilter)
             prefori                         = oris[np.argmax(resp_meanori,axis=1)]
 
@@ -133,9 +133,9 @@ def compute_signal_noise_correlation(sessions,uppertriangular=True,filter_statio
             # sessions[ises].sig_corr         = np.corrcoef(resp_meanori)
 
             #Compute signal correlation on separate halfs of trials:
-            trialfilter                     = np.random.choice([True,False],size=(K),p=[0.5,0.5])
-            resp_meanori1,_                 = mean_resp_gr(sessions[ises],trialfilter=trialfilter)
-            resp_meanori2,_                 = mean_resp_gr(sessions[ises],trialfilter=~trialfilter)
+            splitfilter                     = np.random.choice([True,False],size=(K),p=[0.5,0.5])
+            resp_meanori1,_                 = mean_resp_gr(sessions[ises],trialfilter=splitfilter)
+            resp_meanori2,_                 = mean_resp_gr(sessions[ises],trialfilter=~splitfilter)
             sessions[ises].sig_corr         = 0.5 * (np.corrcoef(resp_meanori1, resp_meanori2)[:N, N:] +
                                                 np.corrcoef(resp_meanori2, resp_meanori1)[:N, N:])
 
@@ -171,13 +171,15 @@ def compute_signal_noise_correlation(sessions,uppertriangular=True,filter_statio
                     data_hat        = pop_rate_gain_model(sessions[ises].respmat, stimuli)
                     respmat_res     = sessions[ises].respmat - data_hat
 
-            # Compute noise correlations from residuals:
+            # #Compute noise correlations from residuals:
             # sessions[ises].noise_corr       = np.corrcoef(respmat_res)
+
             # Compute per stimulus, then average:
-            trial_ori   = sessions[ises].trialdata['Orientation']
-            noise_corr = np.empty((N,N,len(oris)))  
-            for i,ori in enumerate(oris):
-                noise_corr[:,:,i] = np.corrcoef(respmat_res[:,trial_ori==ori])
+            trial_stim   = sessions[ises].trialdata['stimCond'][trialfilter]
+            ustim = np.unique(trial_stim)
+            noise_corr = np.empty((N,N,len(ustim)))  
+            for istim,stim in enumerate(ustim):
+                noise_corr[:,:,istim] = np.corrcoef(respmat_res[:,trial_stim==stim])
             sessions[ises].noise_corr       = np.mean(noise_corr,axis=2)
 
             idx_triu = np.tri(N,N,k=0)==1 #index only upper triangular part
@@ -199,7 +201,8 @@ def compute_signal_noise_correlation(sessions,uppertriangular=True,filter_statio
             [N,K]                           = np.shape(sessions[ises].respmat) #get dimensions of response matrix
             oris                            = np.sort(pd.Series.unique(sessions[ises].trialdata['centerOrientation']))
             speeds                          = np.sort(pd.Series.unique(sessions[ises].trialdata['centerSpeed']))
-            trialfilter                     = sessions[ises].respmat_runspeed<2 if filter_stationary else np.ones(K,bool)
+            # trialfilter                     = sessions[ises].respmat_runspeed<2 if filter_stationary else np.ones(K,bool)
+            trialfilter                     = sessions[ises].respmat_runspeed<.5 if filter_stationary else np.ones(K,bool)
             resp_mean,respmat_res           = mean_resp_gn(sessions[ises],trialfilter)
             prefori, prefspeed              = np.unravel_index(resp_mean.reshape(N,-1).argmax(axis=1), (len(oris), len(speeds)))
             sessions[ises].prefori          = oris[prefori]
@@ -209,9 +212,9 @@ def compute_signal_noise_correlation(sessions,uppertriangular=True,filter_statio
             # sessions[ises].sig_corr         = np.corrcoef(resp_mean.reshape(N,len(oris)*len(speeds)))
             
             #Compute signal correlation on separate halfs of trials:
-            trialfilter                     = np.random.choice([True,False],size=(K),p=[0.5,0.5])
-            resp_mean1,_                    = mean_resp_gn(sessions[ises],trialfilter = trialfilter)
-            resp_mean2,_                    = mean_resp_gn(sessions[ises],trialfilter = ~trialfilter)
+            splitfilter                     = np.random.choice([True,False],size=(K),p=[0.5,0.5])
+            resp_mean1,_                    = mean_resp_gn(sessions[ises],trialfilter = splitfilter)
+            resp_mean2,_                    = mean_resp_gn(sessions[ises],trialfilter = ~splitfilter)
             # sessions[ises].sig_corr         = 0.5 * (np.corrcoef(resp_mean1, resp_mean2)[:N, N:] +
                                                 # np.corrcoef(resp_mean2, resp_mean1)[:N, N:])
             sessions[ises].sig_corr         = 0.5 * (np.corrcoef(resp_mean1.reshape(N,-1), resp_mean2.reshape(N,-1))[:N, N:] +
@@ -236,11 +239,16 @@ def compute_signal_noise_correlation(sessions,uppertriangular=True,filter_statio
                     data_hat        = pop_rate_gain_model(sessions[ises].respmat, stimuli)
                     respmat_res     = sessions[ises].respmat - data_hat
 
-            # Detrend the data:
-            # respmat_res = detrend(respmat_res,axis=1)
+            # #Compute noise correlations from residuals:
+            # sessions[ises].noise_corr       = np.corrcoef(respmat_res)
 
-            #Compute noise correlations from residuals:
-            sessions[ises].noise_corr       = np.corrcoef(respmat_res)
+            # Compute per stimulus, then average:
+            trial_stim   = sessions[ises].trialdata['stimCond'][trialfilter]
+            ustim = np.unique(trial_stim)
+            noise_corr = np.empty((N,N,len(ustim)))  
+            for istim,stim in enumerate(ustim):
+                noise_corr[:,:,istim] = np.corrcoef(respmat_res[:,trial_stim==stim])
+            sessions[ises].noise_corr       = np.mean(noise_corr,axis=2)
 
             idx_triu = np.tri(N,N,k=0)==1   #index upper triangular part
             if uppertriangular:
@@ -267,7 +275,7 @@ def compute_signal_noise_correlation(sessions,uppertriangular=True,filter_statio
 #     # ###  #####     #        #####  ####### #     # #     # 
 
 def hist_corr_areas_labeling(sessions,corr_type='trace_corr',filternear=True,minNcells=10, 
-                        areapairs=' ',layerpairs=' ',projpairs=' ',noise_thr=100,valuematching=None,
+                        areapairs=' ',layerpairs=' ',projpairs=' ',noise_thr=np.inf,valuematching=None,
                         zscore=False,binres=0.01):
     # areas               = ['V1','PM']
     # redcells            = [0,1]

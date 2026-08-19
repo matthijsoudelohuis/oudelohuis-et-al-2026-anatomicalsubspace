@@ -47,7 +47,6 @@ for key in data.keys():
 
 with open(os.path.join(resultdir,filename + '_params' + '.txt'), "rb") as myFile:
     params = pickle.load(myFile)
-
 params['multcomp_method'] = 'holm'
 
 #%% Show an example session:
@@ -66,8 +65,10 @@ for isa,sourcearea in enumerate(sourcearealabelpairs):
     for ita,targetarea in enumerate(targetarealabelpairs):
         ymeantoplot = np.nanmean(R2_ranks[isa][ita][ises],axis=(0,2,3))
         yerrortoplot = np.nanstd(R2_ranks[isa][ita][ises],axis=(0,2,3)) / np.sqrt(params['nmodelfits'])
-        handles.append(shaded_error(np.arange(params['nranks']),ymeantoplot,yerrortoplot,ax=ax,color=clrs_arealabelpairs[isa,ita],alpha=0.3))
+        handles.append(shaded_error(np.arange(params['nranks']),ymeantoplot,yerrortoplot,ax=ax,linewidth=1,
+                                    color=clrs_arealabelpairs[isa,ita],alpha=0.3))
         labels.append(arealabeled_to_figlabels(sourcearea) + ' - ' + arealabeled_to_figlabels(targetarea))
+        ax.plot(np.nanmean(optim_rank[isa][ita][ises]),np.nanmean(R2_cv[isa][ita][ises])+0.005,color=clrs_arealabelpairs[isa,ita],marker='v',markersize=4)
 
 leg = ax.legend(handles,labels,frameon=False, reverse=True,fontsize=5)
 my_legend_strip(ax)
@@ -97,7 +98,7 @@ for isa,sourcearea in enumerate(sourcearealabelpairs):
         handles.append(shaded_error(np.arange(params['nranks']),ymeantoplot,yerrortoplot,ax=ax,color=clrs_arealabelpairs[isa,ita],alpha=0.3))
         labels.append(arealabeled_to_figlabels(sourcearea) + ' - ' + arealabeled_to_figlabels(targetarea))
     
-        ax.plot(np.nanmean(optim_rank[isa][ita]),np.nanmean(R2_cv[isa][ita])+0.005,color=clrs_arealabelpairs[isa,ita],marker='v',markersize=5)
+        # ax.plot(np.nanmean(optim_rank[isa][ita]),np.nanmean(R2_cv[isa][ita])+0.005,color=clrs_arealabelpairs[isa,ita],marker='v',markersize=5)
 
 leg = ax.legend(handles,labels,frameon=False, reverse=True)
 my_legend_strip(ax)
