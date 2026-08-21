@@ -35,14 +35,14 @@ resultdir = params['resultdir']
 version = 'FF_AL_original'
 filename = 'RRR_Joint_labeled_FF_AL_original_2026-02-20_14-50-51'
 
-version = 'FF_AL_original'
-filename = 'RRR_Joint_labeled_FF_AL_behavout_2026-02-20_16-02-43'
+# version = 'FF_AL_original'
+# filename = 'RRR_Joint_labeled_FF_AL_behavout_2026-02-20_16-02-43'
 
-version = 'FB_AL_original'
-filename = 'RRR_Joint_labeled_FB_AL_original_2026-02-22_21-21-50'
+# version = 'FB_AL_original'
+# filename = 'RRR_Joint_labeled_FB_AL_original_2026-02-22_21-21-50'
 
-version = 'FB_AL_behavout'
-filename = 'RRR_Joint_labeled_FB_AL_behavout_2026-02-22_19-33-50'
+# version = 'FB_AL_behavout'
+# filename = 'RRR_Joint_labeled_FB_AL_behavout_2026-02-22_19-33-50'
 
 #%% Load the data:
 data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
@@ -112,7 +112,7 @@ ax.set_xlim([0,nrankstoplot])
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
-my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_%dsessions' % (version,params['nSessions']))
+# my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_%dsessions' % (version,params['nSessions']))
 
 #%% 
 clrs_arealabelpairs = ['grey','grey','red']
@@ -131,7 +131,7 @@ ax.set_ylabel('Cross-validated R2')
 
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
-my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_%dsessions' % (version,params['nSessions']))
+# my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_%dsessions' % (version,params['nSessions']))
 
 #%% Show figure for each of the arealabelpairs and each of the dataversions
 #Reshape stim x sessions:
@@ -146,7 +146,7 @@ if np.any(~np.isnan(R2_data)):
         # clrs        = ['grey',get_clr_area_labeled([sourcearealabelpairs[idx[1]].split('-')[0]])]
         clrs        = ['grey','red']
         fig         = plot_RRR_R2_arealabels_paired(R2_data[idx],optim_rank_data[idx],R2_ranks_data[idx],np.array(sourcearealabelpairs)[idx-1],clrs)
-        my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (sourcearealabelpairs[idx[1]-1],version,params['nSessions']))
+        # my_savefig(fig,figdir,'RRR_cvR2_%s_%s_%dsessions' % (sourcearealabelpairs[idx[1]-1],version,params['nSessions']))
 
 #%% Identify which dimensions are particularly enhanced in labeled cells:
 data = np.nanmean(R2_ranks,axis=(5)) #average across kfolds

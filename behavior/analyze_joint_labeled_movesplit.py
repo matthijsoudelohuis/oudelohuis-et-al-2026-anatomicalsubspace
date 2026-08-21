@@ -59,14 +59,18 @@ narealabelpairs = 3
 statelabels = np.array(['Quiescent','Active'])
 nrankstoplot = 10
 ises = 22
-fig, axes = plt.subplots(1,2,figsize=(7.6*cm,3.6*cm),sharex=True,sharey=True)
+
+fig, axes = plt.subplots(1,1,figsize=(3.8*cm,3.6*cm))
+ax = axes
+ls = [':','-']
 for istate in range(2):
     handles = []
-    ax = axes[istate]
+    # ax = axes[istate]
     for iapl,apl in enumerate(sourcearealabelpairs_FF[1:]):
         ymeantoplot = np.nanmean(R2_ranks_FF[iapl+2][istate][ises],axis=(0,2,3))
         yerrortoplot = np.nanstd(R2_ranks_FF[iapl+2][istate][ises],axis=(0,2,3)) / np.sqrt(nmodelfits)
-        handles.append(shaded_error(np.arange(params['nranks']),ymeantoplot,yerrortoplot,ax=ax,color=clrs_arealabelpairs[iapl+1],alpha=0.3))
+        handles.append(shaded_error(np.arange(params['nranks']),ymeantoplot,yerrortoplot,ax=ax,
+                                    color=clrs_arealabelpairs[iapl+1],alpha=0.3,linewidth=1,linestyle=ls[istate]))
 
     leg = ax.legend(handles,arealabeled_to_figlabels(sourcearealabelpairs_FF[1:]),frameon=False)
     my_legend_strip(ax)
@@ -181,15 +185,18 @@ narealabelpairs = 3
 statelabels = np.array(['Quiescent','Active'])
 nrankstoplot = 10
 ises = 1
-fig, axes = plt.subplots(1,2,figsize=(7.6*cm,3.6*cm),sharex=True,sharey=True)
+
+fig, axes = plt.subplots(1,1,figsize=(3.8*cm,3.6*cm))
+ax = axes
+ls = [':','-']
 for istate in range(2):
     handles = []
-    ax = axes[istate]
+    # ax = axes[istate]
     for iapl,apl in enumerate(sourcearealabelpairs_FB[1:]):
         ymeantoplot = np.nanmean(R2_ranks_FB[iapl+2][istate][ises],axis=(0,2,3))
         yerrortoplot = np.nanstd(R2_ranks_FB[iapl+2][istate][ises],axis=(0,2,3)) / np.sqrt(nmodelfits)
         handles.append(shaded_error(np.arange(params['nranks']),ymeantoplot,yerrortoplot,ax=ax,
-                                    color=clrs_arealabelpairs[iapl+1],alpha=0.3,linewidth=1))
+                                    color=clrs_arealabelpairs[iapl+1],alpha=0.3,linewidth=1,linestyle=ls[istate]))
 
     leg = ax.legend(handles,arealabeled_to_figlabels(sourcearealabelpairs_FB[1:]),frameon=False)
     my_legend_strip(ax)
@@ -287,7 +294,7 @@ for icontrast,contrast in enumerate(contrasts):
                              color=clrs[icontrast],capsize=3,elinewidth=1,marker='o',markersize=5)[0]
         h,p = stats.wilcoxon(ratiodata-1,nan_policy='omit')
         p = np.clip(p * ntests, 0, 1)
-        print('%s vs %s, %s: p = %.4f' % (sourcearealabelpairs_FF[contrast[0]-1],
+        print('%s vs %s, %s: p = %2.2g' % (sourcearealabelpairs_FF[contrast[0]-1],
                                           sourcearealabelpairs_FF[contrast[1]-1],
                                           statelabels[istate],p))
         if p < 0.05:
@@ -312,7 +319,7 @@ for icontrast,contrast in enumerate(contrasts):
                              color=clrs[icontrast],capsize=3,elinewidth=1,marker='o',markersize=5)[0]
         h,p = stats.wilcoxon(ratiodata-1,nan_policy='omit')
         p = np.clip(p * ntests, 0, 1)
-        print('%s vs %s, %s: p = %.4f' % (sourcearealabelpairs_FB[contrast[0]-1],
+        print('%s vs %s, %s: p = %2.2g' % (sourcearealabelpairs_FB[contrast[0]-1],
                                                   sourcearealabelpairs_FB[contrast[1]-1],
                                                   statelabels[istate],p))
         if p < 0.05:
@@ -330,7 +337,7 @@ ax.set_ylabel(r'performance ratio')
 # ax.set_ylim([0,1])
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
-my_savefig(fig,figdir,'perf_ratio_labunl_movesplit_%dsessions' % params['nSessions'])
+# my_savefig(fig,figdir,'perf_ratio_labunl_movesplit_%dsessions' % params['nSessions'])
 
 # #%% Identify which dimensions are particularly enhanced in labeled cells:
 # data = np.nanmean(R2_ranks,axis=(5)) #average across kfolds

@@ -55,7 +55,7 @@ nmodelfits = params['nmodelfits']
 clrs_arealabelpairs = ['grey','red']
 nrankstoplot = 10
 narealabelpairs = 2
-fig, axes = plt.subplots(1,1,figsize=(5*cm,4.5*cm))
+fig, axes = plt.subplots(1,1,figsize=(4*cm,3.7*cm))
 ax = axes
 handles = []
 for iapl,apl in enumerate(sourcearealabelpairs):
@@ -68,14 +68,14 @@ for iapl,apl in enumerate(sourcearealabelpairs):
 
 leg = ax.legend(handles,arealabeled_to_figlabels(sourcearealabelpairs),frameon=False)
 my_legend_strip(ax)
-ax.set_xlabel('Rank')
-ax.set_ylabel('Cross-validated R2')
+ax.set_xlabel('rank')
+ax.set_ylabel('performance (R2)')
 ax.set_xlim([0,nrankstoplot])
 # ax.set_xticks([0,1,5,10])
 ax.set_xticks([1,4,7,10])
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
-# my_savefig(fig,figdir,'RRR_separate_cvR2_labunl_%s_ExampleSesion' % params['direction'])
+my_savefig(fig,figdir,'RRR_separate_cvR2_labunl_%s_ExampleSesion' % params['direction'])
 
 #%% Plot the performance across sessions as a function of rank:
 alx1 = arealabeled_to_figlabels(sourcearealabelpairs[0].split('-')[0])
@@ -126,8 +126,9 @@ fig,axes = plt.subplots(1,1,figsize=(4*cm,3.9*cm))
 ax = axes
 ax.hist(R2_cv[0].flatten(),bins=np.arange(0,0.1,0.005),color='grey',alpha=0.6)
 ax.hist(R2_cv[1].flatten(),bins=np.arange(0,0.1,0.005),color='red',alpha=0.6)
-ax.plot(np.nanmean(R2_cv[0].flatten()),40,'v',color='grey')
-ax.plot(np.nanmean(R2_cv[1].flatten()),40,'v',color='red')
+ylim = my_ceil(ax.get_ylim()[1],-1)
+ax.plot(np.nanmean(R2_cv[0].flatten()),ylim,'v',color='grey')
+ax.plot(np.nanmean(R2_cv[1].flatten()),ylim,'v',color='red')
 ax.set_xlabel('performance (R2)')
 ax.set_ylabel('# datasets')
 # ax.axvline(1,linestyle='--',linewidth=1,color='black')
@@ -142,7 +143,8 @@ perf_ratio = (R2_cv[1].flatten() / R2_cv[0].flatten())
 fig,axes = plt.subplots(1,1,figsize=(4*cm,3.9*cm))
 ax = axes
 ax.hist(perf_ratio,bins=np.arange(0.5,1.8,0.1),color='red',alpha=0.6)
-ax.plot(np.nanmean(perf_ratio),40,'v',color='red')
+ylim = my_ceil(ax.get_ylim()[1],-1)
+ax.plot(np.nanmean(perf_ratio),ylim,'v',color='red')
 ax.set_xlabel('performance ratio')
 ax.set_ylabel('# datasets')
 ax.axvline(1,linestyle='--',linewidth=1,color='black')

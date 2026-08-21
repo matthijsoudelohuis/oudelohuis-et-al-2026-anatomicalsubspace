@@ -89,6 +89,7 @@ t_ticks = np.array([-1,0,1,2])
 ymin = -0.0005
 iapl = 0
 subspacelabels = np.array(['Full','Behav','Non-behav'])
+# subspacelabels = np.array(['Full','Behav','Stim'])
 clrs_subspaces = get_clr_subspaces(subspacelabels)
 
 fig,axes = plt.subplots(1,2,figsize=(2*3*cm,1*3*cm),sharex=True,sharey=True)
@@ -319,142 +320,112 @@ sns.despine(fig=fig, top=True, right=True, offset = 2, trim=False)
 # where the first dimension is the direction (FF,FB) and the second dimension is the subspace (behav/nonbehav)
 # and the third dimension is the contrast between labeled and unlabeled
 
-ndatasets           = params['nSessions'] * params['nStim']
-nsubspaces          = len(subspaces)
-nplotcontrasts      = 2
-ndirections         = 2
+subspacelabels = np.array(['Full','Behav','Stim'])
+#Find the timepoint of max ratio for FF and FB stimulus related:
+idx_time = np.logical_and(params['t_axis']>-.8,params['t_axis']<1.9)
+isubspace = 1 #stim-related
+iplotcontrast = 1 #lab/unl
+# np.argmax(tempdata,axis=2)
+clrs = ['purple','green']
+fig,axes = plt.subplots(1,1,figsize=(4*cm,4*cm))
+ax = axes
+for idirec, direc in enumerate(['FF','FB']):
+    tempdata = R2_ratiodata[idirec,isubspace,iplotcontrast,:,:]
+    tempdata = tempdata[:,idx_time]
+    # tempdata[np.all(tempdata<=1.5,axis=1),:] = np.nan
+    tempdata[tempdata==1] = np.nan
+    tempdata = tempdata[~np.all(np.isnan(tempdata),axis=1),:]
+    tpoints = params['t_axis'][idx_time]
+    ax.hist(tpoints[np.nanargmax(tempdata,axis=1)],color=clrs[idirec],alpha=0.5,bins=params['t_axis']+np.diff(params['t_axis']).mean())
 
-#Compute crosscorrelation function
-ts = params['t_axis']
-dt = np.median(np.diff(ts))
-max_lag_secs = 2.0
-max_lag_samps = int(np.round(max_lag_secs / dt))
-lags = np.arange(-max_lag_samps, max_lag_samps + 1) * dt
-nlags = len(lags)
-
-def normalized_crosscorr(x,y,max_lag_samps,normalize=True):
-    """Per-row (per-dataset) normalized cross-correlation.
-    x,y: (ndatasets,ntimepoints). Returns (ndatasets,nlags)."""
-    ndatasets   = x.shape[0]
-    nlags       = 2*max_lag_samps + 1
-    cc          = np.full((ndatasets,nlags),np.nan)
-    for i in range(ndatasets):
-        xi,yi = x[i,:],y[i,:]
-        if np.any(np.isnan(xi)) or np.any(np.isnan(yi)):
-            continue #skip datasets with missing samples in this window
-        xi = xi - np.mean(xi)
-        yi = yi - np.mean(yi)
-        if normalize:
-            denom = np.sqrt(np.sum(xi**2) * np.sum(yi**2))
-            if denom == 0:
-                continue
-        else: 
-            denom = 1
-        full    = np.correlate(xi,yi,mode='full') / denom
-        center  = len(full) // 2
-        cc[i,:] = full[center-max_lag_samps:center+max_lag_samps+1]
-    return cc
-
-#crosscorrmat: dataset axis first so it can be fed straight into shaded_error(), as with R2_ratiodata
-crosscorrmat = np.full((nplotcontrasts,nsubspaces,nsubspaces,ndatasets,nlags),np.nan)
-
-for idirec in range(ndirections):
-    for iplotcontrast in range(nplotcontrasts):
-        for isubspace in range(nsubspaces):
-            for jsubspace in range(nsubspaces):
-                x = R2_ratiodata[0,isubspace,iplotcontrast,:,:]
-                y = R2_ratiodata[1,jsubspace,iplotcontrast,:,:]
-                crosscorrmat[iplotcontrast,isubspace,jsubspace,:,:] = normalized_crosscorr(x,y,max_lag_samps,normalize=False)
-
-# Example: plot mean +/- ci95 cross-correlation across datasets for one combination
-fig,axes = plt.subplots(nsubspaces,nsubspaces,figsize=(7*cm,6.5*cm))
-for isubspace in range(nsubspaces):
-    for jsubspace in range(nsubspaces):
-        for iplotcontrast in range(nplotcontrasts):
-        # for iplotcontrast in [1]:
-            ax = axes[isubspace,jsubspace]
-            shaded_error(lags,crosscorrmat[iplotcontrast,isubspace,jsubspace,:,:],
-                        center='mean',error='sem',color=clrs[iplotcontrast],ax=ax,linewidth=0.8)
-            ax.axvline(x=0,color='grey',linestyle='--',linewidth=0.8)
-            ax.set_xlabel('lag (s)')
-            ax.set_ylabel('cross-correlation')
-            ax.axhline(0,linestyle=':',color='grey',linewidth=0.5)
-            ax.text(0,0.9,'FF:%s<-\nleads' % subspacelabels[isubspace+1],transform=ax.transAxes,fontsize=4,horizontalalignment='left')
-            ax.text(1,0.9,'->FB:%s\nleads' % subspacelabels[jsubspace+1],transform=ax.transAxes,fontsize=4,horizontalalignment='right')
-            # ax.set_title('FF:%s, FB:%s' % (subspacelabels[isubspace+1],subspacelabels[jsubspace+1]),fontsize=6)
-plt.tight_layout()
+ax.legend(['FF','FB'],frameon=False)
+ax.set_ylabel('# datasets')
+ax.set_xlabel('time (s)')
+ax.set_xticks(t_ticks)
+ax.set_xticklabels(t_ticks)
 sns.despine(fig=fig, top=True, right=True, offset = 2, trim=False)
-# my_savefig(fig,figdir,'RRR_joint_time_ratio_FF_FB_splitsubspaces')
-print('%1.2f sessions with simultaneous data' % (np.sum(~np.any(np.isnan(crosscorrmat),axis=(0,1,2,4)))/params['nStim']))
-# my_savefig(fig,figdir,'perf_ratio_crosscorr_FF_FB_subspaces')
+my_savefig(fig,figdir,'Peak_perf_ratio_stim_FF_FB')
 
 #%%
-def cross_cov(x,y,max_lag_samps,normalize=True):
-    """Per-row (per-dataset) normalized cross-correlation.
-    x,y: (ndatasets,ntimepoints). Returns (ndatasets,nlags)."""
-    ndatasets   = x.shape[0]
-    nlags       = 2*max_lag_samps + 1
-    cc          = np.full((ndatasets,nlags),np.nan)
-    for i in range(ndatasets):
-        xi,yi = x[i,:],y[i,:]
-        if np.any(np.isnan(xi)) or np.any(np.isnan(yi)):
-            continue #skip datasets with missing samples in this window
-        xi = xi - np.mean(xi)
-        yi = yi - np.mean(yi)
-        if normalize:
-            denom = np.sqrt(np.sum(xi**2) * np.sum(yi**2))
-            if denom == 0:
-                continue
-        else: 
-            denom = 1
-        full    = np.correlate(xi,yi,mode='full') / denom
-        center  = len(full) // 2
-        cc[i,:] = full[center-max_lag_samps:center+max_lag_samps+1]
-    return cc
-
-#%% 
 ndatasets           = params['nSessions'] * params['nStim']
 nsubspaces          = len(subspaces)
 nplotcontrasts      = 2
 ndirections         = 2
 
-#Compute crosscovariance across lags and across time relative to stimulus onset
+#compute cross-covariance between datasets for different lags and different timepoints relative to stimulus onset:
+
 ts = params['t_axis']
+ntimepoints = len(ts)
 dt = np.median(np.diff(ts))
 max_lag_secs = 2.0
 max_lag_samps = int(np.round(max_lag_secs / dt))
-lags = np.arange(-max_lag_samps, max_lag_samps + 1) * dt
+lags = np.arange(-max_lag_samps, max_lag_samps + 1)
+tlags = np.arange(-max_lag_samps, max_lag_samps + 1) * dt
 nlags = len(lags)
+lagticks = np.arange(-2,2.5,1)
 
-#crosscorrmat: dataset axis first so it can be fed straight into shaded_error(), as with R2_ratiodata
-crosscovmat = np.full((nplotcontrasts,nsubspaces,nsubspaces,ndatasets,nlags),np.nan)
+crosscovdata = np.full((nsubspaces,nplotcontrasts,ntimepoints,nlags),np.nan)
+crosscorrdata = np.full((nsubspaces,nplotcontrasts,ntimepoints,nlags),np.nan)
 
-for idirec in range(ndirections):
-    for iplotcontrast in range(nplotcontrasts):
-        for isubspace in range(nsubspaces):
-            for jsubspace in range(nsubspaces):
-                x = R2_ratiodata[0,isubspace,iplotcontrast,:,:]
-                y = R2_ratiodata[1,jsubspace,iplotcontrast,:,:]
-                crosscovmat[iplotcontrast,isubspace,jsubspace,:,:] = cross_cov(x,y,max_lag_samps,normalize=False)
-
-# Example: plot mean +/- ci95 cross-correlation across datasets for one combination
-fig,axes = plt.subplots(nsubspaces,nsubspaces,figsize=(7*cm,6.5*cm))
 for isubspace in range(nsubspaces):
-    for jsubspace in range(nsubspaces):
-        for iplotcontrast in range(nplotcontrasts):
-        # for iplotcontrast in [1]:
-            ax = axes[isubspace,jsubspace]
-            shaded_error(lags,crosscovmat[iplotcontrast,isubspace,jsubspace,:,:],
-                        center='mean',error='sem',color=clrs[iplotcontrast],ax=ax,linewidth=0.8)
-            ax.axvline(x=0,color='grey',linestyle='--',linewidth=0.8)
-            ax.set_xlabel('lag (s)')
-            ax.set_ylabel('cross-correlation')
-            ax.axhline(0,linestyle=':',color='grey',linewidth=0.5)
-            ax.text(0,0.9,'FF:%s<-\nleads' % subspacelabels[isubspace+1],transform=ax.transAxes,fontsize=4,horizontalalignment='left')
-            ax.text(1,0.9,'->FB:%s\nleads' % subspacelabels[jsubspace+1],transform=ax.transAxes,fontsize=4,horizontalalignment='right')
-            # ax.set_title('FF:%s, FB:%s' % (subspacelabels[isubspace+1],subspacelabels[jsubspace+1]),fontsize=6)
-plt.tight_layout()
+    for iplotcontrast in range(nplotcontrasts):
+        for it,t in enumerate(ts):
+            for ilag,lag in enumerate(lags):
+                # print(t,lag)
+                # print(it,lag)
+                if (it+lag)>0 and (it+lag)<ntimepoints:
+                    x = R2_ratiodata[0,isubspace,iplotcontrast,:,it]
+                    y = R2_ratiodata[1,isubspace,iplotcontrast,:,it+lag]
+                    x,y = filter_sharednan(x,y)
+                    crosscovdata[isubspace,iplotcontrast,it,ilag] = np.cov([x,y])[0,1]
+                    crosscorrdata[isubspace,iplotcontrast,it,ilag] = np.corrcoef([x,y])[0,1]
+
+#%%
+contrastlabels = ['unl/unl','lab/unl']
+fig,axes = plt.subplots(2,2,figsize=(8*cm,8*cm))
+vmin,vmax = np.nanpercentile(crosscovdata,[2,99])
+for isubspace in range(nsubspaces):
+    for iplotcontrast in range(nplotcontrasts):
+        ax = axes[isubspace,iplotcontrast]
+        ax.pcolor(tlags,ts,crosscovdata[isubspace,iplotcontrast],vmin=vmin,vmax=vmax,cmap='magma')
+        # ax.pcolor(tlags,ts,crosscorrdata[isubspace,iplotcontrast],vmin=vmin,vmax=vmax,cmap='magma')
+
+        ax.set_xlabel('lag (s)')
+        ax.set_xticks(lagticks)
+        ax.set_xticklabels(lagticks)
+        ax.set_ylabel('time rel. to stim onset (s)')
+        ax.set_yticks(t_ticks)
+        ax.set_yticklabels(t_ticks)
+        ax.set_title('%s-%s' % (subspacelabels[isubspace+1],contrastlabels[iplotcontrast]))
+        ax.axvline(0,color='grey',linestyle=':',linewidth=0.8)
+
 sns.despine(fig=fig, top=True, right=True, offset = 2, trim=False)
-# my_savefig(fig,figdir,'RRR_joint_time_ratio_FF_FB_splitsubspaces')
-print('%1.2f sessions with simultaneous data' % (np.sum(~np.any(np.isnan(crosscorrmat),axis=(0,1,2,4)))/params['nStim']))
-# my_savefig(fig,figdir,'perf_ratio_crosscorr_FF_FB_subspaces')
+my_savefig(fig,figdir,'Crosscovariance_FF_FB_splitsubspaces_time_lag_heatmaps')
+# my_savefig(fig,figdir,'Crosscorr_FF_FB_splitsubspaces_time_lag_heatmaps')
+
+#%%  
+fig,axes = plt.subplots(1,1,figsize=(6*cm,4*cm))
+ax = axes
+idx_time = np.logical_and(params['t_axis']>=0,params['t_axis']<1)
+# idx_time = np.logical_and(params['t_axis']>=-1,params['t_axis']<0)
+ls = [':','-']
+ylim = [-0.15,0.7]
+for isubspace in range(nsubspaces):
+    for iplotcontrast in range(nplotcontrasts):
+
+        ax.plot(tlags,np.nanmean(crosscovdata[isubspace,iplotcontrast,idx_time,:],axis=0),
+                color=clrs_subspaces[isubspace+1],linestyle=ls[iplotcontrast])
+ax.legend(['Behav - unl/unl','Behav - lab/unl','Stim - unl/unl','Stim - lab/unl'],reverse=True,bbox_to_anchor=(1.05,0.8))
+ax.text(0.1,0.9,'FB leads',transform=ax.transAxes,fontsize=5,horizontalalignment='left')
+ax.text(0.9,0.9,'FF leads',transform=ax.transAxes,fontsize=5,horizontalalignment='right')
+
+ax.axvline(0,color='grey',linestyle=':',linewidth=0.8)
+ax.set_xlabel('lag (s)')
+ax.set_xticks(lagticks)
+ax.set_xticklabels(lagticks)
+ax.set_ylim(ylim)
+ax.set_ylabel('crosscovariance\nacross datasets')
+sns.despine(fig=fig, top=True, right=True, offset = 2, trim=False)
+my_savefig(fig,figdir,'Crosscovariance_FF_FB_splitsubspaces_crosscov_avg_resp_respwindow')
+# my_savefig(fig,figdir,'Crosscovariance_FF_FB_splitsubspaces_crosscov_avg_resp_baseline')
+

@@ -196,7 +196,8 @@ animal_id           = 'LPE11622' #If empty than all animals in folder will be pr
 animal_id           = 'LPE11086' #If empty than all animals in folder will be processed
 sessiondate         = '2024_03_27'
 rawdatadir          = 'I:\\RawData\\'
-iplane              = 1
+gcamp_proj          = 'meanImg'
+# gcamp_proj          = 'max_proj'
 
 date_filter         = []
 # date_filter         = ['2023_04_12']
@@ -205,8 +206,8 @@ date_filter         = []
 animal_ids          = ['LPE12223']
 date_filter        = ['2024_06_08']
 
-animal_ids          = ['LPE11086']
-date_filter        = ['2024_01_05']
+# animal_ids          = ['LPE11086']
+# date_filter        = ['2024_01_05']
 
 # LPE11998_2024_05_10
 # 2    LPE12223_2024_06_10
@@ -217,8 +218,8 @@ date_filter        = ['2024_01_05']
 # 7    LPE12223_2024_06_08
 # 8    LPE12385_2024_06_13
 
-animal_ids          = ['LPE12223']
-date_filter        = ['2024_06_10']
+# animal_ids          = ['LPE12223']
+# date_filter        = ['2024_06_10']
 
 # animal_ids          = ['LPE09665', 'LPE11495', 'LPE11998', 'LPE12013'] #If empty than all animals in folder will be processed
 # animal_ids          = ['LPE09665', 'LPE11495', 'LPE11998', 'LPE12013'] #If empty than all animals in folder will be processed
@@ -243,7 +244,8 @@ for animal_id in animal_ids: #for each animal
             for iplane,plane_folder in enumerate(plane_folders):
                 plane_folder        = plane_folders[iplane]
 
-                fig     = show_labeling_plane(iplane,plane_folder,saveoverlay=True,showcells=True,overlap_threshold=0.5,gcamp_proj='meanImg')
+                fig     = show_labeling_plane(iplane,plane_folder,saveoverlay=True,showcells=True,overlap_threshold=0.5,gcamp_proj=gcamp_proj)
+                my_savefig(fig,figdir,'ExamplePlane_%s_%s_Plane%d' % (animal_id,sessiondate,iplane))
         except:
             print('suite2p folders not found for %s %s' % (animal_id,sessiondate))
 
@@ -251,6 +253,7 @@ for animal_id in animal_ids: #for each animal
 animal_id           = 'LPE10883' #If empty than all animals in folder will be processed
 sessiondate         = '2024_01_26'
 iplane              = 0
+gcamp_proj          = 'max_proj'
 
 rawdatadir          = get_rawdata_drive([animal_id],protocols=['GR'])
 sesfolder           = os.path.join(rawdatadir,animal_id,sessiondate)
@@ -259,7 +262,7 @@ plane_folders       = natsorted([f.path for f in os.scandir(suite2p_folder) if f
 plane_folder        = plane_folders[iplane]
 
 fig                 = show_labeling_plane(iplane,plane_folder,saveoverlay=True,
-                                          showcells=True,overlap_threshold=0.5,gcamp_proj='max_proj')
+                                          showcells=True,overlap_threshold=0.5,gcamp_proj=gcamp_proj)
 
 my_savefig(fig,figdir,'ExamplePlane_%s_%s_Plane%d' % (animal_id,sessiondate,iplane))
 
@@ -275,7 +278,24 @@ plane_folders       = natsorted([f.path for f in os.scandir(suite2p_folder) if f
 plane_folder        = plane_folders[iplane]
 
 fig                 = show_labeling_plane(iplane,plane_folder,saveoverlay=True,
-                                          showcells=True,overlap_threshold=0.5,gcamp_proj='max_proj')
+                                          showcells=True,overlap_threshold=0.5,gcamp_proj=gcamp_proj)
+my_savefig(fig,figdir,'ExamplePlane_%s_%s_Plane%d' % (animal_id,sessiondate,iplane))
+
+#%% Show example plane AL for one animal
+animal_id           = 'LPE12223' #If empty than all animals in folder will be processed
+sessiondate         = '2024_06_10'
+sessiondate         = '2024_06_08'
+iplane              = 7
+# iplane              = 2
+
+rawdatadir          = get_rawdata_drive([animal_id],protocols=['GR'])
+sesfolder           = os.path.join(rawdatadir,animal_id,sessiondate)
+suite2p_folder      = os.path.join(sesfolder,"suite2p")
+plane_folders       = natsorted([f.path for f in os.scandir(suite2p_folder) if f.is_dir() and f.name[:5]=='plane'])
+plane_folder        = plane_folders[iplane]
+
+fig                 = show_labeling_plane(iplane,plane_folder,saveoverlay=True,
+                                          showcells=True,overlap_threshold=0.5,gcamp_proj=gcamp_proj)
 my_savefig(fig,figdir,'ExamplePlane_%s_%s_Plane%d' % (animal_id,sessiondate,iplane))
 
 #%% Show cropped inset of example V1:
@@ -293,8 +313,8 @@ iplane              = 2
 cornercoords        = [220,240]
 span                = 150
 
-# gcamp_proj          = 'max_proj'
-gcamp_proj          = 'meanImg'
+gcamp_proj          = 'max_proj'
+# gcamp_proj          = 'meanImg'
 
 croplims            = [[cornercoords[0],cornercoords[0]+span],[cornercoords[1],cornercoords[1]+span]]
 
@@ -317,8 +337,7 @@ axes[2].text(cornercoords[0]+span-barlength-30,cornercoords[1]+20,s='10 um',colo
              fontweight='bold',fontsize=6)
 my_savefig(fig,figdir,'Crop_%s_%s_Plane%d_%s' % (animal_id,sessiondate,iplane,gcamp_proj))
 
-#%% 
-# Show cropped inset of example PM: (same animal)
+#%% Show cropped inset of example PM: (same animal)
 # animal_id           = 'LPE12223' #If empty than all animals in folder will be processed
 # sessiondate         = '2024_06_11'
 iplane              = 5
@@ -353,14 +372,13 @@ axes[2].text(cornercoords[0]+span-barlength-30,cornercoords[1]+20,s='10 um',colo
              fontweight='bold',fontsize=6)
 my_savefig(fig,figdir,'Crop_%s_%s_Plane%d_%s' % (animal_id,sessiondate,iplane,gcamp_proj))
 
-#%% 
-# Show cropped inset of example AL: (same animal)
+#%% Show cropped inset of example AL: (same animal)
 animal_id           = 'LPE12223' #If empty than all animals in folder will be processed
-sessiondate         = '2024_06_10'
-iplane              = 6
-cornercoords        = [150,300]
-span                = 150
-cornercoords        = [0,0]
+sessiondate         = '2024_06_08'
+iplane              = 7
+# cornercoords        = [150,300]
+# span                = 150
+cornercoords        = [250,320]
 span                = 150
 
 croplims            = [[cornercoords[0],cornercoords[0]+span],[cornercoords[1],cornercoords[1]+span]]

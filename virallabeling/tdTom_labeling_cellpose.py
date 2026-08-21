@@ -304,7 +304,6 @@ def plotseq_labeling_plane(plane_folder,savedir,showcells=True,overlap_threshold
 
     return 
 
-
 def get_outlines(masks):
     """Get outlines of masks as a list to loop over for plotting.
 

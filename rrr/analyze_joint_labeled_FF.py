@@ -63,7 +63,7 @@ clrs_arealabelpairs = ['grey','grey','red']
 narealabelpairs = 3
 fig, axes = plt.subplots(1,1,figsize=(6*cm,5*cm))
 ax = axes
-ises = 8
+ises = 13
 handles = []
 for iapl,apl in enumerate(sourcearealabelpairs):
     ymeantoplot = np.nanmean(R2_ranks[iapl+1][ises],axis=(0,2,3))
@@ -84,22 +84,17 @@ clrs_arealabelpairs = ['grey','grey','red']
 
 nrankstoplot = 12
 xposrank = 10
-idxs = np.array([1,3])
 meanranks = np.nanmean(optim_rank,axis=(-1,-2))
 meanR2 = np.nanmean(R2_cv,axis=(-1,-2))
 
-fig, axes = plt.subplots(1,1,figsize=(5*cm,4.5*cm))
+fig, axes = plt.subplots(1,1,figsize=(4*cm,3.8*cm))
 ax = axes
 handles = []
-# ax.plot(np.nanmean(R2_ranks[idxs[0]],axis=(0,1,3,4)),label=arealabeled_to_figlabels(sourcearealabelpairs[idxs[0]-1]),
-#         color=clrs_arealabelpairs[idxs[0]-1],linewidth=2)
-# ax.plot(np.nanmean(R2_ranks[idxs[1]],axis=(0,1,3,4)),label=arealabeled_to_figlabels(sourcearealabelpairs[idxs[1]-1]),
-#         color=clrs_arealabelpairs[idxs[1]-1],linewidth=2)
-ydata = np.nanmean(R2_ranks[idxs[0]],axis=(3,4))
+ydata = np.nanmean(R2_ranks[1],axis=(3,4))
 ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
 handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
                             color=clrs_arealabelpairs[idxs[0]-1],alpha=0.3))
-ydata = np.nanmean(R2_ranks[idxs[1]],axis=(3,4))
+ydata = np.nanmean(R2_ranks[3],axis=(3,4))
 ydata = np.transpose(ydata,(2,0,1)).reshape(params['nranks'],-1)
 handles.append(shaded_error(np.arange(params['nranks']),ydata.T,ax=ax,error='sem',
                             color=clrs_arealabelpairs[idxs[1]-1],alpha=0.3))
@@ -108,22 +103,24 @@ for idx in idxs:
 
 leg = ax.legend(handles,arealabeled_to_figlabels(sourcearealabelpairs[idxs-1]),frameon=False)
 my_legend_strip(ax)
-ax.set_xlabel('Rank')
-ax.set_ylabel('Cross-validated R2')
+ax.set_xlabel('rank')
+ax.set_ylabel('performance (R2)')
 
-x = optim_rank[idxs[0],:]
-y = optim_rank[idxs[1],:]
+x = optim_rank[1,:]
+y = optim_rank[2,:]
 nas = np.logical_or(np.isnan(x), np.isnan(y))
-t,p = ttest_rel(x[~nas], y[~nas])
-print('Paired t-test (Rank): p=%.3f' % (p))
+# t,p = ttest_rel(x[~nas], y[~nas])
+t,p = stats.wilcoxon(x[~nas], y[~nas])
+print('Paired test (rank): p=%.3f' % (p))
 ax.plot(meanranks[idxs],np.repeat(np.nanmean(meanR2[idxs]),2)+0.007,linestyle='-',color='k',linewidth=2)
 ax.text(np.nanmean(meanranks),np.nanmean(meanR2[idxs])+0.009,'%s' % get_sig_asterisks(p,return_ns=True),ha='center',va='center',color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
 
-x = R2_cv[idxs[0],:]
-y = R2_cv[idxs[1],:]
+x = R2_cv[1,:]
+y = R2_cv[2,:]
 nas = np.logical_or(np.isnan(x), np.isnan(y))
-t,p = ttest_rel(x[~nas], y[~nas])
-print('Paired t-test (R2): p=%.3f' % (p))
+# t,p = ttest_rel(x[~nas], y[~nas])
+t,p = stats.wilcoxon(x[~nas], y[~nas])
+print('Paired test (perf): p=%.3f' % (p))
 ax.plot([xposrank,xposrank],meanR2[idxs],linestyle='-',color='k',linewidth=2)
 ax.text(xposrank+0.5,np.nanmean(meanR2[idxs])+0.005,'%s' % get_sig_asterisks(p,return_ns=True),ha='center',va='center',color='k') #ax.text(0.2,0.1,'p<0.05',transform=ax.transAxes,ha='center',va='center',fontsize=10,color='red')
 
@@ -133,6 +130,26 @@ ax.set_xlim([0,nrankstoplot])
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 # my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_%dsessions' % (version,params['nSessions']))
+
+#%%
+idxs = np.array([1,3])
+# perf_ratio = (np.nanmean(R2_cv,axis=2)[1].flatten() / np.nanmean(R2_cv,axis=2)[0].flatten())
+# perf_ratio = (np.nanmean(R2_cv,axis=1)[1].flatten() / np.nanmean(R2_cv,axis=1)[0].flatten())
+perf_ratio = (R2_cv[idxs[0]].flatten() / R2_cv[idxs[1]].flatten())
+
+fig,axes = plt.subplots(1,1,figsize=(4*cm,3.9*cm))
+ax = axes
+ax.hist(perf_ratio,bins=np.arange(0.5,1.8,0.1),color='red',alpha=0.6)
+ylim = my_ceil(ax.get_ylim()[1],-1)
+ax.plot(np.nanmean(perf_ratio),ylim,'v',color='red')
+ax.set_xlabel('performance ratio')
+ax.set_ylabel('# datasets')
+ax.axvline(1,linestyle='--',linewidth=1,color='black')
+sns.despine(fig,top=True,right=True,offset=2)
+# my_savefig(fig,figdir,'perf_ratio_hist_%s' % params['direction'])
+
+t,p = stats.wilcoxon(perf_ratio[~np.isnan(perf_ratio)]-1)
+print('p=%.3e, wilcoxon test' % p)
 
 #%% Show figure for each of the arealabelpairs and each of the dataversions
 #Reshape stim x sessions:
