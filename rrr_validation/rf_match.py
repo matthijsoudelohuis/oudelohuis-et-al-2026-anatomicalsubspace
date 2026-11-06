@@ -79,7 +79,6 @@ def compute_pairwise_delta_rf(sessions,rf_type='F'):
 #%%
 params['rf_field'] = 'Fneu'
 # params['rf_field'] = 'Fsmooth'
-# params['rf_field'] = 'F'
 params['minrfR2']     = 0.2 #minimum R2 of receptive field fit to be included in analysis
 
 #%% Get delta receptive fields between neurons
@@ -137,8 +136,7 @@ ax.set_xticks([1,2],['V1$_{ND}$-PM$_{ND}$','V1$_{PM}$-PM$_{V1}$'])
 add_paired_ttest_results(ax,deltaRF[:,0],deltaRF[:,1],pos=[0.5,0.9],fontsize=8,color='k')
 print('t=%1.3f, p=%1.2f' % stats.ttest_rel(deltaRF[:,0],deltaRF[:,1]))
 sns.despine(fig=fig,top=True,right=True,offset=2)
-my_savefig(fig,figdir,'deltaRF_%s_%s_%dsessions' % (params['rf_field'],'nearby' if filter_nearby else '',nSessions))
-
+# my_savefig(fig,figdir,'deltaRF_%s_%s_%dsessions' % (params['rf_field'],'nearby' if filter_nearby else '',nSessions))
 
 #%% Wrapper function to load the tensor data, 
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'])
@@ -261,6 +259,9 @@ for ises,ses in enumerate(sessions):
 #%%
 print('Fraction of array filled with data: %.2f' % (np.sum(~np.isnan(R2_cv)) / R2_cv.size))
 
+print('n=%d datasets' % np.sum(np.any(~np.isnan(R2_cv),axis=(2,3)).flatten()))
+print('from N=%d mice' % (len(np.unique(sessiondata['animal_id'][np.any(~np.isnan(R2_cv),axis=(0,1,2,3))]))))
+
 #%% Plot the results: 
 fig,axes = plt.subplots(1,narealabelpairs,figsize=(5*cm,6*cm),sharey=True,sharex=True)
 if narealabelpairs == 1:
@@ -361,175 +362,179 @@ ax.set_xticks(range(narealabelpairs))
 ax.set_xticklabels(arealabelpairs,rotation=45,ha='right',fontsize=8)
 # my_savefig(fig,figdir,'R2_Ratio_MatchMismatch_RF_%dsessions' % (nSessions),formats = ['png'])
 
-#%% 
-narealabelpairs     = len(sourcearealabelpairs)
 
-Nsub                = 25
-nranks              = 20 #number of ranks of RRR to be evaluated
-nmodelfits          = 100
 
-params['dim_method'] = 'pca_shuffle'
-params['nStim']     = 16
+#Deprecated code for RRR analysis of matched and mismatched receptive fields across areas, 
+# using a different approach with subsampling of neurons.
+# #%% 
+# narealabelpairs     = len(sourcearealabelpairs)
 
-idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
-ntimebins           = len(idx_resp)
+# Nsub                = 25
+# nranks              = 20 #number of ranks of RRR to be evaluated
+# nmodelfits          = 100
 
-R2_cv               = np.full((narealabelpairs+1,nSessions,params['nStim']),np.nan) #dim1: 3 = allneurons, V1unl, V1lab separately
-optim_rank          = np.full((narealabelpairs+1,nSessions,params['nStim']),np.nan)
-R2_ranks            = np.full((narealabelpairs+1,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
-R2_ranks_neurons    = np.full((narealabelpairs+1,Nsub*narealabelpairs,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
-source_dim          = np.full((narealabelpairs+1,nSessions,params['nStim'],nmodelfits),np.nan)
-R2_sourcealigned    = np.full((narealabelpairs+1,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
-frac_pos_weight_out = np.full((nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
-frac_pos_weight_in  = np.full((narealabelpairs+1,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
-weights_in          = np.full((narealabelpairs+1,Nsub,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
+# params['dim_method'] = 'pca_shuffle'
+# params['nStim']     = 16
 
-for ises,ses in enumerate(sessions):
-    if params['filter_nearby']:
-        idx_nearby  = filter_nearlabeled(ses,radius=params['radius'])
-    else:
-        idx_nearby = np.ones(len(ses.celldata),dtype=bool)
+# idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
+# ntimebins           = len(idx_resp)
 
-    idx_areax1      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpairs[0],
-                                ses.celldata['noise_level']<params['maxnoiselevel'],
-                                idx_nearby),axis=0))[0]
-    idx_areax2      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpairs[1],
-                                ses.celldata['noise_level']<params['maxnoiselevel'],
-                                idx_nearby),axis=0))[0]
-    idx_areax3      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpairs[2],
-                                ses.celldata['noise_level']<params['maxnoiselevel'],
-                                idx_nearby),axis=0))[0]
-    idx_areay       = np.where(np.all((ses.celldata['arealabel']==targetarealabelpair,
-                                            ses.celldata['noise_level']<params['maxnoiselevel'],
-                                            idx_nearby
-                                            ),axis=0))[0]
+# R2_cv               = np.full((narealabelpairs+1,nSessions,params['nStim']),np.nan) #dim1: 3 = allneurons, V1unl, V1lab separately
+# optim_rank          = np.full((narealabelpairs+1,nSessions,params['nStim']),np.nan)
+# R2_ranks            = np.full((narealabelpairs+1,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
+# R2_ranks_neurons    = np.full((narealabelpairs+1,Nsub*narealabelpairs,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
+# source_dim          = np.full((narealabelpairs+1,nSessions,params['nStim'],nmodelfits),np.nan)
+# R2_sourcealigned    = np.full((narealabelpairs+1,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
+# frac_pos_weight_out = np.full((nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
+# frac_pos_weight_in  = np.full((narealabelpairs+1,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
+# weights_in          = np.full((narealabelpairs+1,Nsub,nSessions,params['nStim'],nranks,nmodelfits,params['kfold']),np.nan)
 
-    if len(idx_areax1)<Nsub*2 or len(idx_areax2)<Nsub*2 or len(idx_areax3)<Nsub or len(idx_areay)<narealabelpairs*Nsub: #skip exec if not enough neurons in one of the populations
-        continue
+# for ises,ses in enumerate(sessions):
+#     if params['filter_nearby']:
+#         idx_nearby  = filter_nearlabeled(ses,radius=params['radius'])
+#     else:
+#         idx_nearby = np.ones(len(ses.celldata),dtype=bool)
 
-    for imf in tqdm(range(nmodelfits),total=nmodelfits,desc='Fitting RRR model for session %d/%d' % (ises+1,nSessions)):
-        idx_areax1_sub       = np.random.choice(idx_areax1,Nsub,replace=False)
-        idx_areax2_sub       = np.random.choice(np.setdiff1d(idx_areax2,idx_areax1_sub),Nsub,replace=False)
-        idx_areax3_sub       = np.random.choice(idx_areax3,Nsub,replace=False)
-        idx_areay_sub        = np.random.choice(idx_areay,Nsub*narealabelpairs,replace=False)
+#     idx_areax1      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpairs[0],
+#                                 ses.celldata['noise_level']<params['maxnoiselevel'],
+#                                 idx_nearby),axis=0))[0]
+#     idx_areax2      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpairs[1],
+#                                 ses.celldata['noise_level']<params['maxnoiselevel'],
+#                                 idx_nearby),axis=0))[0]
+#     idx_areax3      = np.where(np.all((ses.celldata['arealabel']==sourcearealabelpairs[2],
+#                                 ses.celldata['noise_level']<params['maxnoiselevel'],
+#                                 idx_nearby),axis=0))[0]
+#     idx_areay       = np.where(np.all((ses.celldata['arealabel']==targetarealabelpair,
+#                                             ses.celldata['noise_level']<params['maxnoiselevel'],
+#                                             idx_nearby
+#                                             ),axis=0))[0]
 
-        for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
-            idx_T               = ses.trialdata['stimCond']==stim
+#     if len(idx_areax1)<Nsub*2 or len(idx_areax2)<Nsub*2 or len(idx_areax3)<Nsub or len(idx_areay)<narealabelpairs*Nsub: #skip exec if not enough neurons in one of the populations
+#         continue
+
+#     for imf in tqdm(range(nmodelfits),total=nmodelfits,desc='Fitting RRR model for session %d/%d' % (ises+1,nSessions)):
+#         idx_areax1_sub       = np.random.choice(idx_areax1,Nsub,replace=False)
+#         idx_areax2_sub       = np.random.choice(np.setdiff1d(idx_areax2,idx_areax1_sub),Nsub,replace=False)
+#         idx_areax3_sub       = np.random.choice(idx_areax3,Nsub,replace=False)
+#         idx_areay_sub        = np.random.choice(idx_areay,Nsub*narealabelpairs,replace=False)
+
+#         for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
+#             idx_T               = ses.trialdata['stimCond']==stim
        
-            X1                  = sessions[ises].tensor[np.ix_(idx_areax1_sub,idx_T,idx_resp)]
-            X2                  = sessions[ises].tensor[np.ix_(idx_areax2_sub,idx_T,idx_resp)]
-            X3                  = sessions[ises].tensor[np.ix_(idx_areax3_sub,idx_T,idx_resp)]
-            Y                   = sessions[ises].tensor[np.ix_(idx_areay_sub,idx_T,idx_resp)]
+#             X1                  = sessions[ises].tensor[np.ix_(idx_areax1_sub,idx_T,idx_resp)]
+#             X2                  = sessions[ises].tensor[np.ix_(idx_areax2_sub,idx_T,idx_resp)]
+#             X3                  = sessions[ises].tensor[np.ix_(idx_areax3_sub,idx_T,idx_resp)]
+#             Y                   = sessions[ises].tensor[np.ix_(idx_areay_sub,idx_T,idx_resp)]
 
-            # reshape to neurons x time points
-            X1                  = X1.reshape(len(idx_areax1_sub),-1).T
-            X2                  = X2.reshape(len(idx_areax2_sub),-1).T
-            X3                  = X3.reshape(len(idx_areax3_sub),-1).T
-            Y                   = Y.reshape(len(idx_areay_sub),-1).T
+#             # reshape to neurons x time points
+#             X1                  = X1.reshape(len(idx_areax1_sub),-1).T
+#             X2                  = X2.reshape(len(idx_areax2_sub),-1).T
+#             X3                  = X3.reshape(len(idx_areax3_sub),-1).T
+#             Y                   = Y.reshape(len(idx_areay_sub),-1).T
 
-            X1                  = zscore(X1,axis=0) #zscore the activity per neuron
-            X2                  = zscore(X2,axis=0)
-            X3                  = zscore(X3,axis=0)
-            Y                   = zscore(Y,axis=0)
+#             X1                  = zscore(X1,axis=0) #zscore the activity per neuron
+#             X2                  = zscore(X2,axis=0)
+#             X3                  = zscore(X3,axis=0)
+#             Y                   = zscore(Y,axis=0)
 
-            X                   = np.concatenate((X1,X2,X3),axis=1) #use this as source to predict the activity in Y with RRR
+#             X                   = np.concatenate((X1,X2,X3),axis=1) #use this as source to predict the activity in Y with RRR
 
-            for i,data in enumerate([X,X1,X2,X3]):
-                source_dim[i,ises,istim,imf] = estimate_dimensionality(data,method=params['dim_method'])
+#             for i,data in enumerate([X,X1,X2,X3]):
+#                 source_dim[i,ises,istim,imf] = estimate_dimensionality(data,method=params['dim_method'])
 
-            # OUTPUT: MAX PERF, OPTIM RANK, PERF FOR EACH RANK ACROSS FOLDS AND MODELFITS    
-            R2_kfold    = np.zeros((params['kfold']))
-            kf          = KFold(n_splits=params['kfold'],shuffle=True)
-            for ikf, (idx_train, idx_test) in enumerate(kf.split(X)):
-                X_train, X_test     = X[idx_train], X[idx_test]
-                Y_train, Y_test     = Y[idx_train], Y[idx_test]
+#             # OUTPUT: MAX PERF, OPTIM RANK, PERF FOR EACH RANK ACROSS FOLDS AND MODELFITS    
+#             R2_kfold    = np.zeros((params['kfold']))
+#             kf          = KFold(n_splits=params['kfold'],shuffle=True)
+#             for ikf, (idx_train, idx_test) in enumerate(kf.split(X)):
+#                 X_train, X_test     = X[idx_train], X[idx_test]
+#                 Y_train, Y_test     = Y[idx_train], Y[idx_test]
 
-                #RRR X to Y
-                B_hat_train         = LM(Y_train,X_train, lam=params['lam'])
-                Y_hat_train         = X_train @ B_hat_train
+#                 #RRR X to Y
+#                 B_hat_train         = LM(Y_train,X_train, lam=params['lam'])
+#                 Y_hat_train         = X_train @ B_hat_train
 
-                # decomposing and low rank approximation of Y_hat
-                U, s, V = svds(Y_hat_train,k=nranks,which='LM')
-                U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
+#                 # decomposing and low rank approximation of Y_hat
+#                 U, s, V = svds(Y_hat_train,k=nranks,which='LM')
+#                 U, s, V = U[:, ::-1], s[::-1], V[::-1, :]
 
-                for r in range(nranks):
-                    B_rrr           = B_hat_train @ V[:r,:].T @ V[:r,:] #project beta coeff into low rank subspace
-                    Y_hat_test_rr   = X_test @ B_rrr
+#                 for r in range(nranks):
+#                     B_rrr           = B_hat_train @ V[:r,:].T @ V[:r,:] #project beta coeff into low rank subspace
+#                     Y_hat_test_rr   = X_test @ B_rrr
 
-                    R2_ranks[0,ises,istim,r,imf,ikf] = EV(Y_test,Y_hat_test_rr)
-                    R2_ranks_neurons[0,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_test_rr, multioutput='raw_values')
+#                     R2_ranks[0,ises,istim,r,imf,ikf] = EV(Y_test,Y_hat_test_rr)
+#                     R2_ranks_neurons[0,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_test_rr, multioutput='raw_values')
                     
-                    X_test_1 = copy.deepcopy(X_test)
-                    X_test_1[:,Nsub:] = 0
-                    Y_hat_test_rr   = X_test_1 @ B_rrr
+#                     X_test_1 = copy.deepcopy(X_test)
+#                     X_test_1[:,Nsub:] = 0
+#                     Y_hat_test_rr   = X_test_1 @ B_rrr
 
-                    R2_ranks[1,ises,istim,r,imf,ikf] = EV(Y_test,Y_hat_test_rr)
-                    R2_ranks_neurons[1,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_test_rr, multioutput='raw_values')
+#                     R2_ranks[1,ises,istim,r,imf,ikf] = EV(Y_test,Y_hat_test_rr)
+#                     R2_ranks_neurons[1,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_test_rr, multioutput='raw_values')
 
-                    X_test_2 = copy.deepcopy(X_test)
-                    X_test_2[:,:Nsub] = 0
-                    X_test_2[:,2*Nsub:] = 0
-                    Y_hat_test_rr   = X_test_2 @ B_rrr
+#                     X_test_2 = copy.deepcopy(X_test)
+#                     X_test_2[:,:Nsub] = 0
+#                     X_test_2[:,2*Nsub:] = 0
+#                     Y_hat_test_rr   = X_test_2 @ B_rrr
 
-                    R2_ranks[2,ises,istim,r,imf,ikf] = EV(Y_test,Y_hat_test_rr)
-                    R2_ranks_neurons[2,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_test_rr, multioutput='raw_values')
+#                     R2_ranks[2,ises,istim,r,imf,ikf] = EV(Y_test,Y_hat_test_rr)
+#                     R2_ranks_neurons[2,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_test_rr, multioutput='raw_values')
 
-                    X_test_3 = copy.deepcopy(X_test)
-                    X_test_3[:,:2*Nsub] = 0
-                    Y_hat_test_rr   = X_test_3 @ B_rrr
+#                     X_test_3 = copy.deepcopy(X_test)
+#                     X_test_3[:,:2*Nsub] = 0
+#                     Y_hat_test_rr   = X_test_3 @ B_rrr
 
-                    R2_ranks[3,ises,istim,r,imf,ikf] = EV(Y_test,Y_hat_test_rr)
-                    R2_ranks_neurons[3,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_test_rr, multioutput='raw_values')
+#                     R2_ranks[3,ises,istim,r,imf,ikf] = EV(Y_test,Y_hat_test_rr)
+#                     R2_ranks_neurons[3,:,ises,istim,r,imf,ikf] = r2_score(Y_test,Y_hat_test_rr, multioutput='raw_values')
 
-                for i,data in enumerate([X_test,X_test_1,X_test_2,X_test_3]):
-                    # How much of the variance in the source area is aligned with the predictive subspace:
-                    R2_sourcealigned[i,ises,istim,:,imf,ikf] = compute_rrr_sourcevariance(data, B_hat_train,nranks=20)
+#                 for i,data in enumerate([X_test,X_test_1,X_test_2,X_test_3]):
+#                     # How much of the variance in the source area is aligned with the predictive subspace:
+#                     R2_sourcealigned[i,ises,istim,:,imf,ikf] = compute_rrr_sourcevariance(data, B_hat_train,nranks=20)
 
-                #Fraction of weights that is projecting positively onto firing rate:
-                for r in range(nranks): #for each rank
-                    #find correct sign of weight by sign of inner product mean firing rate and left singular vector
-                    frac_pos_weight_out[ises,istim,r,imf,ikf] = np.sum(np.sign(V[r,:])==np.sign(U[:,r].T @ np.nanmean(Y_train, axis=1))) / np.shape(V)[1]
+#                 #Fraction of weights that is projecting positively onto firing rate:
+#                 for r in range(nranks): #for each rank
+#                     #find correct sign of weight by sign of inner product mean firing rate and left singular vector
+#                     frac_pos_weight_out[ises,istim,r,imf,ikf] = np.sum(np.sign(V[r,:])==np.sign(U[:,r].T @ np.nanmean(Y_train, axis=1))) / np.shape(V)[1]
                     
-                # Predictive source directions
-                W = B_hat_train @ V.T  # (N x k)
-                # Mean source firing rate across timepoints
-                mu_X = X_train.mean(axis=1)
-                for r in range(nranks): #for each rank compute weights
-                    # Align sign to mean source firing
-                    sign = np.sign(np.dot(X_train @ W[:, r], mu_X))
-                    # weights_in[:,ises,istim,r,imf,ikf] = sign * W[:, r]
+#                 # Predictive source directions
+#                 W = B_hat_train @ V.T  # (N x k)
+#                 # Mean source firing rate across timepoints
+#                 mu_X = X_train.mean(axis=1)
+#                 for r in range(nranks): #for each rank compute weights
+#                     # Align sign to mean source firing
+#                     sign = np.sign(np.dot(X_train @ W[:, r], mu_X))
+#                     # weights_in[:,ises,istim,r,imf,ikf] = sign * W[:, r]
 
-                    idx_N = np.arange(Nsub)
-                    weights_in[0,:,ises,istim,r,imf,ikf] = W[np.ix_(idx_N,[r])].flatten()*sign
-                    idx_N = np.arange(Nsub,2*Nsub)
-                    weights_in[1,:,ises,istim,r,imf,ikf] = W[np.ix_(idx_N,[r])].flatten()*sign
-                    idx_N = np.arange(Nsub*2,Nsub*3)
-                    weights_in[2,:,ises,istim,r,imf,ikf] = W[np.ix_(idx_N,[r])].flatten()*sign
+#                     idx_N = np.arange(Nsub)
+#                     weights_in[0,:,ises,istim,r,imf,ikf] = W[np.ix_(idx_N,[r])].flatten()*sign
+#                     idx_N = np.arange(Nsub,2*Nsub)
+#                     weights_in[1,:,ises,istim,r,imf,ikf] = W[np.ix_(idx_N,[r])].flatten()*sign
+#                     idx_N = np.arange(Nsub*2,Nsub*3)
+#                     weights_in[2,:,ises,istim,r,imf,ikf] = W[np.ix_(idx_N,[r])].flatten()*sign
 
-                    frac_pos_weight_in[0,ises,istim,r,imf,ikf] = np.sum(np.sign(W[:, r])==sign) / np.shape(W)[0]
-                    idx_N = np.arange(Nsub)
-                    frac_pos_weight_in[1,ises,istim,r,imf,ikf] = np.sum(np.sign(W[np.ix_(idx_N,[r])])==sign) / Nsub
-                    idx_N = np.arange(Nsub,2*Nsub)
-                    frac_pos_weight_in[2,ises,istim,r,imf,ikf] = np.sum(np.sign(W[np.ix_(idx_N,[r])])==sign) / Nsub
-                    idx_N = np.arange(Nsub*2,Nsub*3)
-                    frac_pos_weight_in[3,ises,istim,r,imf,ikf] = np.sum(np.sign(W[np.ix_(idx_N,[r])])==sign) / Nsub
+#                     frac_pos_weight_in[0,ises,istim,r,imf,ikf] = np.sum(np.sign(W[:, r])==sign) / np.shape(W)[0]
+#                     idx_N = np.arange(Nsub)
+#                     frac_pos_weight_in[1,ises,istim,r,imf,ikf] = np.sum(np.sign(W[np.ix_(idx_N,[r])])==sign) / Nsub
+#                     idx_N = np.arange(Nsub,2*Nsub)
+#                     frac_pos_weight_in[2,ises,istim,r,imf,ikf] = np.sum(np.sign(W[np.ix_(idx_N,[r])])==sign) / Nsub
+#                     idx_N = np.arange(Nsub*2,Nsub*3)
+#                     frac_pos_weight_in[3,ises,istim,r,imf,ikf] = np.sum(np.sign(W[np.ix_(idx_N,[r])])==sign) / Nsub
 
-#%% Find best rank and cvR2 at this rank:
-fixed_rank = None
-for ises in range(nSessions):
-    if np.any(~np.isnan(R2_ranks[0][ises])):
-        for istim in range(params['nStim']):
-            if fixed_rank is not None:
-                rank = fixed_rank
-                R2_cv[0,ises,istim] = np.nanmean(R2_ranks[0,ises,istim,rank,:,:])
-                R2_cv[1,ises,istim] = np.nanmean(R2_ranks[1,ises,istim,rank,:,:])
-                R2_cv[2,ises,istim] = np.nanmean(R2_ranks[2,ises,istim,rank,:,:])
-                R2_cv[3,ises,istim] = np.nanmean(R2_ranks[3,ises,istim,rank,:,:])
-            else:
-                if not np.isnan(R2_ranks[0][ises][istim]).all():
-                    R2_cv[0,ises,istim],optim_rank[0,ises,istim] = rank_from_R2(R2_ranks[0,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-                    R2_cv[1,ises,istim],optim_rank[1,ises,istim] = rank_from_R2(R2_ranks[1,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-                    R2_cv[2,ises,istim],optim_rank[2,ises,istim] = rank_from_R2(R2_ranks[2,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-                    R2_cv[3,ises,istim],optim_rank[3,ises,istim] = rank_from_R2(R2_ranks[3,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
+# #%% Find best rank and cvR2 at this rank:
+# fixed_rank = None
+# for ises in range(nSessions):
+#     if np.any(~np.isnan(R2_ranks[0][ises])):
+#         for istim in range(params['nStim']):
+#             if fixed_rank is not None:
+#                 rank = fixed_rank
+#                 R2_cv[0,ises,istim] = np.nanmean(R2_ranks[0,ises,istim,rank,:,:])
+#                 R2_cv[1,ises,istim] = np.nanmean(R2_ranks[1,ises,istim,rank,:,:])
+#                 R2_cv[2,ises,istim] = np.nanmean(R2_ranks[2,ises,istim,rank,:,:])
+#                 R2_cv[3,ises,istim] = np.nanmean(R2_ranks[3,ises,istim,rank,:,:])
+#             else:
+#                 if not np.isnan(R2_ranks[0][ises][istim]).all():
+#                     R2_cv[0,ises,istim],optim_rank[0,ises,istim] = rank_from_R2(R2_ranks[0,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
+#                     R2_cv[1,ises,istim],optim_rank[1,ises,istim] = rank_from_R2(R2_ranks[1,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
+#                     R2_cv[2,ises,istim],optim_rank[2,ises,istim] = rank_from_R2(R2_ranks[2,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
+#                     R2_cv[3,ises,istim],optim_rank[3,ises,istim] = rank_from_R2(R2_ranks[3,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
 
-#%%
+# #%%

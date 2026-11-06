@@ -101,6 +101,7 @@ plt.tight_layout()
 # my_savefig(fig,figdir,'Scatter_Overlap_Twoways_%dcells_%dsessions' % (len(celldata),nsessions))
 
 
+
 #%%
 sesdata = pd.DataFrame()
 sesdata['ncells']         = celldata.groupby(["session_id","arealabel"])['arealabel'].count()
@@ -188,159 +189,6 @@ my_savefig(fig,figdir,'Quality_Metrics_%dnearbycells_%dsessions' % (len(celldata
 # The distribution of preferred stimulus directions was similar for 
 # labeled and unlabeled neurons 
 # in V1 and PM (Kolmogorov-Smirnov test. 
-
-
-
-
-
-#%% 
-# DEPRECATED:~~~~ 
-
-# #%% Get the colors and names of the areas:
-# areas = celldata['roi_name'].unique()
-# areas = sort_areas(areas)
-# clrs_areas = get_clr_areas(areas)
-
-# #%% Get information about labeled cells per session per area: 
-# sesdata = pd.DataFrame()
-# sesdata['roi_name']         = celldata.groupby(["session_id","roi_name"])['roi_name'].unique()
-# sesdata['recombinase']      = celldata[celldata['recombinase'].isin(['cre','flp'])].groupby(["session_id","roi_name"])['recombinase'].unique()
-# sesdata = sesdata.applymap(lambda x: x[0],na_action='ignore')
-# sesdata['ncells']           = celldata.groupby(["session_id","roi_name"])['nredcells'].count()
-# sesdata['nredcells']        = celldata.groupby(["session_id","roi_name"])['nredcells'].unique().apply(sum)
-# sesdata['nlabeled']         = celldata.groupby(["session_id","roi_name"])['redcell'].sum()
-# sesdata['frac_responsive']  = sesdata['nlabeled'] / sesdata['nredcells'] 
-# sesdata['frac_labeled']     = sesdata['nlabeled'] / sesdata['ncells'] 
-
-# #%% Bar plot of number of labeled cells per area:
-# fig, ax = plt.subplots(figsize=(3,2.5))
-# sns.barplot(data=sesdata,x='roi_name',y='nredcells',palette=clrs_areas,ax=ax,errorbar='se',order=areas)
-# sns.stripplot(data=sesdata,x='roi_name',y='nredcells',color='k',ax=ax,size=3,alpha=0.5,jitter=0.2,order=areas)
-# plt.title('# cellpose cells per session')
-# plt.ylabel('')
-# plt.xlabel(r'Area')
-# plt.tight_layout()
-# my_savefig(fig,figdir,'nCellpose_area_%dsessions' % nsessions)
-
-# #%% Bar plot of number of labeled cells per area:
-# fig, ax = plt.subplots(figsize=(3,2.5))
-# sns.barplot(data=sesdata,x='roi_name',y='ncells',palette=clrs_areas,ax=ax,errorbar='se',order=areas)
-# sns.stripplot(data=sesdata,x='roi_name',y='ncells',color='k',ax=ax,size=3,alpha=0.5,jitter=0.2,order=areas)
-# plt.title('# suite2p cells per session')
-# plt.ylabel('')
-# plt.xlabel(r'Area')
-# plt.tight_layout()
-# my_savefig(fig,figdir,'nSuite2p_area_%dsessions' % nsessions)
-
-# #%% Bar plot of number of labeled cells per area:
-# fig, ax = plt.subplots(figsize=(3,2.5))
-# sns.barplot(data=sesdata,x='roi_name',y='frac_responsive',palette=clrs_areas,ax=ax,errorbar='se',order=areas)
-# sns.stripplot(data=sesdata,x='roi_name',y='frac_responsive',color='k',ax=ax,size=3,alpha=0.5,jitter=0.2,order=areas)
-# plt.title('# Frac. responsive cells per session')
-# plt.ylabel('')
-# plt.xlabel(r'Area')
-# plt.tight_layout()
-# my_savefig(fig,figdir,'Frac_responsive_area_%dsessions' % nsessions)
-
-# #%% Bar plot of number of labeled cells per area:
-# fig, ax = plt.subplots(figsize=(4*cm,3*cm))
-# sns.barplot(data=sesdata,x='roi_name',y='frac_labeled',palette=clrs_areas,ax=ax,errorbar='se',order=areas)
-# sns.stripplot(data=sesdata,x='roi_name',y='frac_labeled',color='k',ax=ax,size=3,alpha=0.5,jitter=0.2,order=areas)
-# plt.title('# Frac. labeled cells per session')
-# plt.ylabel('')
-# plt.xlabel(r'Area')
-# plt.tight_layout()
-# sns.despine(fig=fig,trim=True)
-# my_savefig(fig,figdir,'Frac_labeled_area_%dsessions' % nsessions)
-
-# #%% Bar plot of number of labeled cells per area:
-# fig, ax = plt.subplots(figsize=(4*cm,3.5*cm))
-# sns.barplot(data=sesdata,x='roi_name',y='nlabeled',palette=clrs_areas,ax=ax,errorbar='se',order=areas)
-# sns.stripplot(data=sesdata,x='roi_name',y='nlabeled',color='k',ax=ax,size=3,alpha=0.5,jitter=0.2,order=areas)
-# plt.title('# Labeled cells per session')
-# plt.ylabel('# labeled cells')
-# plt.xlabel(r'area')
-# plt.tight_layout()
-# sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
-# my_savefig(fig,figdir,'nLabeled_area_%dsessions' % nsessions)
-
-
-# #%% ### Get the number of labeled cells, cre / flp, depth, area etc. for each plane :
-# planedata = pd.DataFrame()
-# planedata['depth']          = celldata.groupby(["session_id","plane_idx"])['depth'].unique()
-# planedata['roi_name']       = celldata.groupby(["session_id","plane_idx"])['roi_name'].unique()
-# planedata['recombinase']    = celldata[celldata['recombinase'].isin(['cre','flp'])].groupby(["session_id","plane_idx"])['recombinase'].unique()
-# planedata = planedata.applymap(lambda x: x[0],na_action='ignore')
-# planedata['ncells']         = celldata.groupby(["session_id","plane_idx"])['depth'].count()
-# planedata['nlabeled']       = celldata.groupby(["session_id","plane_idx"])['redcell'].sum()
-# planedata['frac_labeled']   = celldata.groupby(["session_id","plane_idx"])['redcell'].sum() / celldata.groupby(["session_id","plane_idx"])['redcell'].count()
-# planedata['nredcells']      = celldata.groupby(["session_id","plane_idx"])['nredcells'].mean().astype(int)
-# planedata['frac_responsive']  = celldata.groupby(["session_id","plane_idx"])['redcell'].sum() / planedata['nredcells'] 
-
-# #%% Bar plot of number of labeled cells per area:
-# fig, ax = plt.subplots(figsize=(3,2.5))
-# sns.barplot(data=planedata,x='roi_name',y='frac_labeled',palette=clrs_areas,ax=ax,errorbar='se',order=areas)
-# sns.stripplot(data=planedata,x='roi_name',y='frac_labeled',color='k',ax=ax,size=3,alpha=0.5,jitter=0.2,order=areas)
-# plt.ylabel('Fraction labeled in plane')
-# plt.xlabel(r'Area')
-# plt.tight_layout()
-# # plt.savefig(os.path.join(savedir,'Frac_labeled_area_%dplanes' % len(planedata) + '.png'), format = 'png',bbox_inches='tight')
-
-# #%% Bar plot of difference between cre and flp:
-# enzymes = ['cre','flp']
-# clrs_enzymes = get_clr_recombinase(enzymes)
-# enzymelabels = ['retroAAV-pgk-Cre + \n AAV5-CAG-Flex-tdTomato','retroAAV-EF1a-Flpo + \n AAV1-Ef1a-fDIO-tdTomato']
-
-# fig, ax = plt.subplots(figsize=(3,3))
-# sns.barplot(data=planedata,x='recombinase',y='frac_labeled',palette=clrs_enzymes,ax=ax,errorbar='se')
-# plt.ylabel('Frac. labeled\n (per plane)')
-# plt.xlabel(r'Recombinase')
-# ax.set_xticks([0,1])
-# ax.set_xticklabels(['\n\nCre','\n\nFlp'], fontsize=8)
-# ax.set_xticks([0.01,1.01],  minor=True)
-# ax.set_xticklabels(enzymelabels,fontsize=6, minor=True)
-
-# # ax.set_xticklabels(enzymelabels,fontsize=6)
-# plt.tight_layout()
-# # plt.savefig(os.path.join(savedir,'Frac_labeled_enzymes_%dplanes' % len(planedata) + '.png'), format = 'png',bbox_inches='tight')
-
-# #%% Scatter plot as a function of depth:
-# fig, ax = plt.subplots(figsize=(5,4))
-# sns.scatterplot(data=planedata,x='depth',y='frac_labeled',hue='roi_name',palette=clrs_areas,ax=ax,s=14,hue_order=areas)
-# plt.ylabel('Fraction labeled in plane')
-# plt.xlabel(r'Cortical depth ($\mu$m)')
-# plt.xlim([50,500])
-# plt.tight_layout()
-# sns.lineplot(x=planedata['depth'].round(-2),y=planedata['frac_labeled'],
-#              hue=planedata['roi_name'],palette=clrs_areas,ax=ax,hue_order=areas)
-# plt.legend(ax.get_legend_handles_labels()[0][:4],areas, loc='best',frameon=False)
-# plt.savefig(os.path.join(savedir,'Frac_labeled_depth_area_%dplanes' % len(planedata) + '.png'), format = 'png',bbox_inches='tight')
-
-# #%% Number of labeled cells as a function of depth:
-# fig, ax = plt.subplots(figsize=(5,4))
-# sns.scatterplot(data=planedata,x='depth',y='nlabeled',hue='roi_name',palette=clrs_areas,ax=ax,s=14,hue_order=areas)
-# plt.ylabel('Number labeled cells')
-# plt.xlabel(r'Cortical depth ($\mu$m)')
-# plt.xlim([50,500])
-# plt.tight_layout()
-# sns.lineplot(x=planedata['depth'].round(-2),y=planedata['nlabeled'],
-#              hue=planedata['roi_name'],palette=clrs_areas,ax=ax,hue_order=areas)
-# plt.legend(ax.get_legend_handles_labels()[0][:4],areas, loc='best',frameon=False)
-# plt.savefig(os.path.join(savedir,'NLabeled_depth_area_%dplanes' % len(planedata) + '.png'), format = 'png',bbox_inches='tight')
-
-# #%% Number of red cellpose cells as a function of depth (not per se suite2p calcium trace detected):
-# fig, ax = plt.subplots(figsize=(5,4))
-# sns.scatterplot(data=planedata,x='depth',y='nredcells',hue='roi_name',palette=clrs_areas,ax=ax,s=14,hue_order=areas)
-# plt.ylabel('Number labeled in plane')
-# plt.xlabel(r'Cortical depth ($\mu$m)')
-# plt.xlim([50,500])
-# plt.tight_layout()
-# sns.lineplot(x=planedata['depth'].round(-2),y=planedata['nredcells'],
-#              hue=planedata['roi_name'],palette=clrs_areas,ax=ax,hue_order=areas)
-# plt.legend(ax.get_legend_handles_labels()[0][:4],areas, loc='best')
-# plt.savefig(os.path.join(savedir,'Ncellpose_depth_area_%dplanes' % len(planedata) + '.png'), format = 'png',bbox_inches='tight')
-
-
 
 #%% Load all sessions from certain protocols: 
 # sessions,nSessions   = filter_sessions(protocols = ['SP','GR','IM','GN','RF'],filter_areas=['V1','PM']) 
@@ -438,27 +286,4 @@ plt.tight_layout()
 # plt.savefig(os.path.join(savedir,'CalciumTracesComparison','Resp_avgall_deconv' + '.png'), format = 'png')
 # plt.savefig(os.path.join(savedir,'CalciumTracesComparison','Resp_avgpref_deconv' + '.png'), format = 'png')
 
-# ###################### Noise level for labeled vs unlabeled cells:
-
-# ## plot precentage of labeled cells as a function of depth:
-# # sns.barplot(x='depth', y='redcell', data=celldata[celldata['roi_name'].isin(['V1','PM'])], estimator=lambda y: sum(y==1)*100.0/len(y))
-# sns.lineplot(data=celldata[celldata['roi_name'].isin(['V1','PM'])],x='depth', y='redcell', estimator=lambda y: sum(y==1)*100.0/len(y))
-# # sns.lineplot(data=celldata,x='depth', y='redcell', hue='roi_name',estimator=lambda y: sum(y==1)*100.0/len(y),palette='Accent')
-# plt.ylabel('% labeled cells')
-
-# #Plot fraction of labeled cells across areas of recordings: 
-# sns.barplot(x='roi_name', y='redcell', data=celldata, estimator=lambda x: sum(x==1)*100.0/len(x),palette='Accent')
-# plt.ylabel('% labeled cells')
-
-# ## plot number of cells per plane across depths:
-# sns.histplot(data=celldata, x='depth',hue='roi_name',palette='Accent')
-
-# ## plot quality of cells per plane across depths with skew:
-# # sns.lineplot(data=celldata, x="depth",y=celldata['skew'],estimator='mean')
-# sns.lineplot(x=np.round(celldata["depth"],-1),y=celldata['skew'],estimator='mean')
-
-# ## plot quality of cells per plane across depths with noise level:
-# # sns.lineplot(data=celldata, x="depth",y=celldata['noise_level'],estimator='mean')
-# sns.lineplot(x=np.round(celldata["depth"],-1),y=celldata['noise_level'],estimator='mean')
-# plt.ylim([0,0.3])
 

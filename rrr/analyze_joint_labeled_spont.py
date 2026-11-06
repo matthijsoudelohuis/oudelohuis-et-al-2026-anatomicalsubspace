@@ -200,6 +200,11 @@ sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
 # my_savefig(fig,figdir,'perf_ratio_labunl_spont_%dsessions' % params['nSessions'])
 
 
+#%% How many datasets?
+print('FF: n=%d datasets' % np.sum(np.any(~np.isnan(R2_cv_FF),axis=(0)).flatten()))
+print('FB: n=%d datasets' % np.sum(np.any(~np.isnan(R2_cv_FB),axis=(0)).flatten()))
+
+
 #%% Show the mean R2_cv across sessions:
 clrs_arealabelpairs = ['grey','grey','red']
 normalize = True

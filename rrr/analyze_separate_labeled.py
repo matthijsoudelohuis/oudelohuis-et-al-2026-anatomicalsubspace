@@ -36,9 +36,6 @@ filename = 'RRR_Separate_labeled_FF_AL_original_2026-05-22_14-30-47'
 exampleses = 4
 figdir = os.path.join(params['figdir'],'RRR','Labeling','AL')
 
-# version = 'FB_AL_original'
-# filename = 'RRR_Separate_labeled_FB_AL_original_2026-05-22_14-45-21'
-
 #%% Load the data:
 data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
 sourcearealabelpairs = data['sourcearealabelpairs']
@@ -96,32 +93,6 @@ optim_ranktoplot[:,~idx_ses] = np.nan
 
 #%% Plotting:
 clrs_arealabels = ['grey','red']
-fig,axes = plt.subplots(1,1,figsize=(3*cm,3.9*cm))
-ax = axes
-data = R2_cvtoplot
-
-for ialp,[ial0,ial1] in enumerate([[0,1]]):
-    xscatter = np.random.randn(nSessions)*0.1
-    ax.scatter(xscatter+ial0,data[ial0,:].flatten(),s=5,color=clrs_arealabels[ial0],marker='.')
-    ax.scatter(xscatter+ial1,data[ial1,:].flatten(),s=5,color=clrs_arealabels[ial1],marker='.')
-    ax.plot([xscatter+ial0,xscatter+ial1],[data[ial0,:],data[ial1,:]],color='k',marker='',markersize=0,linewidth=0.1)
-    ax.plot(ial0,np.nanmean(data[ial0,:]),color=clrs_arealabels[ial0],marker='o',markersize=5)
-    ax.plot(ial1,np.nanmean(data[ial1,:]),color=clrs_arealabels[ial1],marker='o',markersize=5)
-
-ax.set_ylim([0,my_ceil(ax.get_ylim()[1],2)])
-ax_nticks(ax,4)
-ax.set_ylabel('performance (R$^2$)')
-ax.set_xticks([0,1],[alx1,alx2])
-add_paired_ttest_results(ax,data[0,:],data[1,:],pos=[0.5,0.9])
-
-# nas = np.logical_or(np.isnan(data[0,:]), np.isnan(data[1,:]))
-# t,p = ttest_rel(data[0,:][~nas], data[1,:][~nas])
-
-# print('Paired t-test: t=%1.2f,p=%.3e' % (t,p))
-# sns.despine(fig,top=True,right=True,offset=2)
-# my_savefig(fig,figdir,'perf_V1PM_arealabeled_paired_%s' % params['direction'])
-
-#%%
 fig,axes = plt.subplots(1,1,figsize=(4*cm,3.9*cm))
 ax = axes
 ax.hist(R2_cv[0].flatten(),bins=np.arange(0,0.1,0.005),color='grey',alpha=0.6)
@@ -134,6 +105,8 @@ ax.set_ylabel('# datasets')
 # ax.axvline(1,linestyle='--',linewidth=1,color='black')
 sns.despine(fig,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'perf_hist_%s' % params['direction'])
+
+print('n=%d datasets' % np.sum(~np.isnan(R2_cv[0].flatten())))
 
 #%% 
 # perf_ratio = (np.nanmean(R2_cv,axis=2)[1].flatten() / np.nanmean(R2_cv,axis=2)[0].flatten())

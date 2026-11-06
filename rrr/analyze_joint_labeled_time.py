@@ -56,7 +56,7 @@ Nsub = params['Nsub']
 clrs_arealabelpairs = ['grey','grey','red']
 narealabelpairs = 3
 
-#%% Find best rank and cvR2 at this rank:
+#%% Find best rank and cvR2 at this timepoint for each session, subspace, and stimulus:
 fixed_rank = None
 for ises in tqdm(range(params['nSessions'])):
     for istim in range(params['nStim']):
@@ -119,6 +119,10 @@ for idirec,(direc,data,alps) in enumerate(zip(['FF','FB'],[R2_cv_FF,R2_cv_FB],[s
         ax.set_ylabel('perf. within\n subspace (R$^{2}$)')
 sns.despine(fig=fig, top=True, right=True, offset = 2)
 my_savefig(fig,figdir,'RRR_joint_time_eachsubspace')
+
+#%% Print how many datasets from how many mice:
+print('Number of datasets: %d' % np.sum(np.any(~np.isnan(R2_toplot),axis=(1))))
+
 
 #%% Show an example session labeled and unlabeled: 
 ises = 10
@@ -353,7 +357,6 @@ nplotcontrasts      = 2
 ndirections         = 2
 
 #compute cross-covariance between datasets for different lags and different timepoints relative to stimulus onset:
-
 ts = params['t_axis']
 ntimepoints = len(ts)
 dt = np.median(np.diff(ts))
@@ -408,11 +411,10 @@ fig,axes = plt.subplots(1,1,figsize=(6*cm,4*cm))
 ax = axes
 idx_time = np.logical_and(params['t_axis']>=0,params['t_axis']<1)
 # idx_time = np.logical_and(params['t_axis']>=-1,params['t_axis']<0)
-ls = [':','-']
-ylim = [-0.15,0.7]
+ls      = [':','-']
+ylim    = [-0.15,0.7]
 for isubspace in range(nsubspaces):
     for iplotcontrast in range(nplotcontrasts):
-
         ax.plot(tlags,np.nanmean(crosscovdata[isubspace,iplotcontrast,idx_time,:],axis=0),
                 color=clrs_subspaces[isubspace+1],linestyle=ls[iplotcontrast])
 ax.legend(['Behav - unl/unl','Behav - lab/unl','Stim - unl/unl','Stim - lab/unl'],reverse=True,bbox_to_anchor=(1.05,0.8))

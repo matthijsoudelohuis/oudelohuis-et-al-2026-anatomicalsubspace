@@ -32,15 +32,8 @@ version = 'FF_original'
 # filename = 'RRR_Joint_labeled_FF_original_2026-02-19_18-05-04'
 filename = 'RRR_Joint_labeled_FF_original_2026-03-19_22-05-08'
 
-# version = 'FF_behavout'
-# filename = 'RRR_Joint_labeled_FF_behavout_2026-02-20_02-00-03'
-# filename = 'RRR_Joint_labeled_FF_behavout_2026-03-20_00-39-57'
-
-# version = 'FB_original'
-# filename = 'RRR_Joint_labeled_FB_original_2026-02-19_21-42-16'
-
-# version = 'FB_behavout'
-# filename = 'RRR_Joint_labeled_FB_behavout_2026-02-20_06-11-04'
+version = 'FB_original'
+filename = 'RRR_Joint_labeled_FB_original_2026-02-19_21-42-16'
 
 #%% Load the data:
 data = np.load(os.path.join(resultdir,filename + '.npz'),allow_pickle=True)
@@ -81,6 +74,7 @@ my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_ExampleSesion' % (version))
 
 #%% Show the mean across sessions:
 clrs_arealabelpairs = ['grey','grey','red']
+idxs = np.array([1,3])
 
 nrankstoplot = 12
 xposrank = 10
@@ -130,6 +124,8 @@ ax.set_xlim([0,nrankstoplot])
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 # my_savefig(fig,figdir,'RRR_joint_cvR2_labunl_%s_%dsessions' % (version,params['nSessions']))
+
+print('n=%d datasets' % np.sum(~np.isnan(R2_cv[idxs[1]].flatten())))
 
 #%%
 idxs = np.array([1,3])

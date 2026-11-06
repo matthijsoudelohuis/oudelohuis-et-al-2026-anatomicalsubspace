@@ -22,9 +22,9 @@ from datetime import datetime
 #%% Load parameters and settings:
 params = load_params()
 params['regress_behavout'] = False
-params['direction'] = 'FF'
-# params['direction'] = 'FB'
-# params['direction'] = 'FF_AL'
+# params['direction'] = 'FF'
+params['direction'] = 'FB'
+params['direction'] = 'FF_AL'
 # params['direction'] = 'FB_AL'
 
 version = 'Separate_labeled_%s_%s' % (params['direction'],'behavout' if params['regress_behavout'] else 'original')
@@ -115,7 +115,6 @@ for ises,ses in enumerate(sessions):
         
         # alx,aly = arealabelpair.split('-')
 
-    
         idx_areax           = np.where(np.all((ses.celldata['arealabel']==sourcearea,
                                 ses.celldata['noise_level']<params['maxnoiselevel'],
                                 idx_nearby),axis=0))[0]
@@ -131,7 +130,7 @@ for ises,ses in enumerate(sessions):
         for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
         # for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'][:2])): # loop over orientations 
             idx_T               = ses.trialdata['stimCond']==stim
-       
+
             X                   = sessions[ises].tensor[np.ix_(idx_areax,idx_T,idx_resp)]
             Y                   = sessions[ises].tensor[np.ix_(idx_areay,idx_T,idx_resp)]
                     
@@ -145,24 +144,9 @@ for ises,ses in enumerate(sessions):
                             nmodelfits=params['nmodelfits'],fixed_rank=fixed_rank)
     
    
-
-# #%% Find best rank and cvR2 at this rank:
-# fixed_rank = None
-# for ises in range(nSessions):
-#     if np.any(~np.isnan(R2_ranks[0][ises])):
-#         for istim in range(params['nStim']):
-#             if fixed_rank is not None:
-#                 rank = fixed_rank
-#                 R2_cv[0,ises,istim] = np.nanmean(R2_ranks[0,ises,istim,rank,:,:])
-#                 R2_cv[1,ises,istim] = np.nanmean(R2_ranks[1,ises,istim,rank,:,:])
-#                 R2_cv[2,ises,istim] = np.nanmean(R2_ranks[2,ises,istim,rank,:,:])
-#                 R2_cv[3,ises,istim] = np.nanmean(R2_ranks[3,ises,istim,rank,:,:])
-#             else:
-#                 if not np.isnan(R2_ranks[0][ises][istim]).all():
-#                     R2_cv[0,ises,istim],optim_rank[0,ises,istim] = rank_from_R2(R2_ranks[0,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-#                     R2_cv[1,ises,istim],optim_rank[1,ises,istim] = rank_from_R2(R2_ranks[1,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-#                     R2_cv[2,ises,istim],optim_rank[2,ises,istim] = rank_from_R2(R2_ranks[2,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
-#                     R2_cv[3,ises,istim],optim_rank[3,ises,istim] = rank_from_R2(R2_ranks[3,ises,istim,:,:,:].reshape([nranks,nmodelfits*params['kfold']]),nranks,nmodelfits*params['kfold'])
+#%% How many unique mice are in the dataset?
+sessiondata = pd.concat([ses.sessiondata for ses in sessions],ignore_index=True)
+print('n=%d datasets from N=%d mice' % (np.sum(~np.isnan(R2_cv[1].flatten())), len(np.unique(sessiondata['animal_id'][np.any(~np.isnan(R2_cv[1]),axis=1)]))))
 
 #%%
 params['nSessions'] = nSessions
@@ -176,5 +160,3 @@ np.savez(savefilename + '.npz',R2_cv=R2_cv,R2_ranks=R2_ranks,optim_rank=optim_ra
 
 with open(savefilename +'_params' + '.txt', "wb") as myFile:
     pickle.dump(params, myFile)
-
-#%%

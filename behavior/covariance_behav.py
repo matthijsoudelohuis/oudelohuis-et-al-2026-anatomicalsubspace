@@ -475,6 +475,11 @@ for ises,ses in enumerate(sessions):
                     
                 #     EC_poppairs[ialp,r,istim,ises,ikf] = EV(Y_cov[np.ix_(idx_areax,idx_areay)],Y_cov_rrr[np.ix_(idx_areax,idx_areay)])
 
+#%% Report number of sessions:
+
+for ial,al in enumerate(arealayerlabeled):
+    print('%s: n=%d sessions' % (al,np.sum(np.any(~np.isnan(EV_pops[ial]),axis=(0,1,3)))))
+
 #%% Plotting:
 clrs_arealabels = ['grey','red','grey','red','grey','red']
 fig,axes = plt.subplots(1,1,figsize=(4*cm,3.9*cm))

@@ -107,32 +107,32 @@ ax.set_ylim([0,ax.get_ylim()[1]])
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'perf_behavsubspace_rank_FB_exampleSession%d' % ises)
 
-#%% 
-R2_ranks_FF_all = np.nanmean(R2_ranks_FF[0][0], axis=(0,1,3,4))
-R2_ranks_FF_sum = np.nanmean(R2_ranks_FF[0][1], axis=(0,1,3,4)) + np.nanmean(R2_ranks_FF[0][2], axis=(0,1,3,4)) 
+# #%% 
+# R2_ranks_FF_all = np.nanmean(R2_ranks_FF[0][0], axis=(0,1,3,4))
+# R2_ranks_FF_sum = np.nanmean(R2_ranks_FF[0][1], axis=(0,1,3,4)) + np.nanmean(R2_ranks_FF[0][2], axis=(0,1,3,4)) 
 
-fig, axes = plt.subplots(1,2,figsize=(8.5*cm,3.6*cm),sharex=True,sharey=True)
-ax = axes[0]
-ax.plot(np.arange(params['nranks'])+1,R2_ranks_FF_all,color='k')
-ax.plot(np.arange(params['nranks'])+1,R2_ranks_FF_sum,color='blue',linestyle='--')
-ax.set_xlabel('Rank')
-ax.set_title('FF')
-ax.legend(['Full','Behav+Non-behav'],frameon=False)
+# fig, axes = plt.subplots(1,2,figsize=(8.5*cm,3.6*cm),sharex=True,sharey=True)
+# ax = axes[0]
+# ax.plot(np.arange(params['nranks'])+1,R2_ranks_FF_all,color='k')
+# ax.plot(np.arange(params['nranks'])+1,R2_ranks_FF_sum,color='blue',linestyle='--')
+# ax.set_xlabel('Rank')
+# ax.set_title('FF')
+# ax.legend(['Full','Behav+Non-behav'],frameon=False)
 
-R2_ranks_FB_all = np.nanmean(R2_ranks_FB[0][0], axis=(0,1,3,4))
-R2_ranks_FB_sum = np.nanmean(R2_ranks_FB[0][1], axis=(0,1,3,4)) + np.nanmean(R2_ranks_FB[0][2], axis=(0,1,3,4))
+# R2_ranks_FB_all = np.nanmean(R2_ranks_FB[0][0], axis=(0,1,3,4))
+# R2_ranks_FB_sum = np.nanmean(R2_ranks_FB[0][1], axis=(0,1,3,4)) + np.nanmean(R2_ranks_FB[0][2], axis=(0,1,3,4))
 
-ax = axes[1]
-ax.plot(np.arange(params['nranks'])+1,R2_ranks_FB_all,color='k')
-ax.plot(np.arange(params['nranks'])+1,R2_ranks_FB_sum,color='blue',linestyle='--')
-ax.set_title('FB')
+# ax = axes[1]
+# ax.plot(np.arange(params['nranks'])+1,R2_ranks_FB_all,color='k')
+# ax.plot(np.arange(params['nranks'])+1,R2_ranks_FB_sum,color='blue',linestyle='--')
+# ax.set_title('FB')
 
-# leg = ax.legend(handles,subspacelabels[1:],frameon=False)
-# my_legend_strip(ax)
-ax.set_ylabel(r'R$^{2}$')
-ax.set_xlim([1,nrankstoplot])
-sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
-my_savefig(fig,figdir,'perf_full_sum_rank_subspaces')
+# # leg = ax.legend(handles,subspacelabels[1:],frameon=False)
+# # my_legend_strip(ax)
+# ax.set_ylabel(r'R$^{2}$')
+# ax.set_xlim([1,nrankstoplot])
+# sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
+# my_savefig(fig,figdir,'perf_full_sum_rank_subspaces')
 
 
 #%% 
@@ -169,6 +169,10 @@ ax.set_xlim([0.75,nrankstoplot])
 ax.set_ylim([0,1])
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'frac_perf_behavsubspace')
+
+#%% How many datasets?
+print('FF: n=%d datasets' % np.sum(np.any(~np.isnan(R2_ranks_FF),axis=(0,1,4,5,6)).flatten()))
+print('FB: n=%d datasets' % np.sum(np.any(~np.isnan(R2_ranks_FB),axis=(0,1,4,5,6)).flatten()))
 
 
 #%% LABELED VS UNLABELED
@@ -272,4 +276,5 @@ ax.set_ylabel(r'performance ratio')
 plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
 my_savefig(fig,figdir,'perf_ratio_labunl_behavsubspace_%dsessions' % params['nSessions'])
+
 

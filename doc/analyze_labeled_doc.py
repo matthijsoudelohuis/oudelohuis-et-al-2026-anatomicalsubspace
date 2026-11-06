@@ -44,7 +44,7 @@ with open(os.path.join(resultdir,filename + '_params' + '.txt'), "rb") as myFile
 #%% Show the R2 for original and rotated:
 t_ticks = np.array([-1,0,1,2])
 
-x = np.arange(1,fixed_rank+1)
+x = np.arange(1,params['fixed_rank']+1)
 
 #Plotting the R2 of the original and DOC latents:
 fig,axes = plt.subplots(2,2,figsize=(7.3*cm,6.8*cm),sharey=False,sharex=False)
@@ -69,7 +69,7 @@ for idata,data in enumerate([R2_ranks_orig,R2_ranks_doc]):
         handles = []
 
         for ial in range(2):
-            datatoplot = np.nanmean(data[contrast[ial]][icontrast],axis=(3)).reshape(params['nSessions']*params['nStim'],fixed_rank) #average across modelfits
+            datatoplot = np.nanmean(data[contrast[ial]][icontrast],axis=(3)).reshape(params['nSessions']*params['nStim'],params['fixed_rank']) #average across modelfits
             handles.append(shaded_error(x,datatoplot,color=clrs[icontrast,ial],error='ci95',alpha=0.3,ax=ax))
 
         if idata == 1:
@@ -78,15 +78,15 @@ for idata,data in enumerate([R2_ranks_orig,R2_ranks_doc]):
             datatotest = np.nanmean(data[np.ix_([contrast[ial]],[icontrast],np.arange(params['nSessions']),range(params['nStim']),[docdim],range(params['nmodelfits']))]
                                     ,axis=(0,1,4,5)).flatten()
             tval,pval = stats.ttest_1samp(datatotest,0,nan_policy='omit')[:2]
-            ax.text(docdim/fixed_rank,0.2,'p=%1.3f' % pval,transform=ax.transAxes)
+            ax.text(docdim/params['fixed_rank'],0.2,'p=%1.3f' % pval,transform=ax.transAxes)
             print('DOC latent %d is significantly nonzero for %s population (t=%1.1f,p=%1.2e)' % (docdim+1,sourcearealabelpairs[contrast[ial]-1],tval,pval))
             
             ial = 1
-            docdim = fixed_rank-1
+            docdim = params['fixed_rank']-1
             datatotest = np.nanmean(data[np.ix_([contrast[ial]],[icontrast],np.arange(params['nSessions']),range(params['nStim']),[docdim],range(params['nmodelfits']))]
                                     ,axis=(0,1,4,5)).flatten()
             tval,pval = stats.ttest_1samp(datatotest,0,nan_policy='omit')[:2]
-            ax.text(docdim/fixed_rank,0.2,'p=%1.3f' % stats.ttest_1samp(datatotest,0,nan_policy='omit')[1],transform=ax.transAxes)
+            ax.text(docdim/params['fixed_rank'],0.2,'p=%1.3f' % stats.ttest_1samp(datatotest,0,nan_policy='omit')[1],transform=ax.transAxes)
             print('DOC latent %d is significantly nonzero for %s population (t=%1.1f,p=%1.2e)' % (docdim+1,sourcearealabelpairs[contrast[ial]-1],tval,pval))
 
         ax.legend(handles=handles,labels=figlabels,frameon=False,loc='upper center',fontsize=7)
@@ -104,7 +104,58 @@ for idata,data in enumerate([R2_ranks_orig,R2_ranks_doc]):
         ax.set_xticks(x)
 plt.tight_layout()
 sns.despine(fig=fig, top=True, right=True, offset = 2)
-my_savefig(fig,figdir,'DOC_latents_r2_%s' % params['direction'])
+# my_savefig(fig,figdir,'DOC_latents_r2_%s' % params['direction'])
+
+#%% How many datasets?
+print('n=%d datasets' % np.sum(np.any(~np.isnan(R2_ranks_orig),axis=(0,1,4,5)).flatten()))
+
+
+#%% Show the performance ratio of each DOC latent:
+# fig,axes = plt.subplots(2,2,figsize=(7.3*cm,6.8*cm),sharey=False,sharex=False)
+fig,axes = plt.subplots(1,1,figsize=(3.6*cm,3.7*cm),sharey=False,sharex=False)
+ax = axes
+plotcontrasts = np.array([[1,2],[1,3]])
+# ax = axes[0]
+
+clrs = np.array(['grey','red'])
+handles = []
+ncomparisons = params['fixed_rank'] * 2
+datatotest = np.full((2,params['nSessions']*params['nStim'],params['fixed_rank']),np.nan)
+
+for icontrast,contrast in enumerate(plotcontrasts):
+    if params['direction'] =='FF' and icontrast == 0:
+        figlabels = ['V1$_{ND1}$','V1$_{ND2}$']
+    elif params['direction'] =='FF' and icontrast == 1:
+        figlabels = ['V1$_{ND1}$','V1$_{PM}$']
+    elif params['direction'] =='FB' and icontrast == 0:
+        figlabels = ['PM$_{ND1}$','PM$_{ND2}$']
+    elif params['direction'] =='FB' and icontrast == 1:
+        figlabels = ['PM$_{ND1}$','PM$_{V1}$']
+
+    data        = np.nanmean(R2_ranks_doc,axis=-1) #average across modelfits
+    perf_ratio  = data[contrast[1]][icontrast] / data[contrast[0]][icontrast] #compute the performance ratio
+    perf_ratio = perf_ratio.reshape(params['nSessions']*params['nStim'],params['fixed_rank']) # reshape to datasets
+    datatotest[icontrast,:,:] = perf_ratio #store for stats
+
+    handles.append(shaded_error(x,perf_ratio,color=clrs[icontrast],error='ci95',alpha=0.3,ax=ax,linewidth=0.8))
+
+    # ax.errorbar(x,np.nanmean(perf_ratio,axis=0),yerr=np.nanstd(perf_ratio,axis=0)/np.sqrt(np.sum(~np.isnan(perf_ratio[:,0])))*ncomparisons,
+    #             color=clrs[icontrast],alpha=1,marker='.',markersize=5,linestyle='')
+
+for irank in range(params['fixed_rank']):
+    w,pval  = stats.wilcoxon(datatotest[0,:,irank],datatotest[1,:,irank],nan_policy='omit')
+    pval    = np.clip(pval*ncomparisons,0,1)
+    ax.text(x[irank],np.nanmean(datatotest[1,:,irank])+0.25,get_sig_asterisks(pval),fontsize=6,color='k',horizontalalignment='center')
+    print('Perf ratio difference DOC latent %d, w= %2.2g, p = %2.2g' % (irank+1,w,pval))
+
+ax.set_xlabel('DOC latent')
+ax.set_ylabel('performance ratio')
+ax.axhline(1,linestyle=':',color='k',linewidth=0.8)
+ax.set_yticks([0,1,2,3,4])
+ax.set_xticks(x)
+plt.tight_layout()
+sns.despine(fig=fig, top=True, right=True, offset = 2)
+# my_savefig(fig,figdir,'DOC_latents_perfratio_%s' % params['direction'])
 
 #%% Plotting the R2 for the first DOC latent as a scatter plot: 
 fig, axes = plt.subplots(1,1,figsize=(3.5*cm,3.5*cm))

@@ -71,7 +71,7 @@ else:
 
 #%% Do RRR of V1 and PM labeled and unlabeled neurons
 version = 'FF'
-version = 'FB'
+# version = 'FB'
 if version == 'FF': 
     sourcearealabelpairs = ['V1unl','V1lab']
     # crossarealabelpairs  = ['V1unl','V1lab','ALunl']
@@ -87,7 +87,7 @@ nsourcearealabelpairs   = len(sourcearealabelpairs)
 ncrossarealabelpairs    = len(crossarealabelpairs)
 
 params['nsubprojection'] = 25
-# Nsub                = 25
+
 Nsub_pops           = np.array([5,10,15,20,25,30,35,40,45,50])
 # Nsub_pops           = np.array([5,10,25,50,100])
 # Nsub_pops           = np.array([5,10,15,20,25,30,40,50,75,100,150,200,250,300])
@@ -132,6 +132,7 @@ for ises,ses in enumerate(sessions):
             for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'])): # loop over orientations 
             # for istim,stim in enumerate(np.unique(ses.trialdata['stimCond'][:2])): # loop over orientations 
                 idx_T               = ses.trialdata['stimCond']==stim
+                R2_Z_Xpred[iapl,:,ises,istim,:,imf] = 9
 
                 X                   = ses.tensor[np.ix_(idx_areax_sub,idx_T,idx_resp)]
                 Y                   = ses.tensor[np.ix_(idx_areay_sub,idx_T,idx_resp)]
@@ -197,6 +198,10 @@ idx_incomplete      = np.any(np.isnan(R2_Z_Xpred),axis=1) #True if any crossarea
 
 R2_Z_Xpred[np.broadcast_to(idx_incomplete[:,np.newaxis,:,:,:,:],R2_Z_Xpred.shape)] = np.nan
 R2_Z_Xpred_perrank[np.broadcast_to(idx_incomplete[:,np.newaxis,:,:,:,np.newaxis,:],R2_Z_Xpred_perrank.shape)] = np.nan
+
+#%% How many datasets?
+print('n=%d datasets' % np.sum(np.any(~np.isnan(R2_Z_Xpred),axis=(0,1,4,5)).flatten()))
+
 
 #%%
 # idx_ses = sessiondata['session_id']=='LPE11622_2024_03_25'

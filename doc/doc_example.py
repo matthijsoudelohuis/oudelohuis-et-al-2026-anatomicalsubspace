@@ -29,14 +29,14 @@ figdir = os.path.join(params['figdir'],'RRR','DOC')
 #%% 
 session_list        = np.array([
                                 # ['LPE12223_2024_06_10'], #V1lab actually lower
-                                ['LPE09830_2023_04_10'], #V1 labeled higher predictive than V1unl
+                                # ['LPE09830_2023_04_10'], #V1 labeled higher predictive than V1unl
                                 # ['LPE10919_2023_11_06'],  #V1lab actually lower
                                 # ['LPE12223_2024_06_08'], #V1lab actually lower
                                 # ['LPE11998_2024_05_02'], # V1lab lower?
                                 # ['LPE11622_2024_03_25'], #same
-                                # ['LPE09665_2023_03_14'], #V1lab higher
-                                ['LPE10885_2023_10_23'], #V1lab much higher
-                                # ['LPE11086_2024_01_05'], #Really much higher, best session, first dimensions are more predictive.
+                                ['LPE09665_2023_03_14'], #V1lab higher
+                                # ['LPE10885_2023_10_23'], #V1lab much higher
+                                ['LPE11086_2024_01_05'], #Really much higher, best session, first dimensions are more predictive.
                                 # ['LPE11086_2024_01_10'], #Few v1 labeled cells, very noisy
                                 # ['LPE11998_2024_05_10'], #
                                 # ['LPE12013_2024_05_07'], #
@@ -48,7 +48,7 @@ sessions,nSessions   = filter_sessions(protocols = ['GN','GR'],only_session_id=s
 
 #%% Wrapper function to load the tensor data, 
 [sessions,t_axis] = load_resid_tensor(sessions,params,regressbehavout=params['regress_behavout'])
-
+sessiondata = pd.concat([s.sessiondata for s in sessions],axis=1)
 
 #%% Show an example session, stimulus for feedforward direction
 params['direction'] = 'FF'
@@ -57,7 +57,9 @@ targetarealabelpair = 'PMunl'
 clrs_arealabelpairs = np.array(['grey','red'])
 
 ises                = 0
-stim                = 5
+# ises = np.
+# stim                = 5
+stim                = 10
 offset              = 12
 
 Nsub  = np.sum(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpairs[1],
@@ -72,7 +74,9 @@ clrs_arealabelpairs = np.array(['grey','red'])
 
 ises                = 1
 stim                = 8
-offset              = 6
+# offset              = 6
+stim                = 9
+# offset              = 4
 
 Nsub  = np.sum(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpairs[1],
                             sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
@@ -80,16 +84,17 @@ Nsub  = np.sum(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpair
 
 #%% Compute example shared latents: 
 rank                = 4 #rank of RRR ranks to plot
+
 idx_resp            = np.where((t_axis>=0) & (t_axis<=2))[0]
 
 idx_areax1          = np.where(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpairs[0],
-                            # sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
+                            sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
                             ),axis=0))[0]
 idx_areax2          = np.where(np.all((sessions[ises].celldata['arealabel']==sourcearealabelpairs[1],
-                            # sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
+                            sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
                             ),axis=0))[0]
 idx_areay       = np.where(np.all((sessions[ises].celldata['arealabel']==targetarealabelpair,
-                                        # sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
+                            sessions[ises].celldata['noise_level']<params['maxnoiselevel'],	
                                         ),axis=0))[0]
 print(len(idx_areax2))
 
@@ -155,7 +160,7 @@ Z_2_doc = Z_2 @ doc_eigvecs
 kernel_size         = 3 #size of smoothing kernel in frames
 ntimebins           = 250
 lw                  = 0.7
-startidx            = 100 #skip the first 100 frames
+startidx            = 50 #skip the first 100 frames
 
 #Little bit of smoothing:
 Z_1_smooth = np.zeros_like(Z_1)
@@ -174,21 +179,18 @@ for r in range(rank):
     Z_2_doc_smooth[:,r] = np.convolve(Z_2_doc[:,r], kernel, mode='same')
 
 diffs               = []
+
 #Find a good chunk of time to plot where the DOC is highlighting the difference between the two populations:
-for ichunk,idx_k0 in enumerate(np.arange(startidx,np.shape(X1)[0]-ntimebins,ntimebins)):
+for i,idx_k0 in enumerate(np.arange(startidx,np.shape(X1)[0]-ntimebins,ntimebins)):
     idx_K = np.arange(idx_k0,idx_k0+ntimebins)
-    # diff = np.sum(Z_1_doc_smooth[idx_K,:] - Z_2_doc_smooth[idx_K,:],axis=0)
-    # diffs.append(diff[0] - diff[1])
     diff = np.var(Z_1_doc_smooth[idx_K,:],axis=0) - np.var(Z_2_doc_smooth[idx_K,:],axis=0)
     diffs.append(np.sum(np.abs(diff)))
 
-    # diffdoc = np.sum(np.abs(Z_1_doc_smooth[idx_K,:] - Z_2_doc_smooth[idx_K,:]),axis=0)
-    # difforig = np.sum(np.abs(Z_1_smooth[idx_K,:] - Z_2_smooth[idx_K,:]),axis=0)
-    # diffdoc = np.var(Z_1_doc_smooth[idx_K,:],axis=0) - np.var(Z_2_doc_smooth[idx_K,:],axis=0)
-    # difforig = np.var(Z_1_smooth[idx_K,:],axis=0) - np.var(Z_2_smooth[idx_K,:],axis=0)
-    # diffs.append(np.sum(np.abs(diffdoc)) - np.sum(np.abs(difforig)))
-
 ichunk = np.argmax(diffs)
+# ichunk = np.argmin(diffs)
+# median_val = np.median(diffs)
+# ichunk = np.argmin(np.abs(diffs - median_val))
+# ichunk = 0
 idx_K = np.arange(ichunk*ntimebins+startidx,(ichunk+1)*ntimebins+startidx)
 
 #make the figure:

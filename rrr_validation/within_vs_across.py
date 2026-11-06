@@ -38,6 +38,7 @@ if DEBUG:
     nSessions = len(sessions)
 report_sessions(sessions)
 [sessions,t_axis] = load_resid_tensor(sessions,params)
+sessiondata = pd.concat([ses.sessiondata for ses in sessions],axis=0)
 
 #%% 
 #     # ### ####### #     # ### #     #    #     #  #####        #     #####  ######  #######  #####   #####  
@@ -164,6 +165,9 @@ ax.plot([0,axlim],[0,axlim],':',color='grey',linewidth=1)
 plt.tight_layout()
 sns.despine(offset=2,top=True,right=True)
 my_savefig(fig,figdir,'perf_rank_WithinVSAcross_%dneurons' % nsampleneurons)
+
+Nmice = len(sessiondata[np.any(~np.isnan(R2_cv[0]),axis=1)]['animal_id'].unique())
+print('n=%d datasets from N=%d mice' % (np.sum(~np.isnan(R2_toplot[0])), Nmice))
 
 #%% Plotting:
 clr = clrs_arealabelpairs[0]
@@ -321,7 +325,7 @@ ntargetareas        = len(targetareas)
 rank_subspace       = 5
 nrankstoremove      = 5
 # nsampleneurons      = 50
-nsampleneurons      = 50
+nsampleneurons      = 100
 nStim               = 16
 idx_resp            = np.where((t_axis>=params['tresp_start']) & (t_axis<=params['tresp_end']))[0]
 params['nmodelfits'] = 10
@@ -488,7 +492,13 @@ ax_nticks(axes[0, 0], 3)
 ax.set_xticks([0,1,3,5])
 plt.tight_layout()
 sns.despine(fig=fig, top=True, right=True, offset=2)
-my_savefig(fig, figdir, 'RRR_Remove_Pred_Subspace_%dneurons_%dranks' % (nsampleneurons, nrankstoremove))
+# my_savefig(fig, figdir, 'RRR_Remove_Pred_Subspace_%dneurons_%dranks' % (nsampleneurons, nrankstoremove))
+
+R2_toplot = np.nanmean(R2_removal, axis=(5, 6)) # Average over modelfits, kfolds:
+Nmice = len(sessiondata[np.any(~np.isnan(R2_toplot),axis=(0,1,2,4))]['animal_id'].unique())
+Ndatasets = np.sum(np.any(~np.isnan(R2_toplot), axis=(0,1,2)))
+print('n=%d datasets from N=%d mice' % (Ndatasets, Nmice))
+
 
 #%% Like Semedo Fig 6B/D: histograms of norm. performance at max dims removed (2x2)
 R2_toplot = np.nanmean(R2_removal, axis=(5, 6)) # Average over modelfits, kfolds:

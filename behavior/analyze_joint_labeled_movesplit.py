@@ -339,6 +339,11 @@ plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True,offset=2)
 # my_savefig(fig,figdir,'perf_ratio_labunl_movesplit_%dsessions' % params['nSessions'])
 
+#%% How many datasets?
+print('FF: n=%d datasets' % np.sum(np.any(~np.isnan(R2_ranks_FF),axis=(0,1,4,5,6)).flatten()))
+print('FB: n=%d datasets' % np.sum(np.any(~np.isnan(R2_ranks_FB),axis=(0,1,4,5,6)).flatten()))
+
+
 # #%% Identify which dimensions are particularly enhanced in labeled cells:
 # data = np.nanmean(R2_ranks,axis=(5)) #average across kfolds
 # data = np.diff(data,axis=3) #take the difference between rank r and r+1 (uniquely explained variance by rank r)

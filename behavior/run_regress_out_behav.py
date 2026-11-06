@@ -111,6 +111,10 @@ for ises,ses in tqdm(enumerate(sessions),total=nSessions,desc='Fitting RRR model
                 #OUTPUT: MAX PERF, OPTIM RANK, PERF FOR EACH RANK ACROSS FOLDS AND MODELFITS
                 R2_cv[iapl,rankout,ises,istim],optim_rank[iapl,rankout,ises,istim],_  = RRR_wrapper(Y_out, X_out, nN=params['nsubnonlabeled'],nranks=params['nranks'],nmodelfits=nmodelfits)
 
+#%% Report number of sessions:
+print('n=%d dataset' % np.sum(np.any(~np.isnan(R2_cv),axis=(0,1))))
+
+
 #%%
 params['nmodelfits']    = nmodelfits
 params['nSessions']     = nSessions

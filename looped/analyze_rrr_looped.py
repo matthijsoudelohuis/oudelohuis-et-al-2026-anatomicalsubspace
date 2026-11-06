@@ -274,6 +274,10 @@ plt.tight_layout()
 sns.despine(fig=fig,trim=False,top=True,right=True)
 # my_savefig(fig,figdir,'Looped_cvR2_bars_%s_%dsessions' % (version,params['nSessions']))
 
+#%% How many datasets?
+print('n=%d datasets' % np.sum(np.any(~np.isnan(R2_cv),axis=(0,1)).flatten()))
+# print('FB: n=%d datasets' % np.sum(np.any(~np.isnan(R2_cv_FB),axis=(0)).flatten()))
+# 
 
 #%% Show the sum of each projection added R2 and the added R2 of V1Pm PMv1:
 datatotest = R2_cv - R2_cv[0,0][np.newaxis,np.newaxis,:,:] #calculate the added R2 of each projection by subtracting the R2 of the model with only the first rank (which captures shared variance across all models) from the R2 of the full model. This gives the R2 uniquely explained by each projection.
@@ -458,3 +462,7 @@ for isubspace in range(3):
     ax.set_ylabel('performance ratio')
 sns.despine(fig=fig, top=True, right=True, offset = 3)
 my_savefig(fig,figdir,'RRR_looped_time_ratio_subspaces_%s' % (version))
+
+#%% How many datasets?
+print('n=%d datasets' % np.sum(np.any(~np.isnan(R2_cv),axis=(0,1,2,5)).flatten()))
+# print('FB: n=%d datasets' % np.sum(np.any(~np.isnan(R2_cv_FB),axis=(0)).flatten()))
